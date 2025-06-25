@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Gerar hashes MD5 dos dados de entrada
+    // Gerar hashes MD5 dos dados de entrada x
     const usuarioHash = crypto.createHash('md5').update(usuario).digest('hex');
     const senhaHash = crypto.createHash('md5').update(senha).digest('hex');
 
