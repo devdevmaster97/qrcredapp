@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 import { cookies } from 'next/headers';
+import crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,10 +16,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Gerar hashes MD5 dos dados de entrada
+    const usuarioHash = crypto.createHash('md5').update(usuario).digest('hex');
+    const senhaHash = crypto.createHash('md5').update(senha).digest('hex');
+
     // Criar parâmetros no formato form-urlencoded para enviar para a API PHP
     const params = new URLSearchParams();
-    params.append('userconv', usuario);
-    params.append('passconv', senha);
+    params.append('userconv', usuarioHash);
+    params.append('passconv', senhaHash);
 
     // Enviar requisição para o backend
     const response = await axios.post('https://qrcred.makecard.com.br/convenio_autenticar_app.php', 
