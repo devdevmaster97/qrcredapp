@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 import { cookies } from 'next/headers';
-import crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const usuario = body.usuario;
     const senha = body.senha;
+
+    console.log('🔍 Dados recebidos:', { usuario, senha });
 
     if (!usuario || !senha) {
       return NextResponse.json(
@@ -16,14 +17,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Gerar hashes MD5 dos dados de entrada
-    const usuarioHash = crypto.createHash('md5').update(usuario).digest('hex');
-    const senhaHash = crypto.createHash('md5').update(senha).digest('hex');
-
     // Criar parâmetros no formato form-urlencoded para enviar para a API PHP
     const params = new URLSearchParams();
-    params.append('userconv', usuarioHash);
-    params.append('passconv', senhaHash);
+    params.append('userconv', usuario);
+    params.append('passconv', senha);
+
+    console.log('📤 Enviando para API PHP:', {
+      userconv: usuario,
+      passconv: senha,
+      url: 'https://qrcred.makecard.com.br/convenio_autenticar_app.php'
+    });
 
     // Enviar requisição para o backend
     const response = await axios.post('https://qrcred.makecard.com.br/convenio_autenticar_app.php', 
@@ -31,11 +34,15 @@ export async function POST(request: NextRequest) {
       {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
-        }
+        },
+        timeout: 10000 // 10 segundos
       }
     );
 
-    console.log('Resposta API:', response.data);
+    console.log('📥 Resposta do PHP:', {
+      status: response.status,
+      data: response.data
+    });
 
     if (response.data.tipo_login === 'login sucesso') {
       // Criar um token JWT ou qualquer outro identificador único
@@ -55,6 +62,7 @@ export async function POST(request: NextRequest) {
         path: '/',
       });
 
+      console.log('✅ Login bem-sucedido');
       return NextResponse.json({
         success: true,
         data: {
@@ -70,6 +78,7 @@ export async function POST(request: NextRequest) {
         }
       });
     } else {
+      console.log('❌ Login falhou:', response.data.tipo_login);
       return NextResponse.json({
         success: false,
         message: response.data.tipo_login === 'login incorreto' 
@@ -78,9 +87,28 @@ export async function POST(request: NextRequest) {
       }, { status: 401 });
     }
   } catch (error) {
-    console.error('Erro no login:', error);
+    console.error('💥 Erro detalhado no login:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      isAxiosError: axios.isAxiosError(error)
+    });
+    
+    if (axios.isAxiosError(error)) {
+      console.error('🌐 Detalhes do erro Axios:', {
+        code: error.code,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        url: error.config?.url
+      });
+    }
+    
     return NextResponse.json(
-      { success: false, message: 'Erro ao realizar login' },
+      { 
+        success: false, 
+        message: 'Erro ao realizar login',
+        debug: error instanceof Error ? error.message : String(error)
+      },
       { status: 500 }
     );
   }
