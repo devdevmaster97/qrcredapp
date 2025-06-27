@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { FaUser, FaStore, FaPowerOff } from 'react-icons/fa';
+import { FaUser, FaStore } from 'react-icons/fa';
 import MenuCard from '../components/MenuCard';
 import Logo from '../components/Logo';
 import UpdateChecker from '../components/UpdateChecker';

@@ -12,7 +12,8 @@ import {
   FaCalendarAlt, 
   FaSignOutAlt,
   FaBars,
-  FaTimes
+  FaTimes,
+  FaWhatsapp
 } from 'react-icons/fa';
 
 type SidebarProps = {
@@ -45,6 +46,23 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
 
   const toggleSidebar = () => {
     setIsOpen(!isOpen);
+  };
+
+  const handleAntecipacaoW = () => {
+    const numero = '5535998120032';
+    const mensagem = 'Olá, quero mais informações sobre Antecipação W!';
+    const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
+    
+    try {
+      // Tenta abrir em uma nova aba
+      window.open(url, '_blank');
+    } catch (error) {
+      // Fallback: redireciona na mesma aba
+      window.location.href = url;
+    }
+    
+    // Fechar sidebar no mobile após clicar
+    setIsOpen(false);
   };
 
   const menuItems = [
@@ -121,6 +139,19 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
                   </Link>
                 </li>
               ))}
+              
+              {/* Menu Antecipação W - WhatsApp */}
+              <li>
+                <button
+                  onClick={handleAntecipacaoW}
+                  className="flex items-center w-full px-5 py-3 text-left transition-colors hover:bg-green-600"
+                >
+                  <span className="mr-3">
+                    <FaWhatsapp size={20} />
+                  </span>
+                  Antecipação W
+                </button>
+              </li>
             </ul>
           </nav>
 
