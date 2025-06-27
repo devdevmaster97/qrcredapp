@@ -5,18 +5,23 @@ interface LogoProps {
 }
 
 export default function Logo({ size = 'md' }: LogoProps) {
-  const sizeClasses = {
-    sm: 'text-2xl',
-    md: 'text-3xl',
-    lg: 'text-4xl'
+  const sizeConfig = {
+    sm: { width: 80, height: 32 },
+    md: { width: 120, height: 48 },
+    lg: { width: 160, height: 64 }
   };
+
+  const { width, height } = sizeConfig[size];
 
   return (
     <div className="flex justify-center">
-      <div className={`font-bold text-blue-600 ${sizeClasses[size]}`}>
-        QRCred
-        <span className="text-green-500">.</span>
-      </div>
+      <Image
+        src="/icons/logo.png"  // ou .svg
+        alt="Logo da empresa"
+        width={width}
+        height={height}
+        priority
+      />
     </div>
   );
 } 

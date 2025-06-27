@@ -44,7 +44,7 @@ const handler = NextAuth({
         }
 
         try {
-          const response = await axios.post("https://qrcred.makecard.com.br/login_app.php", {
+          const response = await axios.post("https://sas.makecard.com.br/login_app.php", {
             cartao: credentials.cartao,
             senha: credentials.senha
           });

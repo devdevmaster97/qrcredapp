@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     
     // Enviar a requisição para o backend
     const response = await axios.post(
-      'https://qrcred.makecard.com.br/atualiza_associado_app.php',
+      'https://sas.makecard.com.br/atualiza_associado_app.php',
       body,
       {
         headers: {

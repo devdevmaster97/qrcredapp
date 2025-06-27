@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
 
     // Fazer a requisição para a API PHP de estorno
     const response = await axios.post(
-      'https://qrcred.makecard.com.br/excluir_via_app.php',
+      'https://sas.makecard.com.br/excluir_via_app.php',
       params,
       {
         headers: {

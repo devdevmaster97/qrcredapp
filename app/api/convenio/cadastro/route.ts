@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
     console.log('Dados sendo enviados:', Object.fromEntries(params));
 
     // Enviar requisição para o backend
-    const response = await axios.post('https://qrcred.makecard.com.br/grava_convenio.php', params, {
+    const response = await axios.post('https://sas.makecard.com.br/grava_convenio.php', params, {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },

@@ -8,7 +8,7 @@ export async function GET() {
     // Teste 1: Verificar se conseguimos acessar o servidor
     try {
       const resposta1 = await axios.get(
-        'https://qrcred.makecard.com.br/', 
+        'https://sas.makecard.com.br/', 
         { timeout: 5000 }
       );
       console.log('Servidor respondeu com status:', resposta1.status);
@@ -25,7 +25,7 @@ export async function GET() {
       console.log('Enviando credenciais de teste:', payload.toString());
       
       const resposta2 = await axios.post(
-        'https://qrcred.makecard.com.br/localiza_associado_app_2.php',
+        'https://sas.makecard.com.br/localiza_associado_app_2.php',
         payload,
         {
           headers: {

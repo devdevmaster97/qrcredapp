@@ -89,7 +89,7 @@ export default function MeusDadosContent() {
       
       // Chamada direta à API PHP
       const response = await axios.post(
-        'https://qrcred.makecard.com.br/localiza_associado_app_2.php',
+        'https://sas.makecard.com.br/localiza_associado_app_2.php',
         params,
         {
           headers: {
@@ -189,7 +189,7 @@ export default function MeusDadosContent() {
       });
       
       const response = await axios.post(
-        'https://qrcred.makecard.com.br/atualiza_associado_app.php',
+        'https://sas.makecard.com.br/atualiza_associado_app.php',
         params,
         {
           headers: {

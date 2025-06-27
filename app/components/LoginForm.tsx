@@ -171,7 +171,7 @@ export default function LoginForm({ onSubmit, loading }: LoginFormProps) {
         urlSearchParams.append('senha', senhaLimpa);
         
         const response = await axios.post(
-          'https://qrcred.makecard.com.br/localiza_associado_app_2.php',
+          'https://sas.makecard.com.br/localiza_associado_app_2.php',
           urlSearchParams.toString(),
           {
             headers: {

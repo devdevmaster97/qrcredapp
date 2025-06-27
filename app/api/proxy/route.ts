@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Construir a URL completa
-    const baseUrl = 'https://qrcred.makecard.com.br';
+    const baseUrl = 'https://sas.makecard.com.br';
     const targetUrl = `${baseUrl}/${targetEndpoint}`;
     
     console.log('🔄 Proxy: encaminhando requisição para', targetUrl);
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Construir a URL completa
-    const baseUrl = 'https://qrcred.makecard.com.br';
+    const baseUrl = 'https://sas.makecard.com.br';
     const targetUrl = `${baseUrl}/${targetEndpoint}`;
     
     console.log('🔄 Proxy: encaminhando requisição GET para', targetUrl);

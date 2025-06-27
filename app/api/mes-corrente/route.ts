@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     // Fazer requisição para o backend
     const response = await axios.post(
-      'https://qrcred.makecard.com.br/meses_corrente_app.php',
+      'https://sas.makecard.com.br/meses_corrente_app.php',
       formData
     );
 

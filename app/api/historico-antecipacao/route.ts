@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     
     // Fazer a requisição para o endpoint do backend
     const response = await axios.post(
-      'https://qrcred.makecard.com.br/historico_antecipacao_app.php',
+      'https://sas.makecard.com.br/historico_antecipacao_app.php',
       formData,
       {
         headers: {

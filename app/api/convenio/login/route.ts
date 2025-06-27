@@ -25,11 +25,11 @@ export async function POST(request: NextRequest) {
     console.log('📤 Enviando para API PHP:', {
       userconv: usuario,
       passconv: senha,
-      url: 'https://qrcred.makecard.com.br/convenio_autenticar_app.php'
+      url: 'https://sas.makecard.com.br/convenio_autenticar_app.php'
     });
 
     // Enviar requisição para o backend
-    const response = await axios.post('https://qrcred.makecard.com.br/convenio_autenticar_app.php', 
+    const response = await axios.post('https://sas.makecard.com.br/convenio_autenticar_app.php', 
       params, 
       {
         headers: {

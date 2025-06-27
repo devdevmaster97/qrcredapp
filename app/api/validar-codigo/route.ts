@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
         
         // Inserir o código (ou substituir se já existir)
         const responseInsert = await axios.post(
-          'https://qrcred.makecard.com.br/gerencia_codigo_recuperacao.php',
+          'https://sas.makecard.com.br/gerencia_codigo_recuperacao.php',
           paramsInsert,
           {
             headers: {
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
           paramsAlternative.append('codigo', codigo);
           
           const responseAlternative = await axios.post(
-            'https://qrcred.makecard.com.br/admin_codigos_recuperacao.php',
+            'https://sas.makecard.com.br/admin_codigos_recuperacao.php',
             paramsAlternative,
             {
               headers: {
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
       
       // Chamar API para validar o código
       const response = await axios.post(
-        'https://qrcred.makecard.com.br/valida_codigo_recuperacao.php',
+        'https://sas.makecard.com.br/valida_codigo_recuperacao.php',
         params,
         {
           headers: {

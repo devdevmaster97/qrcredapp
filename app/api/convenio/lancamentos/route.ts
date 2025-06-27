@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
     // Fazer a requisição para a API PHP
     const response = await axios.get(
-      'https://qrcred.makecard.com.br/listar_lancamentos_convenio_app.php',
+      'https://sas.makecard.com.br/listar_lancamentos_convenio_app.php',
       {
         params,
         headers: {

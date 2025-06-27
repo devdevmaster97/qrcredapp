@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
 
     // Fazer a requisição para a API PHP
     const response = await axios.post(
-      'https://qrcred.makecard.com.br/estornos_realizados.php',
+      'https://sas.makecard.com.br/estornos_realizados.php',
       params,
       {
         headers: {

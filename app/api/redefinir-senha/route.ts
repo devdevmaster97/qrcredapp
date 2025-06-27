@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
   
       // Chamar API para redefinir a senha - agora usando altera_senha_associado.php
       const response = await axios.post(
-        'https://qrcred.makecard.com.br/altera_senha_associado.php',
+        'https://sas.makecard.com.br/altera_senha_associado.php',
         params,
         {
           headers: {

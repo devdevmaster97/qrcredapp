@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     
     // Chamar a API de envio de SMS
     const response = await axios.post(
-      'https://qrcred.makecard.com.br/envia_sms_direto.php',
+      'https://sas.makecard.com.br/envia_sms_direto.php',
       params,
       {
         headers: {

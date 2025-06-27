@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     params.append('passconv', tokenData.senha || '');
     
     // Usar a mesma API de login, já que ela retorna todos os dados necessários
-    const response = await axios.post('https://qrcred.makecard.com.br/convenio_autenticar_app.php', 
+    const response = await axios.post('https://sas.makecard.com.br/convenio_autenticar_app.php', 
       params,
       {
         headers: {

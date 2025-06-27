@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       console.log('Chamando API gerencia_codigo_recuperacao.php...');
       
       const responseGerencia = await axios.post(
-        'https://qrcred.makecard.com.br/gerencia_codigo_recuperacao.php',
+        'https://sas.makecard.com.br/gerencia_codigo_recuperacao.php',
         paramsGerencia,
         {
           headers: {
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
       console.log('Chamando API admin_codigos_recuperacao.php...');
       
       const responseAdmin = await axios.post(
-        'https://qrcred.makecard.com.br/admin_codigos_recuperacao.php',
+        'https://sas.makecard.com.br/admin_codigos_recuperacao.php',
         paramsAdmin,
         {
           headers: {

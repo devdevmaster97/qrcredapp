@@ -36,7 +36,7 @@ export async function GET() {
     params.append('cod_convenio', tokenData.id);
 
     // Usar a API de autenticação que já retorna dados do convênio
-    const response = await axios.post('https://qrcred.makecard.com.br/convenio_autenticar_app.php', 
+    const response = await axios.post('https://sas.makecard.com.br/convenio_autenticar_app.php', 
       params, 
       {
         headers: {

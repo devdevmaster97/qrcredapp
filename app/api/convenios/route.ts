@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
   try {
     // Enviar a requisição para o backend
     const response = await axios.post(
-      'https://qrcred.makecard.com.br/convenio_categorias_app.php',
+      'https://sas.makecard.com.br/convenio_categorias_app.php',
       {},
       {
         headers: {

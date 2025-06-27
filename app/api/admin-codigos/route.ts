@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   try {
     // Chamar a API para listar os códigos
     const response = await axios.get(
-      'https://qrcred.makecard.com.br/admin_codigos_recuperacao.php',
+      'https://sas.makecard.com.br/admin_codigos_recuperacao.php',
       {
         params: {
           admin_token: 'chave_segura_123' // Token de autenticação para desenvolvimento

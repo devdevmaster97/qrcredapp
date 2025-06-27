@@ -114,8 +114,20 @@ export default function MenuPage() {
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
       {/* Conteúdo principal */}
       <main className="container mx-auto px-4 py-8 flex flex-col items-center">
-        <div className="mb-8">
-          <Logo size="lg" />
+        {/* Header com Logo e Título */}
+        <div className="mb-12 text-center">
+          <div className="mb-6">
+            <Logo size="lg" />
+          </div>
+          <div className="max-w-md mx-auto">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 leading-tight">
+              Sistema de Assistência Social
+            </h1>
+            <h2 className="text-xl md:text-2xl font-semibold text-blue-600 mt-2">
+              por Convênios
+            </h2>
+            <div className="w-20 h-1 bg-gradient-to-r from-blue-600 to-green-500 mx-auto mt-4 rounded-full"></div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-lg mx-auto">

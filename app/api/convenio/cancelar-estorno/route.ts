@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     // Log detalhado dos parâmetros enviados para a API
     console.log('=====================================================');
     console.log('ENVIANDO REQUISIÇÃO PARA excluir_estorno_app.php');
-    console.log('URL:', 'https://qrcred.makecard.com.br/excluir_estorno_app.php');
+    console.log('URL:', 'https://sas.makecard.com.br/excluir_estorno_app.php');
     console.log('MÉTODO: POST');
     console.log('PARÂMETROS:');
     console.log('  lancamento:', lancamento.toString());
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     // Chamar a API PHP
     const response = await axios.post(
-      'https://qrcred.makecard.com.br/excluir_estorno_app.php',
+      'https://sas.makecard.com.br/excluir_estorno_app.php',
       params.toString(),
       {
         headers: {

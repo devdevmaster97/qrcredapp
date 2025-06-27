@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     console.log('Buscando dados do associado para recuperação de senha:', cartaoLimpo);
 
     const responseAssociado = await axios.post(
-      'https://qrcred.makecard.com.br/localiza_associado_app_2.php',
+              'https://sas.makecard.com.br/localiza_associado_app_2.php',
       params,
       {
         headers: {
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
       paramsInsert.append('destino', metodo === 'email' ? dadosAssociado.email : dadosAssociado.cel);
 
       const responseInsert = await axios.post(
-        'https://qrcred.makecard.com.br/gerencia_codigo_recuperacao.php',
+        'https://sas.makecard.com.br/gerencia_codigo_recuperacao.php',
         paramsInsert,
         {
           headers: {
@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
     try {
       // Chamar API para enviar o código
       const responseEnvio = await axios.post(
-        'https://qrcred.makecard.com.br/envia_codigo_recuperacao.php',
+        'https://sas.makecard.com.br/envia_codigo_recuperacao.php',
         paramsCodigo,
         {
           headers: {
@@ -250,7 +250,7 @@ export async function POST(request: NextRequest) {
             
             // Chamar API alternativa para SMS ou WhatsApp
             const responseSmsAlternativo = await axios.post(
-              'https://qrcred.makecard.com.br/envia_sms_direto.php',
+              'https://sas.makecard.com.br/envia_sms_direto.php',
               paramsSmsAlternativo,
               {
                 headers: {

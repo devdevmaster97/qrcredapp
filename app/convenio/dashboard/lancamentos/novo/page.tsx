@@ -37,7 +37,7 @@ export default function NovoLancamentoPage() {
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
   
   // Usar URLs reais da API - sem simulações locais
-  const BASE_URL = 'https://qrcred.makecard.com.br';
+  const BASE_URL = 'https://sas.makecard.com.br';
   const API_URL = `${BASE_URL}/localizaasapp.php`;
   const API_MESES = `${BASE_URL}/meses_corrente_app.php`;
   const API_CONTA = `${BASE_URL}/conta_app.php`;

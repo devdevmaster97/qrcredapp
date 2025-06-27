@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     
     // Chamar a API externa para gerenciar o código
     const response = await axios.post(
-      'https://qrcred.makecard.com.br/gerencia_codigo_recuperacao.php',
+      'https://sas.makecard.com.br/gerencia_codigo_recuperacao.php',
       params,
       {
         headers: {

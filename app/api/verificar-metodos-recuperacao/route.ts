@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     console.log('Buscando dados do associado para verificar métodos de recuperação:', cartaoLimpo);
 
     const responseAssociado = await axios.post(
-      'https://qrcred.makecard.com.br/localiza_associado_app_2.php',
+      'https://sas.makecard.com.br/localiza_associado_app_2.php',
       params,
       {
         headers: {

@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     
     // Enviar a requisição para o backend
     const response = await axios.post(
-      'https://qrcred.makecard.com.br/grava_antecipacao_app.php',
+      'https://sas.makecard.com.br/grava_antecipacao_app.php',
       payload,
       {
         headers: {

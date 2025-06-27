@@ -3,7 +3,7 @@ import axios from 'axios';
 
 export async function GET() {
   try {
-    const response = await axios.get('https://qrcred.makecard.com.br/categorias_class_app.php');
+    const response = await axios.get('https://sas.makecard.com.br/categorias_class_app.php');
     
     // Garantir que a resposta seja um array
     const categorias = Array.isArray(response.data) ? response.data : [];

@@ -6,7 +6,7 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 // Criar uma instância do axios com a configuração base
 const api = axios.create({
   // Em desenvolvimento, usar a rota de proxy do Next.js para evitar problemas de CORS
-  baseURL: isDevelopment ? '/api' : 'https://qrcred.makecard.com.br/',
+  baseURL: isDevelopment ? '/api' : 'https://sas.makecard.com.br/',
   headers: {
     'Content-Type': 'application/x-www-form-urlencoded',
   }
