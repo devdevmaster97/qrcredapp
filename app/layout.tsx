@@ -11,8 +11,8 @@ import Providers from './components/Providers';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'QRCred',
-  description: 'Sistema de Cartão de Crédito QRCred',
+  title: 'Sistema de Assistência Social por Convênios',
+  description: 'Sistema de Assistência Social por Convênios - QRCred',
   manifest: '/manifest.json',
   themeColor: '#1e40af',
   viewport: 'width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover',
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   },
   applicationName: 'QRCred',
   referrer: 'origin-when-cross-origin',
-  keywords: ['cartão de crédito', 'finanças', 'pagamentos'],
+  keywords: ['assistência social', 'convênios', 'cartão de crédito', 'finanças', 'pagamentos'],
   authors: [{ name: 'QRCred' }],
   creator: 'QRCred',
   publisher: 'QRCred',
@@ -35,22 +35,22 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'pt_BR',
     url: 'https://qrcred.vercel.app',
-    siteName: 'QRCred',
-    title: 'QRCred - Sistema de Cartão de Crédito',
-    description: 'Sistema de Cartão de Crédito QRCred',
+    siteName: 'Sistema de Assistência Social por Convênios',
+    title: 'Sistema de Assistência Social por Convênios - QRCred',
+    description: 'Sistema de Assistência Social por Convênios - QRCred',
     images: [
       {
         url: '/icons/icon-512x512.png',
         width: 512,
         height: 512,
-        alt: 'QRCred Logo',
+        alt: 'Logo Sistema de Assistência Social',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'QRCred - Sistema de Cartão de Crédito',
-    description: 'Sistema de Cartão de Crédito QRCred',
+    title: 'Sistema de Assistência Social por Convênios - QRCred',
+    description: 'Sistema de Assistência Social por Convênios - QRCred',
     images: ['/icons/icon-512x512.png'],
   },
   verification: {

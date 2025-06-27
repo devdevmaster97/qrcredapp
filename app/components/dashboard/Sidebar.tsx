@@ -48,9 +48,9 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
     setIsOpen(!isOpen);
   };
 
-  const handleAntecipacaoW = () => {
+  const handleAntecipacao = () => {
     const numero = '5535998120032';
-    const mensagem = 'Olá, quero mais informações sobre Antecipação W!';
+    const mensagem = 'Olá, quero mais informações sobre Antecipação!';
     const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
     
     try {
@@ -71,7 +71,7 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
     { href: '/dashboard/convenios', label: 'Convênios', icon: <FaStore size={20} /> },
     { href: '/dashboard/qrcode', label: 'QR Code', icon: <FaQrcode size={20} /> },
     { href: '/dashboard/dados', label: 'Meus Dados', icon: <FaUser size={20} /> },
-    { href: '/dashboard/antecipacao', label: 'Antecipação', icon: <FaCalendarAlt size={20} /> },
+    // { href: '/dashboard/antecipacao', label: 'Antecipação', icon: <FaCalendarAlt size={20} /> }, // Oculto temporariamente
   ];
 
   const handleLogout = () => {
@@ -140,16 +140,16 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
                 </li>
               ))}
               
-              {/* Menu Antecipação W - WhatsApp */}
+              {/* Menu Antecipação - WhatsApp */}
               <li>
                 <button
-                  onClick={handleAntecipacaoW}
+                  onClick={handleAntecipacao}
                   className="flex items-center w-full px-5 py-3 text-left transition-colors hover:bg-green-600"
                 >
                   <span className="mr-3">
                     <FaWhatsapp size={20} />
                   </span>
-                  Antecipação W
+                  Antecipação
                 </button>
               </li>
             </ul>
