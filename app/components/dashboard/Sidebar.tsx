@@ -26,7 +26,7 @@ interface UserData {
   nome: string;
   cartao: string;
   nome_divisao: string;
-  [key: string]: string; // Para quaisquer outras propriedades de string
+  [key: string]: string;
 }
 
 export default function Sidebar({ userName, cardNumber, company }: SidebarProps) {
@@ -35,7 +35,6 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
   const [userData, setUserData] = useState<UserData | null>(null);
 
   useEffect(() => {
-    // Carregar dados do usuário do localStorage
     if (typeof window !== 'undefined') {
       const storedUser = localStorage.getItem('qrcred_user');
       if (storedUser) {
@@ -54,14 +53,11 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
     const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
     
     try {
-      // Tenta abrir em uma nova aba
       window.open(url, '_blank');
     } catch (error) {
-      // Fallback: redireciona na mesma aba
       window.location.href = url;
     }
     
-    // Fechar sidebar no mobile após clicar
     setIsOpen(false);
   };
 
@@ -70,15 +66,12 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
     { href: '/dashboard/extrato', label: 'Extrato', icon: <FaClipboardList size={20} /> },
     { href: '/dashboard/convenios', label: 'Convênios', icon: <FaStore size={20} /> },
     { href: '/dashboard/qrcode', label: 'QR Code', icon: <FaQrcode size={20} /> },
-    { href: '/dashboard/dados', label: 'Meus Dados', icon: <FaUser size={20} /> },
-    // { href: '/dashboard/antecipacao', label: 'Antecipação', icon: <FaCalendarAlt size={20} /> }, // Oculto temporariamente
+    { href: '/dashboard/dados', label: 'Meus Dados', icon: <FaUser size={20} /> }
   ];
 
   const handleLogout = () => {
     if (typeof window !== 'undefined') {
-      // Remover dados do localStorage
       localStorage.removeItem('qrcred_user');
-      // Redirecionar para a página de login
       window.location.href = '/login';
     }
   };
@@ -140,7 +133,7 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
                 </li>
               ))}
               
-              {/* Menu Antecipação - WhatsApp */}
+              {/* Menu Antecipação - WhatsApp (renomeado de "Antecipação W") */}
               <li>
                 <button
                   onClick={handleAntecipacao}
