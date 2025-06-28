@@ -3,14 +3,14 @@ const fs = require('fs');
 const path = require('path');
 
 const sizes = [192, 512];
-const inputFile = path.join(__dirname, '../public/icons/logo.png');
+const inputFile = path.join(__dirname, '../public/icons/logo2.png');
 const outputDir = path.join(__dirname, '../public/icons');
 
 async function generateIcons() {
   // Verificar se o arquivo de origem existe
   if (!fs.existsSync(inputFile)) {
     console.error(`❌ Arquivo de entrada não encontrado: ${inputFile}`);
-    console.log('📁 Certifique-se de que o arquivo logo.png está na pasta public/icons/');
+    console.log('📁 Certifique-se de que o arquivo logo2.png está na pasta public/icons/');
     return;
   }
 
@@ -37,7 +37,7 @@ async function generateIcons() {
     }
   }
 
-  // Também gerar um favicon baseado no logo
+  // Também gerar um favicon baseado no logo2
   try {
     const faviconFile = path.join(__dirname, '../app/favicon.png');
     await sharp(inputFile)
@@ -54,6 +54,7 @@ async function generateIcons() {
   }
 
   console.log('\n🎉 Processo de geração de ícones concluído!');
+  console.log('📝 Agora usando logo2.png como base para os ícones');
   console.log('📝 Para que as mudanças tenham efeito:');
   console.log('   1. Limpe o cache do navegador');
   console.log('   2. Reinstale o PWA se já estiver instalado');

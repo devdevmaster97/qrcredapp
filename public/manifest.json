@@ -1,7 +1,7 @@
 {
-  "name": "QRCred",
-  "short_name": "QRCred",
-  "description": "Sistema de Cartão de Crédito QRCred",
+  "name": "SaSapp",
+  "short_name": "SaSapp",
+  "description": "Sistema de Assistência Social por Convênio.",
   "theme_color": "#1e40af",
   "background_color": "#ffffff",
   "display": "standalone",
