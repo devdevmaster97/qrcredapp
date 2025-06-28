@@ -97,40 +97,40 @@ export default function MenuPage() {
   if (!isMounted) {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
-        <div className="container mx-auto px-4 py-8 flex flex-col items-center">
-          {/* Conteúdo mínimo para não causar mudança de layout */}
-          <div className="mb-8"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-lg mx-auto">
-            <div className="flex flex-col items-center justify-center bg-white rounded-lg shadow-md p-6"></div>
-            <div className="flex flex-col items-center justify-center bg-white rounded-lg shadow-md p-6"></div>
+        <div className="container mx-auto px-4 py-4 flex flex-col items-center">
+          <div className="mb-6"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-lg mx-auto">
+            <div className="flex flex-col items-center justify-center bg-white rounded-lg shadow-md p-4"></div>
+            <div className="flex flex-col items-center justify-center bg-white rounded-lg shadow-md p-4"></div>
           </div>
-          <div className="mt-12 text-center"></div>
+          <div className="mt-8 text-center"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4">
       {/* Conteúdo principal */}
-      <main className="container mx-auto px-4 py-8 flex flex-col items-center">
-        {/* Header com Logo e Título */}
-        <div className="mb-12 text-center">
-          <div className="mb-6">
-            <Logo size="lg" />
+      <main className="container mx-auto py-4 md:py-8 flex flex-col items-center w-full max-w-md md:max-w-2xl">
+        {/* Header com Logo e Título - Reduzido para mobile */}
+        <div className="mb-6 md:mb-10 text-center">
+          <div className="mb-3 md:mb-4">
+            <Logo size="md" />
           </div>
-          <div className="max-w-md mx-auto">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 leading-tight">
+          <div className="max-w-sm md:max-w-md mx-auto">
+            <h1 className="text-xl md:text-3xl font-bold text-gray-800 leading-tight">
               Sistema de Assistência Social
             </h1>
-            <h2 className="text-xl md:text-2xl font-semibold text-blue-600 mt-2">
+            <h2 className="text-lg md:text-2xl font-semibold text-blue-600 mt-1 md:mt-2">
               por Convênios
             </h2>
-            <div className="w-20 h-1 bg-gradient-to-r from-blue-600 to-green-500 mx-auto mt-4 rounded-full"></div>
+            <div className="w-16 md:w-20 h-1 bg-gradient-to-r from-blue-600 to-green-500 mx-auto mt-2 md:mt-4 rounded-full"></div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-lg mx-auto">
+        {/* Cards dos menus */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 w-full max-w-sm md:max-w-lg mx-auto">
           <MenuCard 
             icon={<FaUser />} 
             title="Área do Associado" 
@@ -143,8 +143,9 @@ export default function MenuPage() {
           />
         </div>
         
-        <div className="mt-12 text-center">
-          <div className="flex flex-wrap justify-center gap-4 mb-3">
+        {/* Footer - Compacto para mobile */}
+        <div className="mt-6 md:mt-12 text-center">
+          <div className="flex flex-wrap justify-center gap-4 mb-2">
             <button 
               onClick={handlePoliticaPrivacidadeClick}
               className="text-blue-600 hover:underline text-sm"
@@ -152,7 +153,7 @@ export default function MenuPage() {
               Política de Privacidade
             </button>
           </div>
-          <p className="text-gray-500 text-xs mt-2">
+          <p className="text-gray-500 text-xs mt-1">
             Versão: {appVersion}
           </p>
         </div>
