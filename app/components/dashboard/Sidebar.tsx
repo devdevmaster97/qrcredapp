@@ -13,7 +13,8 @@ import {
   FaSignOutAlt,
   FaBars,
   FaTimes,
-  FaWhatsapp
+  FaWhatsapp,
+  FaStar
 } from 'react-icons/fa';
 
 type SidebarProps = {
@@ -66,7 +67,8 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
     { href: '/dashboard/extrato', label: 'Extrato', icon: <FaClipboardList size={20} /> },
     { href: '/dashboard/convenios', label: 'Convênios', icon: <FaStore size={20} /> },
     { href: '/dashboard/qrcode', label: 'QR Code', icon: <FaQrcode size={20} /> },
-    { href: '/dashboard/dados', label: 'Meus Dados', icon: <FaUser size={20} /> }
+    { href: '/dashboard/dados', label: 'Meus Dados', icon: <FaUser size={20} /> },
+    { href: '/dashboard/adesao-sasapp', label: 'Aderir ao Sascred', icon: <FaStar size={20} className="text-yellow-400" /> }
   ];
 
   const handleLogout = () => {
