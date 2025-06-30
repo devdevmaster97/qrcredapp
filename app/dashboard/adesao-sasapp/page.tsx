@@ -12,31 +12,112 @@ export default function AdesaoSasapp() {
   const router = useRouter();
 
   useEffect(() => {
-    // Verificar se o usuário já aderiu ao Sascred
-    const verificarAdesao = () => {
-      console.log('Iniciando verificação de adesão...');
+    // Verificar se o usuário já aderiu ao Sascred no banco de dados
+    const verificarAdesaoNoBanco = async () => {
+      console.log('🔍 Iniciando verificação de adesão no banco...');
+      
       try {
         const storedUser = localStorage.getItem('qrcred_user');
-        console.log('Usuário armazenado:', storedUser);
-        if (storedUser) {
-          const userData = JSON.parse(storedUser);
-          const adesaoStatus = localStorage.getItem(`sascred_${userData.cartao}`);
-          console.log('Status de adesão:', adesaoStatus);
-          
-          if (adesaoStatus === 'aderido') {
-            setJaAderiu(true);
-            console.log('Usuário já aderiu ao Sascred.');
-          }
+        
+        if (!storedUser) {
+          console.log('❌ Usuário não encontrado no localStorage');
+          setCheckingStatus(false);
+          return;
         }
+
+        const userData = JSON.parse(storedUser);
+        console.log('👤 Dados do usuário:', { cartao: userData.cartao, nome: userData.nome });
+        
+        // Buscar os dados completos do usuário para obter a matrícula
+        console.log('🔄 Buscando dados completos do associado...');
+        const localizaResponse = await fetch('/api/localiza-associado', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            cartao: userData.cartao,
+            senha: userData.senha,
+          }).toString(),
+        });
+
+        if (!localizaResponse.ok) {
+          console.log('❌ Erro ao buscar dados do associado');
+          setCheckingStatus(false);
+          return;
+        }
+
+        const responseText = await localizaResponse.text();
+        let localizaData;
+        
+        try {
+          localizaData = JSON.parse(responseText);
+        } catch (e) {
+          console.error('❌ Erro ao fazer parse dos dados do associado:', e);
+          setCheckingStatus(false);
+          return;
+        }
+        
+        if (!localizaData?.matricula) {
+          console.log('❌ Matrícula não encontrada nos dados do associado');
+          setCheckingStatus(false);
+          return;
+        }
+
+        console.log('✅ Matrícula encontrada:', localizaData.matricula);
+        
+        // Verificar na tabela sind.associados_sasmais
+        console.log('🔍 Verificando adesão na tabela sind.associados_sasmais...');
+        const verificaResponse = await fetch('/api/verificar-adesao-sasmais', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            codigo: localizaData.matricula.toString()
+          })
+        });
+
+        const verificaResponseText = await verificaResponse.text();
+        console.log('📥 Resposta bruta da verificação:', verificaResponseText);
+        
+        let verificaData;
+        try {
+          verificaData = JSON.parse(verificaResponseText);
+        } catch (e) {
+          console.error('❌ Erro ao fazer parse da resposta de verificação:', e);
+          setCheckingStatus(false);
+          return;
+        }
+        
+        console.log('📊 Dados da verificação parseados:', verificaData);
+        
+        // Verificar se o associado já aderiu
+        if (verificaResponse.ok && verificaData?.status === 'sucesso') {
+          if (verificaData.jaAderiu === true) {
+            setJaAderiu(true);
+            console.log('✅ CONFIRMADO: Usuário já aderiu ao Sascred (verificado no banco)');
+            console.log('📄 Dados da adesão:', verificaData.dados);
+          } else {
+            setJaAderiu(false);
+            console.log('🆕 Usuário ainda não aderiu ao Sascred');
+          }
+        } else {
+          console.log('⚠️ Erro na verificação ou associado não encontrado na tabela');
+          setJaAderiu(false);
+        }
+        
       } catch (error) {
-        console.error('Erro ao verificar status de adesão:', error);
+        console.error('❌ Erro geral ao verificar status de adesão:', error);
+        // Em caso de erro, assumir que não aderiu para permitir acesso aos termos
+        setJaAderiu(false);
       } finally {
         setCheckingStatus(false);
-        console.log('Verificação de adesão concluída.');
+        console.log('🏁 Verificação de adesão concluída');
       }
     };
 
-    verificarAdesao();
+    verificarAdesaoNoBanco();
   }, []);
 
   const handleAccept = async () => {
@@ -144,10 +225,6 @@ export default function AdesaoSasapp() {
           `Erro ao processar a adesão: ${adesaoResponseText}`
         );
       }
-
-      // Salvar status de adesão no localStorage
-      localStorage.setItem(`sascred_${cartao}`, 'aderido');
-      localStorage.setItem(`sascred_${cartao}_data`, new Date().toISOString());
 
       // Redirecionar para página de sucesso com link do ZapSign
       router.push('/dashboard/adesao-sasapp/sucesso');
