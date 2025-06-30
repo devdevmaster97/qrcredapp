@@ -2,13 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { FaCheckCircle, FaHome, FaStar, FaExternalLinkAlt, FaSignature, FaWhatsapp, FaSync } from 'react-icons/fa';
-import { isAssinaturaCompleta, marcarAssinaturaCompleta, abrirCanalAntecipacao, verificarStatusAssinatura, ZAPSIGN_URL } from '@/app/utils/assinatura';
+import { FaCheckCircle, FaHome, FaStar, FaExternalLinkAlt, FaSignature, FaWhatsapp } from 'react-icons/fa';
+import { isAssinaturaCompleta, marcarAssinaturaCompleta, abrirCanalAntecipacao, ZAPSIGN_URL } from '@/app/utils/assinatura';
 
 export default function SucessoAdesao() {
   const router = useRouter();
   const [assinaturaCompleta, setAssinaturaCompleta] = useState(false);
-  const [verificandoAssinatura, setVerificandoAssinatura] = useState(false);
 
   const voltarDashboard = () => {
     router.push('/dashboard');
@@ -17,24 +16,6 @@ export default function SucessoAdesao() {
   const abrirZapSign = () => {
     // Abrir ZapSign em nova aba para manter o app aberto
     window.open(ZAPSIGN_URL, '_blank');
-  };
-
-  const verificarStatusAssinaturaLocal = async () => {
-    setVerificandoAssinatura(true);
-    
-    try {
-      const assinaturaCompleta = await verificarStatusAssinatura();
-      
-      setAssinaturaCompleta(assinaturaCompleta);
-      
-      if (assinaturaCompleta) {
-        marcarAssinaturaCompleta();
-      }
-    } catch (error) {
-      console.error('Erro ao verificar status da assinatura:', error);
-    } finally {
-      setVerificandoAssinatura(false);
-    }
   };
 
   // Verificar ao carregar a página se a assinatura já foi completa
@@ -139,26 +120,9 @@ export default function SucessoAdesao() {
                     Novidade em Breve!
                   </span>
                 </div>
-                <p className="text-sm text-green-700 text-center mb-3">
+                <p className="text-sm text-green-700 text-center">
                   <strong>🚀 Após a finalização da sua adesão</strong>, será liberado neste app um canal exclusivo para <strong>solicitação de Antecipação de Crédito</strong>. Fique atento às novidades!
                 </p>
-                <button
-                  onClick={verificarStatusAssinaturaLocal}
-                  disabled={verificandoAssinatura}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center mx-auto text-sm"
-                >
-                  {verificandoAssinatura ? (
-                    <>
-                      <FaSync className="mr-2 animate-spin" />
-                      Verificando...
-                    </>
-                  ) : (
-                    <>
-                      <FaSync className="mr-2" />
-                      Verificar Status da Assinatura
-                    </>
-                  )}
-                </button>
               </div>
             )}
           </div>
