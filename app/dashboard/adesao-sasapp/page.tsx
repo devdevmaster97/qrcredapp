@@ -9,6 +9,7 @@ export default function AdesaoSasapp() {
   const [isLoading, setIsLoading] = useState(false);
   const [jaAderiu, setJaAderiu] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
+  const [buttonBlocked, setButtonBlocked] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -126,13 +127,27 @@ export default function AdesaoSasapp() {
       return;
     }
 
-    // Prevenir execução dupla
+    // 🚫 BLOQUEIO TRIPLO CONTRA EXECUÇÃO DUPLA
     if (isLoading) {
       console.log('⚠️ Já está processando, ignorando clique duplicado');
       return;
     }
 
+    if (buttonBlocked) {
+      console.log('⚠️ Botão bloqueado temporariamente, ignorando clique');
+      return;
+    }
+
+    // Bloquear botão imediatamente
+    setButtonBlocked(true);
     setIsLoading(true);
+
+    // Log detalhado do início
+    const timestamp = new Date().toISOString();
+    console.log(`🚀 INÍCIO DA ADESÃO [${timestamp}] - Botão bloqueado`);
+    
+    // Delay inicial obrigatório de 200ms para evitar cliques muito rápidos
+    await new Promise(resolve => setTimeout(resolve, 200));
     
     try {
       // Recupera os dados do usuário do localStorage
@@ -218,6 +233,40 @@ export default function AdesaoSasapp() {
 
       console.log('✅ Associado não existe na tabela - Prosseguindo com adesão');
 
+      // 🔒 DELAY ADICIONAL PARA EVITAR RACE CONDITIONS (500ms)
+      console.log('⏳ Aplicando delay de segurança...');
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // 🔍 SEGUNDA VERIFICAÇÃO CRÍTICA (dupla verificação)
+      console.log('🔍 SEGUNDA verificação crítica antes de gravar...');
+      const verificaResponse2 = await fetch('/api/verificar-adesao-sasmais', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          codigo: localizaData.matricula.toString()
+        })
+      });
+
+      const verificaResponseText2 = await verificaResponse2.text();
+      
+      try {
+        const verificaData2 = JSON.parse(verificaResponseText2);
+        
+        // Se já existe na tabela na segunda verificação, não prosseguir
+        if (verificaData2?.jaAderiu === true) {
+          console.log('🚫 SEGUNDA VERIFICAÇÃO: Associado já existe - Duplicação evitada!');
+          alert('Detectamos que você já aderiu ao Sascred. Não realizaremos nova adesão.');
+          setJaAderiu(true);
+          return;
+        }
+      } catch (e) {
+        console.error('❌ Erro na segunda verificação, mas prosseguindo:', e);
+      }
+
+      console.log('✅ DUPLA VERIFICAÇÃO OK - Prosseguindo com adesão');
+
       // Prepara os dados no formato JSON que a API espera
       const dadosParaEnviar = {
         codigo: localizaData.matricula.toString(),
@@ -266,6 +315,12 @@ export default function AdesaoSasapp() {
       alert(error instanceof Error ? error.message : 'Erro ao processar a adesão. Tente novamente.');
     } finally {
       setIsLoading(false);
+      
+      // ⏰ TIMEOUT DE SEGURANÇA: Manter botão bloqueado por 3 segundos após finalizar
+      setTimeout(() => {
+        setButtonBlocked(false);
+        console.log('🔓 Botão desbloqueado após timeout de segurança');
+      }, 3000);
     }
   };
 
@@ -503,17 +558,17 @@ export default function AdesaoSasapp() {
               <div className="flex justify-center">
               <button
                 onClick={handleAccept}
-                disabled={!isChecked || isLoading}
+                disabled={!isChecked || isLoading || buttonBlocked}
                 className={`px-8 py-3 rounded-lg font-semibold text-white transition-all duration-200 ${
-                  isChecked && !isLoading
+                  isChecked && !isLoading && !buttonBlocked
                     ? 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
                     : 'bg-gray-400 cursor-not-allowed'
                 }`}
               >
-                {isLoading ? (
+                {isLoading || buttonBlocked ? (
                   <div className="flex items-center">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Processando...
+                    {buttonBlocked ? 'Bloqueado...' : 'Processando...'}
                   </div>
                 ) : (
                   <div className="flex items-center">
