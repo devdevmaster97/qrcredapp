@@ -163,33 +163,7 @@ export default function SucessoAdesao() {
             )}
           </div>
 
-          {/* Informações Adicionais */}
-          <div className="bg-gray-50 rounded-lg p-4 mb-8">
-            <p className="text-sm text-gray-600 mb-2">
-              <strong>📱 Dica:</strong> O link será aberto em uma nova aba. Após completar a verificação, você pode retornar aqui e verificar o status.
-            </p>
-            <p className="text-sm text-gray-600">
-              <strong>Em caso de dúvidas:</strong> Entre em contato com nosso suporte.
-            </p>
-            
-            {/* Botão para Demonstração - REMOVER EM PRODUÇÃO */}
-            {!assinaturaCompleta && (
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <p className="text-xs text-gray-500 mb-2">
-                  <em>Para demonstração (remover em produção):</em>
-                </p>
-                <button
-                  onClick={() => {
-                    setAssinaturaCompleta(true);
-                    marcarAssinaturaCompleta();
-                  }}
-                  className="bg-purple-500 hover:bg-purple-600 text-white text-xs py-1 px-3 rounded transition-colors"
-                >
-                  ⚡ Simular Assinatura Completa
-                </button>
-              </div>
-            )}
-          </div>
+
 
           {/* Botão de Retorno */}
           <button
