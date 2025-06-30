@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { isAssinaturaCompleta, abrirCanalAntecipacao } from '@/app/utils/assinatura';
 import { 
   FaWallet, 
   FaClipboardList, 
@@ -13,8 +14,8 @@ import {
   FaSignOutAlt,
   FaBars,
   FaTimes,
-  FaWhatsapp,
-  FaStar
+  FaStar,
+  FaWhatsapp
 } from 'react-icons/fa';
 
 type SidebarProps = {
@@ -34,6 +35,7 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   const [userData, setUserData] = useState<UserData | null>(null);
+  const [assinaturaCompleta, setAssinaturaCompleta] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -41,26 +43,22 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
       if (storedUser) {
         setUserData(JSON.parse(storedUser));
       }
+      
+      // Verificar se a assinatura digital foi completa
+      setAssinaturaCompleta(isAssinaturaCompleta());
     }
   }, []);
+
+  const handleAntecipacao = () => {
+    abrirCanalAntecipacao();
+    setIsOpen(false);
+  };
 
   const toggleSidebar = () => {
     setIsOpen(!isOpen);
   };
 
-  const handleAntecipacao = () => {
-    const numero = '5535998120032';
-    const mensagem = 'Olá, quero mais informações sobre Antecipação!';
-    const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`;
-    
-    try {
-      window.open(url, '_blank');
-    } catch (error) {
-      window.location.href = url;
-    }
-    
-    setIsOpen(false);
-  };
+
 
   const menuItems = [
     { href: '/dashboard/saldo', label: 'Saldo', icon: <FaWallet size={20} /> },
@@ -135,18 +133,22 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
                 </li>
               ))}
               
-              {/* Menu Antecipação - WhatsApp (renomeado de "Antecipação W") */}
-              <li>
-                <button
-                  onClick={handleAntecipacao}
-                  className="flex items-center w-full px-5 py-3 text-left transition-colors hover:bg-green-600"
-                >
-                  <span className="mr-3">
-                    <FaWhatsapp size={20} />
-                  </span>
-                  Antecipação
-                </button>
-              </li>
+              {/* Menu Antecipação - Só aparece após assinatura digital completa */}
+              {assinaturaCompleta && (
+                <li>
+                  <button
+                    onClick={handleAntecipacao}
+                    className="flex items-center w-full px-5 py-3 text-left transition-colors hover:bg-green-600"
+                  >
+                    <span className="mr-3">
+                      <FaWhatsapp size={20} />
+                    </span>
+                    Antecipação
+                  </button>
+                </li>
+              )}
+              
+
             </ul>
           </nav>
 

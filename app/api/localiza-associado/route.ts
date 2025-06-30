@@ -4,6 +4,7 @@ import axios from 'axios';
 export async function POST(request: NextRequest) {
   try {
     let cartao: string;
+    let senha: string;
     
     // Verificar o Content-Type e processar a request apropriadamente
     const contentType = request.headers.get('Content-Type') || '';
@@ -11,25 +12,19 @@ export async function POST(request: NextRequest) {
     if (contentType.includes('multipart/form-data')) {
       const formData = await request.formData();
       cartao = formData.get('cartao') as string;
-      
-      if (!cartao) {
-        return NextResponse.json(
-          { error: 'Cartão é obrigatório' },
-          { status: 400 }
-        );
-      }
+      senha = formData.get('senha') as string;
+    } else if (contentType.includes('application/x-www-form-urlencoded')) {
+      // Processar dados de formulário URL encoded
+      const formData = await request.text();
+      const params = new URLSearchParams(formData);
+      cartao = params.get('cartao') || '';
+      senha = params.get('senha') || '';
     } else {
       // Assume JSON
       try {
         const body = await request.json();
         cartao = body.cartao;
-        
-        if (!cartao) {
-          return NextResponse.json(
-            { error: 'Cartão é obrigatório' },
-            { status: 400 }
-          );
-        }
+        senha = body.senha;
       } catch (e) {
         console.error('Erro ao fazer parse do JSON:', e);
         return NextResponse.json(
@@ -39,8 +34,15 @@ export async function POST(request: NextRequest) {
       }
     }
     
+    if (!cartao) {
+      return NextResponse.json(
+        { error: 'Cartão é obrigatório' },
+        { status: 400 }
+      );
+    }
+    
     // Debug dos parâmetros recebidos
-    console.log('Parâmetros recebidos:', { cartao });
+    console.log('Parâmetros recebidos:', { cartao, senha: senha ? '***' : 'não fornecida' });
 
     // Limpar o cartão de possíveis formatações
     const cartaoLimpo = String(cartao).replace(/\D/g, '').trim();
@@ -48,9 +50,13 @@ export async function POST(request: NextRequest) {
     // Preparar os dados para enviar ao backend
     const payload = new URLSearchParams();
     payload.append('cartao', cartaoLimpo);
+    if (senha) {
+      payload.append('senha', senha);
+    }
     
     console.log('Dados sendo enviados para localiza_associado_app_2.php:', {
-      cartao: cartaoLimpo
+      cartao: cartaoLimpo,
+      senha: senha ? '***' : 'não fornecida'
     });
     
     // Enviar a requisição para o backend

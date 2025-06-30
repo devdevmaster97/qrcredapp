@@ -143,8 +143,8 @@ export default function AdesaoSasapp() {
       localStorage.setItem(`sascred_${cartao}`, 'aderido');
       localStorage.setItem(`sascred_${cartao}_data`, new Date().toISOString());
 
-      // Redirecionar para link de assinatura digital
-      window.location.href = 'https://app.zapsign.com.br/verificar/doc/b4ab32f3-d964-4fae-b9d2-01c05f2f4258';
+      // Redirecionar para página de sucesso com link do ZapSign
+      router.push('/dashboard/adesao-sasapp/sucesso');
     } catch (error) {
       console.error('Erro completo:', error);
       alert(error instanceof Error ? error.message : 'Erro ao processar a adesão. Tente novamente.');
@@ -211,14 +211,36 @@ export default function AdesaoSasapp() {
                     <strong>Status:</strong> Adesão em processamento
                   </p>
                   <p className="text-sm text-gray-600 mt-1">
-                    <strong>Próximos passos:</strong> Aguarde o contato da nossa equipe
+                    <strong>Próximos passos:</strong> Complete a verificação digital se ainda não fez
                   </p>
+                </div>
+              </div>
+
+              {/* Botão para ZapSign */}
+              <div className="mb-6">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-center justify-center mb-2">
+                    <FaCheckCircle className="text-blue-600 mr-2" />
+                    <span className="text-sm font-semibold text-blue-800">
+                      Verificação Digital
+                    </span>
+                  </div>
+                  <p className="text-sm text-blue-700 mb-3">
+                    Se ainda não completou a verificação de assinatura digital, clique no botão abaixo:
+                  </p>
+                  <button
+                    onClick={() => window.open('https://app.zapsign.com.br/verificar/doc/b4ab32f3-d964-4fae-b9d2-01c05f2f4258', '_blank')}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors duration-200 flex items-center mx-auto"
+                  >
+                    <FaCheckCircle className="mr-2" />
+                    Acessar Verificação
+                  </button>
                 </div>
               </div>
 
               <button
                 onClick={voltarDashboard}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200 flex items-center mx-auto"
+                className="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200 flex items-center mx-auto"
               >
                 <FaArrowLeft className="mr-2" />
                 Voltar ao Dashboard
@@ -248,13 +270,145 @@ export default function AdesaoSasapp() {
         </div>
         
         <div className="bg-white rounded-lg shadow-lg p-8">
-          <h2 className="text-2xl font-semibold text-blue-600 mb-6 text-center">
-            Termo de Adesão ao Sistema de Créditos Sascred
-          </h2>
-          
-          <p className="text-gray-700 text-center">
-            Funcionalidade em desenvolvimento...
-          </p>
+          <div className="prose max-w-none">
+            <h2 className="text-2xl font-semibold text-blue-600 mb-6 text-center">
+              Termo de Adesão ao Sistema de Créditos Sascred
+            </h2>
+            
+            <div className="text-gray-700 leading-relaxed space-y-4">
+              <p className="text-justify">
+                Ao prosseguir, o(a) usuário(a) declara ter lido, compreendido e aceitado integralmente os termos e condições abaixo, ciente de que a aceitação implica adesão automática ao sistema Sascred.
+              </p>
+
+              <div className="space-y-6 mt-8">
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-800 mb-3">1. Sobre o Sascred</h3>
+                  <p className="text-justify">
+                    O Sascred é um sistema de créditos integrado ao aplicativo SaSapp, que permite ao usuário utilizar créditos digitais disponibilizado pela sua empregadora, como forma de pagamento em estabelecimentos participantes da rede conveniada SaSapp, e somente poderá usufruir do benefício o empregado da empregadora da categoria, que não estiver usufruindo de licença para tratamento de saúde, aviso prévio ou outro afastamento de qualquer natureza que implique em suspensão do contrato de trabalho e do pagamento dos salários.
+                  </p>
+                </section>
+
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-800 mb-3">2. Adesão e Taxa</h3>
+                  <p className="text-justify mb-3">
+                    A adesão ao Sascred será realizada após a aceitação dos termos, e a ativação do serviço implica a cobrança de taxa de manutenção no valor mensal de <strong className="text-blue-600">R$ 7,50 (sete reais e cinquenta centavos)</strong>, através de desconto em folha, que dede já autoriza a sua empregadora em efetivá-lo.
+                  </p>
+                  <p className="text-justify">
+                    Uma vez aderido, o(a) usuário(a) terá acesso ao painel de créditos, onde poderá:
+                  </p>
+                  <ul className="list-disc list-inside mt-2 space-y-1 ml-4">
+                    <li>Receber crédito disponibilizado por sua empresadora;</li>
+                    <li>Consultar saldo e histórico de movimentações;</li>
+                    <li>Utilizar créditos como forma de pagamento nos estabelecimentos credenciados.</li>
+                  </ul>
+                  <p className="text-justify mt-3">
+                    Após a adesão o titular receberá uma comunicação informando seu limite de crédito liberado pela empregadora, sendo que o saldo disponível para compras poderá ser consultado no APP e em qualquer estabelecimento credenciado via internet.
+                  </p>
+                </section>
+
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-800 mb-3">3. Das Condições Adesão</h3>
+                  <p className="text-justify mb-2">
+                    O titular do beneficio autoriza o desconto a ser efetuado pela sua empregadora no momento do pagamento de seu salário, dos valores concedidos a título de adiantamento salarial utilizados durante o período de uso do cartão, e da taxa de administração no valor de R$ 7,50 (sete reais e cinquenta centavos).
+                  </p>
+                  <p className="text-justify mb-2">
+                    O titular do beneficio concorda que a sua empregadora, no momento da rescisão contratual terá a obrigação de descontar os valores remanescentes originários do convênio ora pactuado.
+                  </p>
+                  <p className="text-justify mb-2">
+                    O desconto em folha será efetuado conforme Artigo 462 da CLT e na Convenção Coletiva de Trabalho da Categoria.
+                  </p>
+                  <p className="text-justify mb-2">
+                    As parcelas das compras que vencerem no mês de férias, serão descontadas antecipadamente, conforme folha de pagamento (das férias) da empresa. As compras efetuadas em parcelas serão parceladas em, no máximo, 02 (duas) vezes (com ou sem acréscimo).
+                  </p>
+                  <p className="text-justify">
+                    O titular do beneficio tem ciência que, após efetuada a aquisição de bens e serviços, dentro dos parâmetros do limite autorizado e vigente, a empresa não poderá deixar, sob qualquer hipótese, de fazer o desconto na folha de pagamento do titular e o consequente repasse sob pena de arcar com tal valor.
+                  </p>
+                </section>
+
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-800 mb-3">4. Uso dos Créditos</h3>
+                  <p className="text-justify mb-2">Os créditos adquiridos por meio do Sascred:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-4">
+                    <li>São pessoais e intransferíveis;</li>
+                    <li>Podem ser utilizados exclusivamente na rede conveniada SaSapp, disponível para consulta no próprio aplicativo.</li>
+                  </ul>
+                </section>
+
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-800 mb-3">5. Responsabilidades do Usuário</h3>
+                  <p className="text-justify mb-2">O(a) usuário(a) se compromete a:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-4">
+                    <li>Utilizar os créditos de maneira lícita e conforme os termos aqui descritos;</li>
+                    <li>Manter seus dados pessoais atualizados no aplicativo;</li>
+                    <li>Reportar ao suporte do SaSapp qualquer atividade suspeita ou uso indevido da conta.</li>
+                  </ul>
+                </section>
+
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-800 mb-3">6. Privacidade e Proteção de Dados</h3>
+                  <p className="text-justify">
+                    Ao aderir ao Sascred, o(a) usuário(a) autoriza o tratamento de seus dados pessoais conforme a Lei Geral de Proteção de Dados (Lei nº 13.709/2018), exclusivamente para fins de operação, segurança e aperfeiçoamento do sistema de créditos.
+                  </p>
+                </section>
+
+                <section>
+                  <h3 className="text-xl font-semibold text-gray-800 mb-3">7. Modificações e Cancelamento</h3>
+                  <p className="text-justify">
+                    O SaSapp reserva-se o direito de atualizar este termo ou suspender o sistema de créditos, mediante aviso prévio no aplicativo. O cancelamento da adesão por parte do usuário pode ser solicitado a qualquer momento, contudo, a taxa de adesão não é reembolsável.
+                  </p>
+                </section>
+              </div>
+            </div>
+          </div>
+
+          {/* Checkbox e Botão de Aceitação */}
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <label className="flex items-start space-x-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={(e) => setIsChecked(e.target.checked)}
+                  className="mt-1 h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700 leading-relaxed">
+                  <strong>☑ Declaro que li, entendi e concordo com os termos acima, ciente de que a aceitação implica minha adesão automática ao Sascred e autorizo minha empregadora a efetivar o desconto em folha dos créditos disponibilizados e efetivamente utilizados e a cobrança de taxa de manutenção no valor mensal de R$ 7,50 (sete reais e cinquenta centavos).</strong>
+                </span>
+              </label>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              <div className="text-center text-sm text-gray-600">
+                <p>Local, data e hora da assinatura eletrónica.</p>
+                <br />
+                <p>Titular do Beneficio</p>
+              </div>
+
+              <div className="flex justify-center">
+              <button
+                onClick={handleAccept}
+                disabled={!isChecked || isLoading}
+                className={`px-8 py-3 rounded-lg font-semibold text-white transition-all duration-200 ${
+                  isChecked && !isLoading
+                    ? 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
+                    : 'bg-gray-400 cursor-not-allowed'
+                }`}
+              >
+                {isLoading ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    Processando...
+                  </div>
+                ) : (
+                  <div className="flex items-center">
+                    <FaCheckCircle className="mr-2" />
+                      Aceitar e Aderir ao Sascred
+                  </div>
+                )}
+              </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
