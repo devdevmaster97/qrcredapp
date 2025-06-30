@@ -45,6 +45,12 @@ export default function AdesaoSasapp() {
       return;
     }
 
+    // Prevenir execução dupla
+    if (isLoading) {
+      console.log('Já está processando, ignorando clique duplicado');
+      return;
+    }
+
     setIsLoading(true);
     
     try {
