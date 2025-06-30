@@ -82,7 +82,56 @@ export async function POST(request: NextRequest) {
     // Marcar requisição como em processamento
     requestCache.set(requestKey, { timestamp: now, processing: true });
 
-    console.log('Enviando dados para API externa:', { codigo: body.codigo, nome: body.nome, celular: body.celular });
+    // 🔍 VERIFICAÇÃO ADICIONAL: Verificar se o associado já existe na tabela antes de gravar
+    console.log('🔍 Verificação de segurança: Consultando se código já existe na tabela...');
+    try {
+      const verificaResponse = await fetch('https://sas.makecard.com.br/api_verificar_adesao_sasmais.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          codigo: body.codigo
+        }),
+      });
+
+      if (verificaResponse.ok) {
+        const verificaText = await verificaResponse.text();
+        try {
+          const verificaData = JSON.parse(verificaText);
+          
+          if (verificaData?.status === 'sucesso' && verificaData?.jaAderiu === true) {
+            console.log('⚠️ DUPLICAÇÃO EVITADA: Associado já existe na tabela!');
+            requestCache.set(requestKey, { timestamp: now, processing: false });
+            return NextResponse.json(
+              { 
+                status: 'erro', 
+                mensagem: 'Associado já aderiu ao Sascred anteriormente. Duplicação evitada.'
+              },
+              { 
+                status: 409, // Conflict
+                headers: {
+                  'Access-Control-Allow-Origin': '*',
+                  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+                }
+              }
+            );
+          }
+          
+          console.log('✅ Verificação OK: Associado não existe na tabela, prosseguindo...');
+        } catch (e) {
+          console.log('⚠️ Erro no parse da verificação, mas prosseguindo com cautela');
+        }
+      } else {
+        console.log('⚠️ Erro na verificação de duplicação, mas prosseguindo com cautela');
+      }
+    } catch (error) {
+      console.log('⚠️ Erro na chamada de verificação, mas prosseguindo:', error);
+    }
+
+    console.log('📤 Enviando dados para API externa:', { codigo: body.codigo, nome: body.nome, celular: body.celular });
 
     // Faz a requisição para a API externa PHP
     const response = await fetch('https://sas.makecard.com.br/api_associados.php', {

@@ -128,7 +128,7 @@ export default function AdesaoSasapp() {
 
     // Prevenir execução dupla
     if (isLoading) {
-      console.log('Já está processando, ignorando clique duplicado');
+      console.log('⚠️ Já está processando, ignorando clique duplicado');
       return;
     }
 
@@ -144,7 +144,7 @@ export default function AdesaoSasapp() {
       const userData = JSON.parse(storedUser);
       const { cartao, senha } = userData;
 
-      console.log('Enviando dados para localização:', { cartao, senha });
+      console.log('🔄 Iniciando processo de adesão para:', { cartao });
 
       // Busca os dados completos do usuário na API de localização
       const localizaResponse = await fetch('/api/localiza-associado', {
@@ -158,17 +158,16 @@ export default function AdesaoSasapp() {
         }).toString(),
       });
 
-      // Tenta ler a resposta como texto primeiro para debug
       const responseText = await localizaResponse.text();
-      console.log('Resposta bruta da API de localização:', responseText);
+      console.log('📥 Resposta da API de localização:', responseText);
 
       // Tenta fazer o parse do JSON
       let localizaData;
       try {
         localizaData = JSON.parse(responseText);
-        console.log('Dados recebidos da API de localização:', localizaData);
+        console.log('✅ Dados do associado obtidos:', { matricula: localizaData.matricula, nome: localizaData.nome });
       } catch (e) {
-        console.error('Erro ao fazer parse da resposta:', e);
+        console.error('❌ Erro ao fazer parse da resposta:', e);
         throw new Error('Erro ao processar resposta da API. Por favor, tente novamente.');
       }
 
@@ -176,16 +175,48 @@ export default function AdesaoSasapp() {
         throw new Error('Erro ao buscar dados do usuário. Por favor, tente novamente.');
       }
 
-      // Verifica se os dados necessários estão presentes e mostra detalhes do que está faltando
+      // Verifica se os dados necessários estão presentes
       const camposFaltantes = [];
       if (!localizaData?.matricula) camposFaltantes.push('matricula');
       if (!localizaData?.nome) camposFaltantes.push('nome');
       if (!localizaData?.cel) camposFaltantes.push('cel');
 
       if (camposFaltantes.length > 0) {
-        console.error('Campos faltantes:', camposFaltantes);
+        console.error('❌ Campos faltantes:', camposFaltantes);
         throw new Error(`Dados incompletos. Faltam os seguintes campos: ${camposFaltantes.join(', ')}`);
       }
+
+      // 🔍 VERIFICAR PRIMEIRO SE JÁ EXISTE NA TABELA PARA EVITAR DUPLICAÇÃO
+      console.log('🔍 Verificando se associado já existe na tabela antes de gravar...');
+      const verificaResponse = await fetch('/api/verificar-adesao-sasmais', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          codigo: localizaData.matricula.toString()
+        })
+      });
+
+      const verificaResponseText = await verificaResponse.text();
+      
+      let verificaData;
+      try {
+        verificaData = JSON.parse(verificaResponseText);
+      } catch (e) {
+        console.error('❌ Erro ao fazer parse da verificação:', e);
+        // Se não conseguir verificar, vamos continuar com cuidado
+      }
+
+      // Se já existe na tabela, não prosseguir com a adesão
+      if (verificaData?.jaAderiu === true) {
+        console.log('⚠️ ASSOCIADO JÁ EXISTE NA TABELA - Evitando duplicação');
+        alert('Você já aderiu ao Sascred anteriormente. Redirecionando para a página de confirmação.');
+        setJaAderiu(true);
+        return;
+      }
+
+      console.log('✅ Associado não existe na tabela - Prosseguindo com adesão');
 
       // Prepara os dados no formato JSON que a API espera
       const dadosParaEnviar = {
@@ -194,7 +225,7 @@ export default function AdesaoSasapp() {
         celular: localizaData.cel
       };
 
-      console.log('Enviando dados para API de associados:', dadosParaEnviar);
+      console.log('📤 Enviando dados para API de adesão:', dadosParaEnviar);
 
       // Envia os dados para nossa API route local (que fará o proxy para a API externa)
       const adesaoResponse = await fetch('/api/adesao-saspy', {
@@ -207,15 +238,15 @@ export default function AdesaoSasapp() {
 
       // Tenta ler a resposta como texto primeiro
       const adesaoResponseText = await adesaoResponse.text();
-      console.log('Resposta da API de associados:', adesaoResponseText);
+      console.log('📥 Resposta da API de adesão:', adesaoResponseText);
 
       // Tenta fazer o parse da resposta como JSON
       let responseData;
       try {
         responseData = JSON.parse(adesaoResponseText);
-        console.log('Resposta parseada:', responseData);
+        console.log('📊 Resposta parseada:', responseData);
       } catch (e) {
-        console.error('Erro ao fazer parse da resposta:', e);
+        console.error('❌ Erro ao fazer parse da resposta:', e);
         throw new Error('Erro interno do servidor.');
       }
 
@@ -226,10 +257,12 @@ export default function AdesaoSasapp() {
         );
       }
 
-      // Redirecionar para página de sucesso com link do ZapSign
+      console.log('🎉 Adesão realizada com sucesso!');
+      
+      // Redirecionar para página de sucesso
       router.push('/dashboard/adesao-sasapp/sucesso');
     } catch (error) {
-      console.error('Erro completo:', error);
+      console.error('💥 Erro no processo de adesão:', error);
       alert(error instanceof Error ? error.message : 'Erro ao processar a adesão. Tente novamente.');
     } finally {
       setIsLoading(false);
