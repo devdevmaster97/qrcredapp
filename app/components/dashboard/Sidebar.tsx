@@ -80,7 +80,9 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
     <>
       {/* Botão de Menu para Mobile */}
       <button 
-        className="lg:hidden fixed top-4 left-4 z-50 bg-blue-600 p-2 rounded-md text-white"
+        className={`lg:hidden fixed top-4 z-50 bg-blue-600 p-2 rounded-md text-white transition-all duration-300 ease-in-out ${
+          isOpen ? 'left-60' : 'left-4'
+        }`}
         onClick={toggleSidebar}
         aria-label={isOpen ? "Fechar Menu" : "Abrir Menu"}
       >
