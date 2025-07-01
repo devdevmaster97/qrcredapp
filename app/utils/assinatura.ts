@@ -44,42 +44,66 @@ export function abrirCanalAntecipacao(): void {
 }
 
 /**
- * Obtém o CPF do usuário logado
+ * Extrai o signer_token da URL do ZapSign
+ * Exemplo: https://app.zapsign.com.br/verificar/92b36ec9-a449-4574-8ff0-5cc2c5ab7
+ * Retorna: 92b36ec9-a449-4574-8ff0-5cc2c5ab7
  */
-function obterCpfUsuario(): string | null {
-  if (typeof window === 'undefined') return null;
-  
+export function extrairSignerTokenDaUrl(url: string): string | undefined {
   try {
-    const storedUser = localStorage.getItem('qrcred_user');
-    if (!storedUser) return null;
+    // Remover espaços e quebras de linha
+    const urlLimpa = url.trim();
     
-    const userData = JSON.parse(storedUser);
-    // Assumindo que o CPF está nos dados do usuário
-    // Pode ser necessário ajustar dependendo da estrutura dos dados
-    return userData.cpf || userData.documento || null;
+    // Padrão regex para capturar o token após "/verificar/"
+    const regex = /\/verificar\/([a-zA-Z0-9\-]+)/;
+    const match = urlLimpa.match(regex);
+    
+    if (match && match[1]) {
+      console.log('✅ Signer token extraído:', match[1]);
+      return match[1];
+    }
+    
+    console.log('❌ Não foi possível extrair signer_token da URL:', urlLimpa);
+    return undefined;
   } catch (error) {
-    console.error('Erro ao obter CPF do usuário:', error);
-    return null;
+    console.error('❌ Erro ao extrair signer_token:', error);
+    return undefined;
   }
 }
 
 /**
- * Verifica o status da assinatura digital via API do ZapSign
- * Faz uma chamada real para nossa API local que consulta o ZapSign
+ * Verifica se uma URL é válida do ZapSign
  */
-export async function verificarStatusAssinatura(): Promise<boolean> {
+export function isUrlZapSignValida(url: string): boolean {
+  try {
+    const urlLimpa = url.trim();
+    return urlLimpa.includes('zapsign.com.br/verificar/') && extrairSignerTokenDaUrl(urlLimpa) !== undefined;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Verifica o status da assinatura digital via token do signatário
+ * Usa a nova API que consulta diretamente pelo signer_token
+ */
+export async function verificarStatusAssinatura(signerToken?: string): Promise<boolean> {
   try {
     console.log('🔍 Verificando status da assinatura digital...');
     
-    // Obter CPF do usuário
-    const cpf = obterCpfUsuario();
+    let tokenParaUsar = signerToken;
     
-    if (!cpf) {
-      console.log('⚠️ CPF do usuário não encontrado. Não é possível verificar assinatura.');
-      return false;
+    // Se não foi fornecido token, tentar extrair da URL padrão
+    if (!tokenParaUsar) {
+      // Usar o token padrão da URL do ZapSign
+      tokenParaUsar = extrairSignerTokenDaUrl(ZAPSIGN_URL);
+      
+      if (!tokenParaUsar) {
+        console.log('⚠️ Signer token não fornecido e não foi possível extrair da URL padrão.');
+        return false;
+      }
     }
 
-    console.log('📞 Chamando API de verificação de assinatura...');
+    console.log('📞 Chamando API de verificação de assinatura com token:', tokenParaUsar);
     
     // Chamar nossa API local
     const response = await fetch('/api/verificar-assinatura-zapsign', {
@@ -87,7 +111,7 @@ export async function verificarStatusAssinatura(): Promise<boolean> {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ cpf })
+      body: JSON.stringify({ signer_token: tokenParaUsar })
     });
 
     const responseText = await response.text();
@@ -103,15 +127,18 @@ export async function verificarStatusAssinatura(): Promise<boolean> {
 
     console.log('📊 Dados da verificação:', data);
 
-    if (response.ok && data.status === 'ok') {
-      console.log('✅ Assinatura digital encontrada!', data.documento);
+    if (response.ok && data.status === 'ok' && data.assinado === true) {
+      console.log('✅ Assinatura digital completa!', data.signatario);
       
       // Marcar como completa no localStorage
       marcarAssinaturaCompleta();
       
       return true;
+    } else if (data.status === 'pendente') {
+      console.log(`⏳ Assinatura pendente. Status: ${data.signatario?.status}`);
+      return false;
     } else if (data.status === 'nao_encontrado') {
-      console.log('❌ Assinatura digital não encontrada para este CPF');
+      console.log('❌ Token do signatário não encontrado');
       return false;
     } else {
       console.log('⚠️ Erro na verificação:', data.mensagem);
@@ -125,21 +152,28 @@ export async function verificarStatusAssinatura(): Promise<boolean> {
 }
 
 /**
- * Verifica se o usuário tem CPF disponível para verificação de assinatura
+ * Verifica assinatura usando URL completa do ZapSign
  */
-export function temCpfParaVerificacao(): boolean {
-  return obterCpfUsuario() !== null;
+export async function verificarAssinaturaPorUrl(urlZapSign: string): Promise<boolean> {
+  const signerToken = extrairSignerTokenDaUrl(urlZapSign);
+  
+  if (!signerToken) {
+    console.error('❌ Não foi possível extrair signer_token da URL:', urlZapSign);
+    return false;
+  }
+  
+  return verificarStatusAssinatura(signerToken);
 }
 
 /**
  * Obtém informações do usuário para verificação de assinatura
  */
 export function obterInfoUsuarioAssinatura() {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === 'undefined') return undefined;
   
   try {
     const storedUser = localStorage.getItem('qrcred_user');
-    if (!storedUser) return null;
+    if (!storedUser) return undefined;
     
     const userData = JSON.parse(storedUser);
     
@@ -151,11 +185,38 @@ export function obterInfoUsuarioAssinatura() {
     };
   } catch (error) {
     console.error('Erro ao obter informações do usuário:', error);
-    return null;
+    return undefined;
+  }
+}
+
+/**
+ * Obtém detalhes completos do signatário via API
+ */
+export async function obterDetalhesSignatario(signerToken: string) {
+  try {
+    const response = await fetch('/api/verificar-assinatura-zapsign', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ signer_token: signerToken })
+    });
+
+    const data = await response.json();
+    
+    if (response.ok && data.signatario) {
+      return data.signatario;
+    }
+    
+    return undefined;
+  } catch (error) {
+    console.error('Erro ao obter detalhes do signatário:', error);
+    return undefined;
   }
 }
 
 /**
  * URL do ZapSign para verificação de assinatura
+ * O signer_token será extraído automaticamente desta URL
  */
 export const ZAPSIGN_URL = 'https://app.zapsign.com.br/verificar/doc/b4ab32f3-d964-4fae-b9d2-01c05f2f4258'; 

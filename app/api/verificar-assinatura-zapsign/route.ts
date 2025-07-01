@@ -1,18 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Tipo para a resposta da API ZapSign
-interface ZapSignDocument {
+// Tipo para a resposta da API ZapSign (signatário individual)
+interface ZapSignSigner {
+  external_id: string;
   token: string;
+  status: string;
   name: string;
-  signers?: Array<{
-    cpf?: string;
-    name?: string;
-    status?: string;
-  }>;
-}
-
-interface ZapSignListResponse {
-  results: ZapSignDocument[];
+  lock_name: boolean;
+  email: string;
+  lock_email: boolean;
+  hide_email: boolean;
+  blank_email: boolean;
+  phone_country: string;
+  phone_number: string;
+  lock_phone: boolean;
+  hide_phone: boolean;
+  blank_phone: boolean;
+  times_viewed: number;
+  last_view_at: string | null;
+  signed_at: string | null;
+  auth_mode: string;
+  qualification: string;
+  require_selfie_photo: boolean;
+  require_document_photo: boolean;
+  geo_latitude: string | null;
+  geo_longitude: string | null;
+  redirect_link: string;
+  resend_attempts: {
+    whatsapp: number;
+    email: number;
+    sms: number;
+  };
+  send_automatic_whatsapp_signed_file: boolean;
 }
 
 export async function POST(request: NextRequest) {
@@ -20,11 +39,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // Validar dados recebidos
-    if (!body.cpf) {
+    if (!body.signer_token) {
       return NextResponse.json(
         { 
           status: 'erro', 
-          mensagem: 'CPF é obrigatório.' 
+          mensagem: 'Token do signatário é obrigatório.' 
         },
         { 
           status: 400,
@@ -37,7 +56,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const cpfProcurado = body.cpf;
+    const signerToken = body.signer_token.trim();
     
     // Token do ZapSign (deve estar nas variáveis de ambiente)
     const zapSignToken = process.env.ZAPSIGN_API_TOKEN;
@@ -60,7 +79,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('🔍 Verificando assinatura digital para CPF:', cpfProcurado);
+    console.log('🔍 Verificando assinatura digital para signer_token:', signerToken);
 
     // Headers para requisições ao ZapSign
     const headers = {
@@ -69,128 +88,114 @@ export async function POST(request: NextRequest) {
       'Accept': 'application/json'
     };
 
-    // 📋 Buscar lista de documentos no ZapSign
-    console.log('📋 Buscando documentos no ZapSign...');
-    const docsResponse = await fetch('https://api.zapsign.com.br/api/v1/docs/', {
+    // 🎯 Consulta DIRETA ao signatário pelo token
+    console.log('📞 Consultando signatário diretamente no ZapSign...');
+    const signerResponse = await fetch(`https://api.zapsign.com.br/api/v1/signers/${signerToken}/`, {
       method: 'GET',
       headers: headers
     });
 
-    if (!docsResponse.ok) {
-      console.error('❌ Erro ao buscar documentos:', docsResponse.status);
-      return NextResponse.json(
-        { 
-          status: 'erro', 
-          mensagem: 'Erro ao acessar API do ZapSign.' 
-        },
-        { 
-          status: 500,
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
-          }
-        }
-      );
-    }
+    console.log('📡 Status da resposta:', signerResponse.status);
 
-    const docsData: ZapSignListResponse = await docsResponse.json();
-    
-    if (!docsData.results) {
-      console.error('❌ Resposta inválida do ZapSign');
-      return NextResponse.json(
-        { 
-          status: 'erro', 
-          mensagem: 'Resposta inválida da API ZapSign.' 
-        },
-        { 
-          status: 500,
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
-          }
-        }
-      );
-    }
-
-    console.log(`📄 Encontrados ${docsData.results.length} documentos. Verificando signatários...`);
-
-    // 🔍 Verificar cada documento e seus signatários
-    for (const doc of docsData.results) {
-      const docToken = doc.token;
-      
-      console.log(`🔍 Verificando documento: ${doc.name || docToken}`);
-      
-      // Buscar detalhes do documento
-      const docDetailResponse = await fetch(`https://api.zapsign.com.br/api/v1/docs/${docToken}/`, {
-        method: 'GET',
-        headers: headers
-      });
-
-      if (!docDetailResponse.ok) {
-        console.log(`⚠️ Erro ao buscar detalhes do documento ${docToken}:`, docDetailResponse.status);
-        continue; // Pular para próximo documento
-      }
-
-      const docDetails: ZapSignDocument = await docDetailResponse.json();
-
-      // Verificar signatários
-      if (docDetails.signers) {
-        console.log(`👥 Verificando ${docDetails.signers.length} signatários do documento ${docDetails.name}`);
-        
-        for (const signer of docDetails.signers) {
-          if (signer.cpf) {
-            // Remover caracteres não numéricos para comparação
-            const cpfSigner = signer.cpf.replace(/\D/g, '');
-            const cpfBusca = cpfProcurado.replace(/\D/g, '');
-            
-            console.log(`🔍 Comparando CPF: ${cpfSigner} vs ${cpfBusca}`);
-            
-            if (cpfSigner === cpfBusca) {
-              console.log(`✅ CPF encontrado! Documento: ${docDetails.name}, Signatário: ${signer.name}`);
-              
-              return NextResponse.json(
-                { 
-                  status: 'ok', 
-                  mensagem: `CPF já assinou: ${docDetails.name}`,
-                  documento: {
-                    nome: docDetails.name,
-                    token: docDetails.token,
-                    signatario: signer.name,
-                    status: signer.status
-                  }
-                },
-                { 
-                  headers: {
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-                    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
-                  }
-                }
-              );
+    if (!signerResponse.ok) {
+      if (signerResponse.status === 404) {
+        console.log('❌ Signatário não encontrado');
+        return NextResponse.json(
+          { 
+            status: 'nao_encontrado', 
+            mensagem: 'Token do signatário não encontrado ou inválido.' 
+          },
+          { 
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'POST, OPTIONS',
+              'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
             }
           }
-        }
+        );
+      } else {
+        console.error('❌ Erro ao consultar signatário:', signerResponse.status);
+        return NextResponse.json(
+          { 
+            status: 'erro', 
+            mensagem: `Erro ao consultar API do ZapSign: ${signerResponse.status}` 
+          },
+          { 
+            status: 500,
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Allow-Methods': 'POST, OPTIONS',
+              'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+            }
+          }
+        );
       }
     }
 
-    // CPF não encontrado em nenhum documento
-    console.log('❌ Nenhuma assinatura encontrada para o CPF:', cpfProcurado);
+    const signerData: ZapSignSigner = await signerResponse.json();
     
-    return NextResponse.json(
-      { 
-        status: 'nao_encontrado', 
-        mensagem: 'Nenhuma assinatura encontrada para o CPF informado.' 
-      },
-      { 
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Methods': 'POST, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+    console.log('📊 Dados do signatário recebidos:');
+    console.log('👤 Nome:', signerData.name);
+    console.log('📧 Email:', signerData.email);
+    console.log('📱 Telefone:', signerData.phone_number);
+    console.log('📝 Status:', signerData.status);
+    console.log('🕒 Assinado em:', signerData.signed_at);
+
+    // 🎯 VERIFICAR STATUS DA ASSINATURA
+    if (signerData.status === 'signed') {
+      console.log('✅ ASSINATURA COMPLETA! Status: signed');
+      
+      return NextResponse.json(
+        { 
+          status: 'ok', 
+          mensagem: `Assinatura digital completa para ${signerData.name}`,
+          assinado: true,
+          signatario: {
+            token: signerData.token,
+            nome: signerData.name,
+            email: signerData.email,
+            telefone: signerData.phone_number,
+            status: signerData.status,
+            assinado_em: signerData.signed_at,
+            visualizacoes: signerData.times_viewed,
+            ultima_visualizacao: signerData.last_view_at
+          }
+        },
+        { 
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+          }
         }
-      }
-    );
+      );
+    } else {
+      console.log(`❌ ASSINATURA NÃO COMPLETA. Status atual: ${signerData.status}`);
+      
+      return NextResponse.json(
+        { 
+          status: 'pendente', 
+          mensagem: `Assinatura não finalizada. Status: ${signerData.status}`,
+          assinado: false,
+          signatario: {
+            token: signerData.token,
+            nome: signerData.name,
+            email: signerData.email,
+            telefone: signerData.phone_number,
+            status: signerData.status,
+            visualizacoes: signerData.times_viewed,
+            ultima_visualizacao: signerData.last_view_at
+          }
+        },
+        { 
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+          }
+        }
+      );
+    }
 
   } catch (error) {
     console.error('💥 Erro ao verificar assinatura digital:', error);
@@ -215,11 +220,11 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   // Suporte para requisições GET também (compatibilidade)
   const { searchParams } = new URL(request.url);
-  const cpf = searchParams.get('cpf');
+  const signerToken = searchParams.get('signer_token');
   
-  if (!cpf) {
+  if (!signerToken) {
     return NextResponse.json(
-      { status: 'erro', mensagem: 'CPF é obrigatório.' },
+      { status: 'erro', mensagem: 'Token do signatário é obrigatório.' },
       { status: 400 }
     );
   }
@@ -228,7 +233,7 @@ export async function GET(request: NextRequest) {
   return POST(new NextRequest(request.url, {
     method: 'POST',
     headers: request.headers,
-    body: JSON.stringify({ cpf })
+    body: JSON.stringify({ signer_token: signerToken })
   }));
 }
 
