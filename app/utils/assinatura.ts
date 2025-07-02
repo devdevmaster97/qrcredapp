@@ -45,27 +45,41 @@ export function abrirCanalAntecipacao(): void {
 
 /**
  * Extrai o signer_token da URL do ZapSign
- * Exemplo: https://app.zapsign.com.br/verificar/92b36ec9-a449-4574-8ff0-5cc2c5ab7
- * Retorna: 92b36ec9-a449-4574-8ff0-5cc2c5ab7
+ * Suporta dois padrões:
+ * - https://app.zapsign.com.br/verificar/92b36ec9-a449-4574-8ff0-5cc2c5ab7 (signer direto)
+ * - https://app.zapsign.com.br/verificar/doc/b4ab32f3-d964-4fae-b9d2-01c05f2f4258 (documento)
  */
 export function extrairSignerTokenDaUrl(url: string): string | undefined {
   try {
     // Remover espaços e quebras de linha
     const urlLimpa = url.trim();
     
-    // Padrão regex para capturar o token após "/verificar/"
-    const regex = /\/verificar\/([a-zA-Z0-9\-]+)/;
-    const match = urlLimpa.match(regex);
+    // Padrão 1: URL de signer direto - /verificar/{signer_token}
+    const regexSigner = /\/verificar\/([a-zA-Z0-9\-]+)$/;
+    const matchSigner = urlLimpa.match(regexSigner);
     
-    if (match && match[1]) {
-      console.log('✅ Signer token extraído:', match[1]);
-      return match[1];
+    if (matchSigner && matchSigner[1]) {
+      console.log('✅ Signer token extraído (padrão direto):', matchSigner[1]);
+      return matchSigner[1];
     }
     
-    console.log('❌ Não foi possível extrair signer_token da URL:', urlLimpa);
+    // Padrão 2: URL de documento - /verificar/doc/{document_id}
+    const regexDoc = /\/verificar\/doc\/([a-zA-Z0-9\-]+)/;
+    const matchDoc = urlLimpa.match(regexDoc);
+    
+    if (matchDoc && matchDoc[1]) {
+      console.log('✅ Document ID extraído (padrão doc):', matchDoc[1]);
+      console.log('⚠️ Nota: Este é um document_id, não um signer_token direto');
+      return matchDoc[1];
+    }
+    
+    console.log('❌ Não foi possível extrair token da URL:', urlLimpa);
+    console.log('📋 Padrões suportados:');
+    console.log('  • /verificar/{signer_token}');
+    console.log('  • /verificar/doc/{document_id}');
     return undefined;
   } catch (error) {
-    console.error('❌ Erro ao extrair signer_token:', error);
+    console.error('❌ Erro ao extrair token:', error);
     return undefined;
   }
 }

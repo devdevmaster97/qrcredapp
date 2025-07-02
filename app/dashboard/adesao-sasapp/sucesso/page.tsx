@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaCheckCircle, FaHome, FaStar, FaExternalLinkAlt, FaSignature, FaWhatsapp } from 'react-icons/fa';
-import { isAssinaturaCompleta, marcarAssinaturaCompleta, abrirCanalAntecipacao, ZAPSIGN_URL } from '@/app/utils/assinatura';
+import { isAssinaturaCompleta, marcarAssinaturaCompleta, abrirCanalAntecipacao, ZAPSIGN_URL, extrairSignerTokenDaUrl } from '@/app/utils/assinatura';
 
 export default function SucessoAdesao() {
   const router = useRouter();
@@ -13,7 +13,81 @@ export default function SucessoAdesao() {
     router.push('/dashboard');
   };
 
-  const abrirZapSign = () => {
+  const abrirZapSign = async () => {
+    try {
+      // 🔍 DEBUG: Testar API ZapSign antes de abrir o link
+      console.log('🔍 [DEBUG] Iniciando teste da API ZapSign...');
+      
+      // Extrair signer_token da URL do ZapSign
+      const signerToken = extrairSignerTokenDaUrl(ZAPSIGN_URL);
+      
+      if (!signerToken) {
+        alert('🐛 DEBUG: Não foi possível extrair signer_token da URL');
+        console.error('❌ Signer token não encontrado na URL:', ZAPSIGN_URL);
+        return;
+      }
+
+      console.log('✅ Signer token extraído:', signerToken);
+      
+      // Fazer chamada para a API de verificação
+      const zapSignResponse = await fetch('/api/verificar-assinatura-zapsign', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          signer_token: signerToken
+        })
+      });
+
+      const zapSignData = await zapSignResponse.json();
+      
+      // Detectar tipo de token pela URL
+      const isDocumentPattern = ZAPSIGN_URL.includes('/doc/');
+      const tokenType = isDocumentPattern ? 'Document ID' : 'Signer Token';
+      
+      // Popup de debug detalhado
+      const debugInfo = `
+🔍 DEBUG - Teste API ZapSign
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🌐 URL ZapSign Original:
+• ${ZAPSIGN_URL}
+
+🔑 Token Extraído:
+• Tipo: ${tokenType}
+• Valor: ${signerToken}
+• Padrão: ${isDocumentPattern ? '/verificar/doc/{id}' : '/verificar/{signer_token}'}
+
+🌐 API Endpoint Testada:
+• https://api.zapsign.com.br/api/v1/signers/${signerToken}/
+
+📥 Resposta da API:
+• Status HTTP: ${zapSignResponse.status}
+• Status Text: ${zapSignResponse.statusText}
+• Success: ${zapSignData.success || 'N/A'}
+• Status Assinatura: ${zapSignData.status || 'N/A'}
+• Message: ${zapSignData.message || 'N/A'}
+
+📊 Dados Completos da Resposta:
+${JSON.stringify(zapSignData, null, 2)}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  Este popup é apenas para debug em desenvolvimento
+🚀 Adesão ao Sascred foi concluída com sucesso!
+
+Clique em OK para abrir o ZapSign...
+      `;
+      
+      alert(debugInfo);
+      console.log('🐛 [DEBUG] Dados completos ZapSign:', zapSignData);
+      
+    } catch (debugError) {
+      console.error('🐛 [DEBUG] Erro ao testar API ZapSign:', debugError);
+      const errorMessage = debugError instanceof Error ? debugError.message : String(debugError);
+      alert(`🐛 DEBUG ERROR - ZapSign API:\n${errorMessage}\n\nClique em OK para continuar com o ZapSign...`);
+    }
+    
     // Abrir ZapSign em nova aba para manter o app aberto
     window.open(ZAPSIGN_URL, '_blank');
   };
