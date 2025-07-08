@@ -79,6 +79,7 @@ export default function LoginForm({ onSubmit, loading }: LoginFormProps) {
   const [enviandoNovaSenha, setEnviandoNovaSenha] = useState(false);
   const [mostrarNovaSenha, setMostrarNovaSenha] = useState(false);
   const [mostrarConfirmacaoSenha, setMostrarConfirmacaoSenha] = useState(false);
+  const [mostrarSenhaLogin, setMostrarSenhaLogin] = useState(false);
   
   // Estado para armazenar informações do usuário para recuperação
   const [dadosUsuarioRecuperacao, setDadosUsuarioRecuperacao] = useState<{
@@ -1044,12 +1045,20 @@ export default function LoginForm({ onSubmit, loading }: LoginFormProps) {
                   <FaLock className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  type="password"
+                  type={mostrarSenhaLogin ? "text" : "password"}
                   placeholder="Senha"
-                  className="block w-full pl-10 py-2 sm:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="block w-full pl-10 pr-10 py-2 sm:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   maxLength={20}
                   {...register('senha')}
                 />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700"
+                  onClick={() => setMostrarSenhaLogin(!mostrarSenhaLogin)}
+                  tabIndex={-1}
+                >
+                  {mostrarSenhaLogin ? <FaEyeSlash className="h-4 w-4" /> : <FaEye className="h-4 w-4" />}
+                </button>
               </div>
               {errors.senha && (
                 <p className="text-sm text-red-500">{errors.senha.message}</p>
