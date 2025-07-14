@@ -287,7 +287,7 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
               Cartão: {userData?.cartao || cardNumber}
             </p>
             <p className="text-sm opacity-90 truncate">
-              Convênio: {userData?.nome_divisao || company}
+              Convênio: SasApp
             </p>
             
             {/* Indicador de adesão SasCred */}

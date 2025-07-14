@@ -1,5 +1,5 @@
-import SaldoCard from '@/app/components/dashboard/SaldoCard';
-import { FaInfoCircle } from 'react-icons/fa';
+import ConveniosContent from '@/app/components/dashboard/ConveniosContent';
+import { FaInfoCircle, FaUserMd } from 'react-icons/fa';
 
 export default function DashboardPage() {
   return (
@@ -14,13 +14,18 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <main className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <section className="lg:col-span-3">
-          <h2 className="sr-only">Saldo do Cartão</h2>
-          <SaldoCard />
+      <main className="grid grid-cols-1 gap-6">
+        <section className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="p-4 bg-blue-600 flex items-center">
+            <FaUserMd className="text-white text-2xl mr-3" />
+            <h2 className="text-xl font-bold text-white">Profissionais Conveniados</h2>
+          </div>
+          <div className="p-4">
+            <ConveniosContent />
+          </div>
         </section>
 
-        <section className="lg:col-span-3 bg-white p-4 rounded-lg shadow space-y-4">
+        <section className="bg-white p-4 rounded-lg shadow space-y-4">
           <h2 className="text-xl font-semibold text-gray-800">Dicas de Uso</h2>
           
           <div className="space-y-3">
