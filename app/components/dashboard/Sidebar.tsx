@@ -24,7 +24,8 @@ import {
   FaMobileAlt,
   FaMoneyBillWave,
   FaHistory,
-  FaClock
+  FaClock,
+  FaFileContract
 } from 'react-icons/fa';
 
 type SidebarProps = {
@@ -122,7 +123,7 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
         {
           href: '/dashboard/adesao-sasapp',
           label: 'Aderir',
-          icon: <FaStar size={16} className="text-yellow-400" />
+          icon: <FaFileContract size={16} className="text-blue-500" />
         },
         // Submenus condicionais - só aparecem se o associado já aderiu
         ...(jaAderiuSasCred ? [
@@ -300,7 +301,7 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
                   </span>
                 ) : (
                   <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                    <FaStar className="mr-1" size={10} />
+                    <FaFileContract className="mr-1" size={10} />
                     Aderir SasCred
                   </span>
                 )}

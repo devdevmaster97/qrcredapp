@@ -18,7 +18,7 @@ export default function DashboardPage() {
         <section className="bg-white rounded-lg shadow overflow-hidden">
           <div className="p-4 bg-blue-600 flex items-center">
             <FaUserMd className="text-white text-2xl mr-3" />
-            <h2 className="text-xl font-bold text-white">Profissionais Conveniados</h2>
+            <h2 className="text-xl font-bold text-white">Saúde Familiar Rede Conveniada</h2>
           </div>
           <div className="p-4">
             <ConveniosContent />

@@ -44,7 +44,7 @@ export default function OQueESasCred() {
           <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
             <p className="text-blue-800 font-medium">
               💡 <strong>Importante:</strong> O SasCred não é um empréstimo! É o seu próprio salário sendo 
-              antecipado, sem juros abusivos ou taxas escondidas.
+              antecipado.
             </p>
           </div>
         </div>
