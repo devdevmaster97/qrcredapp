@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { isAssinaturaCompleta, abrirCanalAntecipacao } from '@/app/utils/assinatura';
+import { useAdesaoSasCred } from '@/app/hooks/useAdesaoSasCred';
 import { 
   FaWallet, 
   FaClipboardList, 
@@ -15,7 +16,15 @@ import {
   FaBars,
   FaTimes,
   FaStar,
-  FaWhatsapp
+  FaWhatsapp,
+  FaPhone,
+  FaInfoCircle,
+  FaChevronDown,
+  FaChevronRight,
+  FaMobileAlt,
+  FaMoneyBillWave,
+  FaHistory,
+  FaClock
 } from 'react-icons/fa';
 
 type SidebarProps = {
@@ -33,9 +42,13 @@ interface UserData {
 
 export default function Sidebar({ userName, cardNumber, company }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isSasCredOpen, setIsSasCredOpen] = useState(false);
   const pathname = usePathname();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [assinaturaCompleta, setAssinaturaCompleta] = useState(false);
+  
+  // Hook para verificar adesão ao SasCred
+  const { jaAderiu: jaAderiuSasCred, loading: loadingAdesao } = useAdesaoSasCred();
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -49,6 +62,18 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
     }
   }, []);
 
+  // Expandir automaticamente o menu SasCred se estiver em uma página relacionada
+  useEffect(() => {
+    if (pathname.includes('/dashboard/sascred') || 
+        pathname.includes('/dashboard/saldo') ||
+        pathname.includes('/dashboard/extrato') ||
+        pathname.includes('/dashboard/qrcode') ||
+        pathname.includes('/dashboard/antecipacao') ||
+        pathname.includes('/dashboard/adesao-sasapp')) {
+      setIsSasCredOpen(true);
+    }
+  }, [pathname]);
+
   const handleAntecipacao = () => {
     abrirCanalAntecipacao();
     setIsOpen(false);
@@ -58,15 +83,88 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
     setIsOpen(!isOpen);
   };
 
+  const toggleSasCred = () => {
+    setIsSasCredOpen(!isSasCredOpen);
+  };
 
-
+  // Menu principal (ordem conforme solicitado)
   const menuItems = [
-    { href: '/dashboard/saldo', label: 'Saldo', icon: <FaWallet size={20} /> },
-    { href: '/dashboard/extrato', label: 'Extrato', icon: <FaClipboardList size={20} /> },
-    { href: '/dashboard/convenios', label: 'Convênios', icon: <FaStore size={20} /> },
-    { href: '/dashboard/qrcode', label: 'QR Code', icon: <FaQrcode size={20} /> },
-    { href: '/dashboard/dados', label: 'Meus Dados', icon: <FaUser size={20} /> },
-    { href: '/dashboard/adesao-sasapp', label: 'Aderir ao Sascred', icon: <FaStar size={20} className="text-yellow-400" /> }
+    {
+      type: 'link',
+      href: '/dashboard',
+      label: 'SasApp',
+      icon: <FaMobileAlt size={20} />
+    },
+    {
+      type: 'link',
+      href: '/dashboard/dados',
+      label: 'Meus Dados',
+      icon: <FaUser size={20} />
+    },
+    {
+      type: 'link', 
+      href: '/dashboard/convenios',
+      label: 'Convênios',
+      icon: <FaStore size={20} />
+    },
+    {
+      type: 'submenu',
+      label: 'SasCred',
+      icon: <FaMoneyBillWave size={20} className="text-green-500" />,
+      isOpen: isSasCredOpen,
+      toggle: toggleSasCred,
+      items: [
+        {
+          href: '/dashboard/sascred/o-que-e',
+          label: 'O que é',
+          icon: <FaInfoCircle size={16} />
+        },
+        {
+          href: '/dashboard/adesao-sasapp',
+          label: 'Aderir',
+          icon: <FaStar size={16} className="text-yellow-400" />
+        },
+        // Submenus condicionais - só aparecem se o associado já aderiu
+        ...(jaAderiuSasCred ? [
+          {
+            href: '/dashboard/saldo',
+            label: 'Saldo',
+            icon: <FaWallet size={16} />
+          },
+          {
+            href: '/dashboard/extrato',
+            label: 'Extrato',
+            icon: <FaClipboardList size={16} />
+          },
+          {
+            href: '/dashboard/qrcode',
+            label: 'QR Code',
+            icon: <FaQrcode size={16} />
+          },
+          {
+            href: '/dashboard/convenios',
+            label: 'Convênios',
+            icon: <FaStore size={16} />
+          },
+          {
+            href: '/dashboard/antecipacao',
+            label: 'Antecipação',
+            icon: <FaHistory size={16} />
+          },
+          {
+            href: '/dashboard/sascred/programado',
+            label: 'Programado',
+            icon: <FaClock size={16} />
+          }
+        ] : [])
+      ]
+    },
+    {
+      type: 'link',
+      href: '/dashboard/contatos',
+      label: 'Contatos',
+      icon: <FaPhone size={20} />
+    }
   ];
 
   const handleLogout = () => {
@@ -74,6 +172,83 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
       localStorage.removeItem('qrcred_user');
       window.location.href = '/login';
     }
+  };
+
+  const renderMenuItem = (item: any, isSubmenuItem = false) => {
+    if (item.type === 'submenu') {
+      return (
+        <li key={item.label}>
+          <button
+            onClick={item.toggle}
+            className={`flex items-center justify-between w-full px-5 py-3 text-left transition-colors hover:bg-blue-700 ${
+              pathname.includes('/dashboard/sascred') || 
+              pathname.includes('/dashboard/saldo') ||
+              pathname.includes('/dashboard/extrato') ||
+              pathname.includes('/dashboard/qrcode') ||
+              pathname.includes('/dashboard/antecipacao') ||
+              pathname.includes('/dashboard/adesao-sasapp') ? 'bg-blue-700' : ''
+            }`}
+          >
+            <div className="flex items-center">
+              <span className="mr-3">{item.icon}</span>
+              {item.label}
+              {!loadingAdesao && !jaAderiuSasCred && (
+                <span className="ml-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                  Novo
+                </span>
+              )}
+            </div>
+            {item.isOpen ? <FaChevronDown size={12} /> : <FaChevronRight size={12} />}
+          </button>
+          
+          {/* Submenu items */}
+          {item.isOpen && (
+            <ul className="bg-gray-700">
+              {item.items.map((subItem: any) => (
+                <li key={subItem.href}>
+                  <Link href={subItem.href} passHref>
+                    <div
+                      className={`flex items-center px-8 py-2 text-sm transition-colors hover:bg-blue-700 ${
+                        pathname === subItem.href ? 'bg-blue-700' : ''
+                      }`}
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <span className="mr-3">{subItem.icon}</span>
+                      {subItem.label}
+                    </div>
+                  </Link>
+                </li>
+              ))}
+              
+              {/* Mostrar mensagem se não aderiu ainda */}
+              {!loadingAdesao && !jaAderiuSasCred && item.items.length === 2 && (
+                <li className="px-8 py-2 text-xs text-gray-300 border-t border-gray-600 mt-1">
+                  <FaInfoCircle className="inline mr-1" />
+                  Faça a adesão para acessar mais opções
+                </li>
+              )}
+            </ul>
+          )}
+        </li>
+      );
+    }
+
+    // Item de link normal
+    return (
+      <li key={item.href}>
+        <Link href={item.href} passHref>
+          <div
+            className={`flex items-center px-5 py-3 transition-colors hover:bg-blue-700 ${
+              pathname === item.href ? 'bg-blue-700' : ''
+            } ${isSubmenuItem ? 'text-sm pl-8' : ''}`}
+            onClick={() => setIsOpen(false)}
+          >
+            <span className="mr-3">{item.icon}</span>
+            {item.label}
+          </div>
+        </Link>
+      </li>
+    );
   };
 
   return (
@@ -114,29 +289,32 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
             <p className="text-sm opacity-90 truncate">
               Convênio: {userData?.nome_divisao || company}
             </p>
+            
+            {/* Indicador de adesão SasCred */}
+            {!loadingAdesao && (
+              <div className="mt-2">
+                {jaAderiuSasCred ? (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <FaMoneyBillWave className="mr-1" size={10} />
+                    SasCred Ativo
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                    <FaStar className="mr-1" size={10} />
+                    Aderir SasCred
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Links de Navegação */}
           <nav className="flex-1 overflow-y-auto py-4">
             <ul className="space-y-1">
-              {menuItems.map((item) => (
-                <li key={item.href}>
-                  <Link href={item.href} passHref>
-                    <div
-                      className={`flex items-center px-5 py-3 transition-colors hover:bg-blue-700 ${
-                        pathname === item.href ? 'bg-blue-700' : ''
-                      }`}
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <span className="mr-3">{item.icon}</span>
-                      {item.label}
-                    </div>
-                  </Link>
-                </li>
-              ))}
+              {menuItems.map((item) => renderMenuItem(item))}
               
-              {/* Menu Antecipação - Só aparece após assinatura digital completa */}
-              {assinaturaCompleta && (
+              {/* Menu Antecipação - Só aparece após assinatura digital completa (mantido para compatibilidade) */}
+              {assinaturaCompleta && !jaAderiuSasCred && (
                 <li>
                   <button
                     onClick={handleAntecipacao}
@@ -145,16 +323,14 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
                     <span className="mr-3">
                       <FaWhatsapp size={20} />
                     </span>
-                    Antecipação
+                    Antecipação (WhatsApp)
                   </button>
                 </li>
               )}
-              
-
             </ul>
           </nav>
 
-          {/* Rodapé do Sidebar */}
+          {/* Footer do Sidebar */}
           <div className="p-4 border-t border-gray-700">
             <button
               onClick={handleLogout}
