@@ -15,22 +15,17 @@ export default function AdesaoSasapp() {
   useEffect(() => {
     // Verificar se o usuário já aderiu ao Sascred no banco de dados
     const verificarAdesaoNoBanco = async () => {
-      console.log('🔍 Iniciando verificação de adesão no banco...');
-      
       try {
         const storedUser = localStorage.getItem('qrcred_user');
         
         if (!storedUser) {
-          console.log('❌ Usuário não encontrado no localStorage');
           setCheckingStatus(false);
           return;
         }
 
         const userData = JSON.parse(storedUser);
-        console.log('👤 Dados do usuário:', { cartao: userData.cartao, nome: userData.nome });
         
         // Buscar os dados completos do usuário para obter a matrícula
-        console.log('🔄 Buscando dados completos do associado...');
         const localizaResponse = await fetch('/api/localiza-associado', {
           method: 'POST',
           headers: {
@@ -43,7 +38,6 @@ export default function AdesaoSasapp() {
         });
 
         if (!localizaResponse.ok) {
-          console.log('❌ Erro ao buscar dados do associado');
           setCheckingStatus(false);
           return;
         }
@@ -54,21 +48,16 @@ export default function AdesaoSasapp() {
         try {
           localizaData = JSON.parse(responseText);
         } catch (e) {
-          console.error('❌ Erro ao fazer parse dos dados do associado:', e);
           setCheckingStatus(false);
           return;
         }
         
         if (!localizaData?.matricula) {
-          console.log('❌ Matrícula não encontrada nos dados do associado');
           setCheckingStatus(false);
           return;
         }
-
-        console.log('✅ Matrícula encontrada:', localizaData.matricula);
         
         // Verificar na tabela sind.associados_sasmais
-        console.log('🔍 Verificando adesão na tabela sind.associados_sasmais...');
         const verificaResponse = await fetch('/api/verificar-adesao-sasmais', {
           method: 'POST',
           headers: {
@@ -80,41 +69,31 @@ export default function AdesaoSasapp() {
         });
 
         const verificaResponseText = await verificaResponse.text();
-        console.log('📥 Resposta bruta da verificação:', verificaResponseText);
         
         let verificaData;
         try {
           verificaData = JSON.parse(verificaResponseText);
         } catch (e) {
-          console.error('❌ Erro ao fazer parse da resposta de verificação:', e);
           setCheckingStatus(false);
           return;
         }
-        
-        console.log('📊 Dados da verificação parseados:', verificaData);
         
         // Verificar se o associado já aderiu
         if (verificaResponse.ok && verificaData?.status === 'sucesso') {
           if (verificaData.jaAderiu === true) {
             setJaAderiu(true);
-            console.log('✅ CONFIRMADO: Usuário já aderiu ao Sascred (verificado no banco)');
-            console.log('📄 Dados da adesão:', verificaData.dados);
           } else {
             setJaAderiu(false);
-            console.log('🆕 Usuário ainda não aderiu ao Sascred');
           }
         } else {
-          console.log('⚠️ Erro na verificação ou associado não encontrado na tabela');
           setJaAderiu(false);
         }
         
       } catch (error) {
-        console.error('❌ Erro geral ao verificar status de adesão:', error);
         // Em caso de erro, assumir que não aderiu para permitir acesso aos termos
         setJaAderiu(false);
       } finally {
         setCheckingStatus(false);
-        console.log('🏁 Verificação de adesão concluída');
       }
     };
 
@@ -127,14 +106,8 @@ export default function AdesaoSasapp() {
       return;
     }
 
-    // 🚫 BLOQUEIO TRIPLO CONTRA EXECUÇÃO DUPLA
-    if (isLoading) {
-      console.log('⚠️ Já está processando, ignorando clique duplicado');
-      return;
-    }
-
-    if (buttonBlocked) {
-      console.log('⚠️ Botão bloqueado temporariamente, ignorando clique');
+    // Bloqueio contra execução dupla
+    if (isLoading || buttonBlocked) {
       return;
     }
 
@@ -142,11 +115,7 @@ export default function AdesaoSasapp() {
     setButtonBlocked(true);
     setIsLoading(true);
 
-    // Log detalhado do início
-    const timestamp = new Date().toISOString();
-    console.log(`🚀 INÍCIO DA ADESÃO [${timestamp}] - Botão bloqueado`);
-    
-    // Delay inicial obrigatório de 200ms para evitar cliques muito rápidos
+    // Delay inicial para evitar cliques muito rápidos
     await new Promise(resolve => setTimeout(resolve, 200));
     
     try {
@@ -158,8 +127,6 @@ export default function AdesaoSasapp() {
 
       const userData = JSON.parse(storedUser);
       const { cartao, senha } = userData;
-
-      console.log('🔄 Iniciando processo de adesão para:', { cartao });
 
       // Busca os dados completos do usuário na API de localização
       const localizaResponse = await fetch('/api/localiza-associado', {
@@ -174,15 +141,12 @@ export default function AdesaoSasapp() {
       });
 
       const responseText = await localizaResponse.text();
-      console.log('📥 Resposta da API de localização:', responseText);
 
       // Tenta fazer o parse do JSON
       let localizaData;
       try {
         localizaData = JSON.parse(responseText);
-        console.log('✅ Dados do associado obtidos:', { matricula: localizaData.matricula, nome: localizaData.nome });
       } catch (e) {
-        console.error('❌ Erro ao fazer parse da resposta:', e);
         throw new Error('Erro ao processar resposta da API. Por favor, tente novamente.');
       }
 
@@ -197,12 +161,10 @@ export default function AdesaoSasapp() {
       if (!localizaData?.cel) camposFaltantes.push('cel');
 
       if (camposFaltantes.length > 0) {
-        console.error('❌ Campos faltantes:', camposFaltantes);
         throw new Error(`Dados incompletos. Faltam os seguintes campos: ${camposFaltantes.join(', ')}`);
       }
 
-      // 🔍 VERIFICAR PRIMEIRO SE JÁ EXISTE NA TABELA PARA EVITAR DUPLICAÇÃO
-      console.log('🔍 Verificando se associado já existe na tabela antes de gravar...');
+      // Verificar primeiro se já existe na tabela para evitar duplicação
       const verificaResponse = await fetch('/api/verificar-adesao-sasmais', {
         method: 'POST',
         headers: {
@@ -219,26 +181,20 @@ export default function AdesaoSasapp() {
       try {
         verificaData = JSON.parse(verificaResponseText);
       } catch (e) {
-        console.error('❌ Erro ao fazer parse da verificação:', e);
         // Se não conseguir verificar, vamos continuar com cuidado
       }
 
       // Se já existe na tabela, não prosseguir com a adesão
       if (verificaData?.jaAderiu === true) {
-        console.log('⚠️ ASSOCIADO JÁ EXISTE NA TABELA - Evitando duplicação');
         alert('Você já aderiu ao Sascred anteriormente. Redirecionando para a página de confirmação.');
         setJaAderiu(true);
         return;
       }
 
-      console.log('✅ Associado não existe na tabela - Prosseguindo com adesão');
-
-      // 🔒 DELAY ADICIONAL PARA EVITAR RACE CONDITIONS (500ms)
-      console.log('⏳ Aplicando delay de segurança...');
+      // Delay adicional para evitar race conditions
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      // 🔍 SEGUNDA VERIFICAÇÃO CRÍTICA (dupla verificação)
-      console.log('🔍 SEGUNDA verificação crítica antes de gravar...');
+      // Segunda verificação crítica antes de gravar
       const verificaResponse2 = await fetch('/api/verificar-adesao-sasmais', {
         method: 'POST',
         headers: {
@@ -256,16 +212,13 @@ export default function AdesaoSasapp() {
         
         // Se já existe na tabela na segunda verificação, não prosseguir
         if (verificaData2?.jaAderiu === true) {
-          console.log('🚫 SEGUNDA VERIFICAÇÃO: Associado já existe - Duplicação evitada!');
           alert('Detectamos que você já aderiu ao Sascred. Não realizaremos nova adesão.');
           setJaAderiu(true);
           return;
         }
       } catch (e) {
-        console.error('❌ Erro na segunda verificação, mas prosseguindo:', e);
+        // Erro na segunda verificação, mas prosseguindo
       }
-
-      console.log('✅ DUPLA VERIFICAÇÃO OK - Prosseguindo com adesão');
 
       // Prepara os dados no formato JSON que a API espera
       const dadosParaEnviar = {
@@ -274,9 +227,7 @@ export default function AdesaoSasapp() {
         celular: localizaData.cel
       };
 
-      console.log('📤 Enviando dados para API de adesão:', dadosParaEnviar);
-
-      // Envia os dados para nossa API route local (que fará o proxy para a API externa)
+      // Envia os dados para nossa API route local
       const adesaoResponse = await fetch('/api/adesao-saspy', {
         method: 'POST',
         headers: {
@@ -287,15 +238,12 @@ export default function AdesaoSasapp() {
 
       // Tenta ler a resposta como texto primeiro
       const adesaoResponseText = await adesaoResponse.text();
-      console.log('📥 Resposta da API de adesão:', adesaoResponseText);
 
       // Tenta fazer o parse da resposta como JSON
       let responseData;
       try {
         responseData = JSON.parse(adesaoResponseText);
-        console.log('📊 Resposta parseada:', responseData);
       } catch (e) {
-        console.error('❌ Erro ao fazer parse da resposta:', e);
         throw new Error('Erro interno do servidor.');
       }
 
@@ -305,21 +253,17 @@ export default function AdesaoSasapp() {
           `Erro ao processar a adesão: ${adesaoResponseText}`
         );
       }
-
-      console.log('🎉 Adesão realizada com sucesso!');
       
       // Redirecionar para página de sucesso
       router.push('/dashboard/adesao-sasapp/sucesso');
     } catch (error) {
-      console.error('💥 Erro no processo de adesão:', error);
       alert(error instanceof Error ? error.message : 'Erro ao processar a adesão. Tente novamente.');
     } finally {
       setIsLoading(false);
       
-      // ⏰ TIMEOUT DE SEGURANÇA: Manter botão bloqueado por 3 segundos após finalizar
+      // Timeout de segurança: Manter botão bloqueado por 3 segundos após finalizar
       setTimeout(() => {
         setButtonBlocked(false);
-        console.log('🔓 Botão desbloqueado após timeout de segurança');
       }, 3000);
     }
   };
@@ -543,7 +487,7 @@ export default function AdesaoSasapp() {
                   className="mt-1 h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
                 <span className="text-sm text-gray-700 leading-relaxed">
-                  <strong>☑ Declaro que li, entendi e concordo com os termos acima, ciente de que a aceitação implica minha adesão automática ao Sascred e autorizo minha empregadora a efetivar o desconto em folha dos créditos disponibilizados e efetivamente utilizados e a cobrança de taxa de manutenção no valor mensal de R$ 7,50 (sete reais e cinquenta centavos).</strong>
+                  <strong>☑ Declaro que li, entendi e concordo com os termos acima, ciente de que a aceitação implica minha adesão automática ao Sascred e autorizo minha empregadora a efetivar o desconto em folha dos créditos disponibilizados e efetivamente utilizados e a cobrança de taxa de manutenção no valor mensal de R$ 7,50 (sete reais e cinquenta centavos) para o associado e R$ 15,00 (quinze reais) para o não associado.</strong>
                 </span>
               </label>
             </div>
