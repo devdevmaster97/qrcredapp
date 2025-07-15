@@ -111,6 +111,22 @@ export default function AdesaoSasapp() {
       return;
     }
 
+    // Verificar se já há uma tentativa de adesão em curso nesta sessão
+    const adesaoEmAndamento = localStorage.getItem('adesao_em_andamento');
+    if (adesaoEmAndamento) {
+      const tempoInicio = parseInt(adesaoEmAndamento);
+      const tempoDecorrido = Date.now() - tempoInicio;
+      
+      // Se passou menos de 30 segundos da última tentativa, bloquear
+      if (tempoDecorrido < 30000) {
+        alert('Aguarde alguns segundos antes de tentar novamente.');
+        return;
+      }
+    }
+
+    // Marcar que uma adesão está em andamento
+    localStorage.setItem('adesao_em_andamento', Date.now().toString());
+
     // Bloquear botão imediatamente
     setButtonBlocked(true);
     setIsLoading(true);
@@ -254,11 +270,17 @@ export default function AdesaoSasapp() {
         );
       }
       
+      // Sinalizar que o status de adesão mudou para atualizar o menu
+      localStorage.setItem('adesao_status_changed', 'true');
+      
       // Redirecionar para página de sucesso
       router.push('/dashboard/adesao-sasapp/sucesso');
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Erro ao processar a adesão. Tente novamente.');
     } finally {
+      // Limpar flag de adesão em andamento
+      localStorage.removeItem('adesao_em_andamento');
+      
       setIsLoading(false);
       
       // Timeout de segurança: Manter botão bloqueado por 3 segundos após finalizar

@@ -120,11 +120,14 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
           label: 'O que é',
           icon: <FaInfoCircle size={16} />
         },
-        {
-          href: '/dashboard/adesao-sasapp',
-          label: 'Aderir',
-          icon: <FaFileContract size={16} className="text-blue-500" />
-        },
+        // Só mostrar "Aderir" se ainda não aderiu
+        ...(!jaAderiuSasCred ? [
+          {
+            href: '/dashboard/adesao-sasapp',
+            label: 'Aderir',
+            icon: <FaFileContract size={16} className="text-blue-500" />
+          }
+        ] : []),
         // Submenus condicionais - só aparecem se o associado já aderiu
         ...(jaAderiuSasCred ? [
           {
