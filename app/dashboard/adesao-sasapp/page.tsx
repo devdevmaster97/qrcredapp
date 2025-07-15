@@ -202,7 +202,6 @@ export default function AdesaoSasapp() {
 
       // Se já existe na tabela, não prosseguir com a adesão
       if (verificaData?.jaAderiu === true) {
-        alert('Você já aderiu ao Sascred anteriormente. Redirecionando para a página de confirmação.');
         setJaAderiu(true);
         return;
       }
@@ -228,7 +227,6 @@ export default function AdesaoSasapp() {
         
         // Se já existe na tabela na segunda verificação, não prosseguir
         if (verificaData2?.jaAderiu === true) {
-          alert('Detectamos que você já aderiu ao Sascred. Não realizaremos nova adesão.');
           setJaAderiu(true);
           return;
         }
@@ -236,43 +234,6 @@ export default function AdesaoSasapp() {
         // Erro na segunda verificação, mas prosseguindo
       }
 
-      // Prepara os dados no formato JSON que a API espera
-      const dadosParaEnviar = {
-        codigo: localizaData.matricula.toString(),
-        nome: localizaData.nome,
-        celular: localizaData.cel
-      };
-
-      // Envia os dados para nossa API route local
-      const adesaoResponse = await fetch('/api/adesao-saspy', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(dadosParaEnviar)
-      });
-
-      // Tenta ler a resposta como texto primeiro
-      const adesaoResponseText = await adesaoResponse.text();
-
-      // Tenta fazer o parse da resposta como JSON
-      let responseData;
-      try {
-        responseData = JSON.parse(adesaoResponseText);
-      } catch (e) {
-        throw new Error('Erro interno do servidor.');
-      }
-
-      if (!adesaoResponse.ok) {
-        throw new Error(
-          responseData?.mensagem || 
-          `Erro ao processar a adesão: ${adesaoResponseText}`
-        );
-      }
-      
-      // Sinalizar que o status de adesão mudou para atualizar o menu
-      localStorage.setItem('adesao_status_changed', 'true');
-      
       // Redirecionar para página de sucesso
       router.push('/dashboard/adesao-sasapp/sucesso');
     } catch (error) {
