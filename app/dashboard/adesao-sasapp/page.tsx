@@ -428,7 +428,7 @@ export default function AdesaoSasapp() {
                 <section>
                   <h3 className="text-xl font-semibold text-gray-800 mb-3">2. Adesão e Taxa</h3>
                   <p className="text-justify mb-3">
-                    A adesão ao Sascred será realizada após a aceitação dos termos, e a ativação do serviço implica a cobrança de taxa de manutenção no valor mensal de <strong className="text-blue-600">R$ 7,50 (sete reais e cinquenta centavos)</strong>, através de desconto em folha, que dede já autoriza a sua empregadora em efetivá-lo.
+                    A adesão ao Sascred será realizada após a aceitação dos termos, e a ativação do serviço implica a cobrança de taxa de manutenção no valor mensal de <strong className="text-blue-600">R$ 7,50 (sete reais e cinquenta centavos) para o associado e R$ 15,00 (quinze reais) para o não associado</strong>, através de desconto em folha, que dede já autoriza a sua empregadora em efetivá-lo.
                   </p>
                   <p className="text-justify">
                     Uma vez aderido, o(a) usuário(a) terá acesso ao painel de créditos, onde poderá:
@@ -446,7 +446,7 @@ export default function AdesaoSasapp() {
                 <section>
                   <h3 className="text-xl font-semibold text-gray-800 mb-3">3. Das Condições Adesão</h3>
                   <p className="text-justify mb-2">
-                    O titular do beneficio autoriza o desconto a ser efetuado pela sua empregadora no momento do pagamento de seu salário, dos valores concedidos a título de adiantamento salarial utilizados durante o período de uso do cartão, e da taxa de administração no valor de R$ 7,50 (sete reais e cinquenta centavos).
+                    O titular do beneficio autoriza o desconto a ser efetuado pela sua empregadora no momento do pagamento de seu salário, dos valores concedidos a título de adiantamento salarial utilizados durante o período de uso do cartão, e da taxa de administração no valor de R$ 7,50 (sete reais e cinquenta centavos) para o associado e R$ 15,00 (quinze reais) para o não associado.
                   </p>
                   <p className="text-justify mb-2">
                     O titular do beneficio concorda que a sua empregadora, no momento da rescisão contratual terá a obrigação de descontar os valores remanescentes originários do convênio ora pactuado.
