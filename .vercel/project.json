@@ -1,9 +1,1 @@
-{
-    "builds": [
-      {
-        "src": "package.json",
-        "use": "@vercel/static-build",
-        "config": { "memory": 4096 }
-      }
-    ]
-  }
+{"projectId":"prj_QuXPAqer31uKU9bmisJ7dhUWZaW7","orgId":"team_vUzAdCpekxkE2lUbiG4Kz7de"}
