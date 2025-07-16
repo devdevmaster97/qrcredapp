@@ -19,7 +19,7 @@ const urlsToCache = [
   '/window.svg',
   '/offline.html'
 ];
-
+// atualizado
 // Instalação do Service Worker
 self.addEventListener('install', (event) => {
   console.log(`[Service Worker] Instalando nova versão ${CACHE_VERSION}`);
