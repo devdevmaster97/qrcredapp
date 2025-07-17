@@ -62,8 +62,8 @@ export function useAdesaoSasCred(): AdesaoStatus {
         return false;
       }
 
-      // Fazer chamada para a API de verificação de adesão
-      const response = await fetch('/api/verificar-adesao-sasmais', {
+      // Fazer chamada para a API de verificação de adesão (versão simples - apenas existência)
+      const response = await fetch('/api/verificar-adesao-sasmais-simples', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

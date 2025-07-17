@@ -57,8 +57,8 @@ export default function AdesaoSasapp() {
           return;
         }
         
-        // Verificar na tabela sind.associados_sasmais
-        const verificaResponse = await fetch('/api/verificar-adesao-sasmais', {
+        // Verificar na tabela sind.associados_sasmais (versão simples - apenas existência)
+        const verificaResponse = await fetch('/api/verificar-adesao-sasmais-simples', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -180,8 +180,8 @@ export default function AdesaoSasapp() {
         throw new Error(`Dados incompletos. Faltam os seguintes campos: ${camposFaltantes.join(', ')}`);
       }
 
-      // Verificar primeiro se já existe na tabela para evitar duplicação
-      const verificaResponse = await fetch('/api/verificar-adesao-sasmais', {
+      // Verificar primeiro se já existe na tabela para evitar duplicação (versão simples)
+      const verificaResponse = await fetch('/api/verificar-adesao-sasmais-simples', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
