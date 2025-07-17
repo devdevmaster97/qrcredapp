@@ -1,7 +1,12 @@
+'use client';
+
 import Link from 'next/link';
 import { FaMoneyBillWave, FaStore, FaQrcode, FaClipboardList, FaWallet, FaUser, FaPhone, FaHistory, FaClock, FaStar, FaShieldAlt, FaMobileAlt, FaArrowRight, FaChartLine, FaGift } from 'react-icons/fa';
+import { useAdesaoSasCred } from '@/app/hooks/useAdesaoSasCred';
 
 export default function DashboardPage() {
+  const { jaAderiu } = useAdesaoSasCred();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -59,64 +64,124 @@ export default function DashboardPage() {
           </Link>
 
           {/* QR Code */}
-          <Link href="/dashboard/qrcode" className="group">
-            <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
-              <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-6">
-                <FaQrcode className="text-white text-4xl mb-4" />
-                <h3 className="text-2xl font-bold text-white mb-2">QR Code</h3>
-                <p className="text-purple-100">Pagamentos Rápidos</p>
+          {jaAderiu ? (
+            <Link href="/dashboard/qrcode" className="group">
+              <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
+                <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-6">
+                  <FaQrcode className="text-white text-4xl mb-4" />
+                  <h3 className="text-2xl font-bold text-white mb-2">QR Code</h3>
+                  <p className="text-purple-100">Pagamentos Rápidos</p>
+                </div>
+                <div className="p-6">
+                  <p className="text-gray-600 mb-4">
+                    Realize pagamentos instantâneos nos estabelecimentos parceiros usando seu QR Code pessoal.
+                  </p>
+                  <div className="flex items-center text-purple-600 font-semibold group-hover:text-purple-700">
+                    <span>Gerar QR Code</span>
+                    <FaArrowRight className="ml-2 transition-transform group-hover:translate-x-1" />
+                  </div>
+                </div>
               </div>
-              <div className="p-6">
-                <p className="text-gray-600 mb-4">
-                  Realize pagamentos instantâneos nos estabelecimentos parceiros usando seu QR Code pessoal.
-                </p>
-                <div className="flex items-center text-purple-600 font-semibold group-hover:text-purple-700">
-                  <span>Gerar QR Code</span>
-                  <FaArrowRight className="ml-2 transition-transform group-hover:translate-x-1" />
+            </Link>
+          ) : (
+            <div className="cursor-not-allowed">
+              <div className="bg-white rounded-xl shadow-lg overflow-hidden opacity-60">
+                <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-6">
+                  <FaQrcode className="text-white text-4xl mb-4" />
+                  <h3 className="text-2xl font-bold text-white mb-2">QR Code</h3>
+                  <p className="text-purple-100">Pagamentos Rápidos</p>
+                </div>
+                <div className="p-6">
+                  <p className="text-gray-600 mb-4">
+                    Realize pagamentos instantâneos nos estabelecimentos parceiros usando seu QR Code pessoal.
+                  </p>
+                  <div className="flex items-center text-gray-400 font-semibold">
+                    <span>Requer adesão ao SasCred</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </Link>
+          )}
 
           {/* Saldo */}
-          <Link href="/dashboard/saldo" className="group">
-            <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
-              <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-6">
-                <FaWallet className="text-white text-4xl mb-4" />
-                <h3 className="text-2xl font-bold text-white mb-2">Saldo</h3>
-                <p className="text-emerald-100">Consulta em Tempo Real</p>
+          {jaAderiu ? (
+            <Link href="/dashboard/saldo" className="group">
+              <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
+                <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-6">
+                  <FaWallet className="text-white text-4xl mb-4" />
+                  <h3 className="text-2xl font-bold text-white mb-2">Saldo</h3>
+                  <p className="text-emerald-100">Consulta em Tempo Real</p>
+                </div>
+                <div className="p-6">
+                  <p className="text-gray-600 mb-4">
+                    Consulte seu saldo atual e acompanhe suas movimentações financeiras em tempo real.
+                  </p>
+                  <div className="flex items-center text-emerald-600 font-semibold group-hover:text-emerald-700">
+                    <span>Ver saldo</span>
+                    <FaArrowRight className="ml-2 transition-transform group-hover:translate-x-1" />
+                  </div>
+                </div>
               </div>
-              <div className="p-6">
-                <p className="text-gray-600 mb-4">
-                  Consulte seu saldo atual e acompanhe suas movimentações financeiras em tempo real.
-                </p>
-                <div className="flex items-center text-emerald-600 font-semibold group-hover:text-emerald-700">
-                  <span>Ver saldo</span>
-                  <FaArrowRight className="ml-2 transition-transform group-hover:translate-x-1" />
+            </Link>
+          ) : (
+            <div className="cursor-not-allowed">
+              <div className="bg-white rounded-xl shadow-lg overflow-hidden opacity-60">
+                <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-6">
+                  <FaWallet className="text-white text-4xl mb-4" />
+                  <h3 className="text-2xl font-bold text-white mb-2">Saldo</h3>
+                  <p className="text-emerald-100">Consulta em Tempo Real</p>
+                </div>
+                <div className="p-6">
+                  <p className="text-gray-600 mb-4">
+                    Consulte seu saldo atual e acompanhe suas movimentações financeiras em tempo real.
+                  </p>
+                  <div className="flex items-center text-gray-400 font-semibold">
+                    <span>Requer adesão ao SasCred</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </Link>
+          )}
 
           {/* Extrato */}
-          <Link href="/dashboard/extrato" className="group">
-            <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
-              <div className="bg-gradient-to-r from-orange-500 to-red-500 p-6">
-                <FaClipboardList className="text-white text-4xl mb-4" />
-                <h3 className="text-2xl font-bold text-white mb-2">Extrato</h3>
-                <p className="text-orange-100">Histórico Completo</p>
+          {jaAderiu ? (
+            <Link href="/dashboard/extrato" className="group">
+              <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
+                <div className="bg-gradient-to-r from-orange-500 to-red-500 p-6">
+                  <FaClipboardList className="text-white text-4xl mb-4" />
+                  <h3 className="text-2xl font-bold text-white mb-2">Extrato</h3>
+                  <p className="text-orange-100">Histórico Completo</p>
+                </div>
+                <div className="p-6">
+                  <p className="text-gray-600 mb-4">
+                    Acesse seu extrato detalhado com todas as transações e movimentações financeiras.
+                  </p>
+                  <div className="flex items-center text-orange-600 font-semibold group-hover:text-orange-700">
+                    <span>Ver extrato</span>
+                    <FaArrowRight className="ml-2 transition-transform group-hover:translate-x-1" />
+                  </div>
+                </div>
               </div>
-              <div className="p-6">
-                <p className="text-gray-600 mb-4">
-                  Acesse seu extrato detalhado com todas as transações e movimentações financeiras.
-                </p>
-                <div className="flex items-center text-orange-600 font-semibold group-hover:text-orange-700">
-                  <span>Ver extrato</span>
-                  <FaArrowRight className="ml-2 transition-transform group-hover:translate-x-1" />
+            </Link>
+          ) : (
+            <div className="cursor-not-allowed">
+              <div className="bg-white rounded-xl shadow-lg overflow-hidden opacity-60">
+                <div className="bg-gradient-to-r from-orange-500 to-red-500 p-6">
+                  <FaClipboardList className="text-white text-4xl mb-4" />
+                  <h3 className="text-2xl font-bold text-white mb-2">Extrato</h3>
+                  <p className="text-orange-100">Histórico Completo</p>
+                </div>
+                <div className="p-6">
+                  <p className="text-gray-600 mb-4">
+                    Acesse seu extrato detalhado com todas as transações e movimentações financeiras.
+                  </p>
+                  <div className="flex items-center text-gray-400 font-semibold">
+                    <span>Requer adesão ao SasCred</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </Link>
+          )}
 
           {/* Meus Dados */}
           <Link href="/dashboard/dados" className="group">
