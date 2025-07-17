@@ -2,8 +2,12 @@
 
 import Link from 'next/link';
 import { FaArrowLeft, FaMoneyBillWave, FaCalendarCheck, FaShieldAlt, FaClock, FaUserCheck, FaMobileAlt } from 'react-icons/fa';
+import { useAdesaoSasCred } from '@/app/hooks/useAdesaoSasCred';
 
 export default function OQueESasCred() {
+  // Hook para verificar se o usuário já aderiu ao SasCred
+  const { jaAderiu: jaAderiuSasCred, loading: loadingAdesao } = useAdesaoSasCred();
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -220,12 +224,15 @@ export default function OQueESasCred() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link 
-              href="/dashboard/adesao-sasapp"
-              className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-            >
-              Aderir ao SasCred
-            </Link>
+            {/* Só mostrar botão "Aderir" se ainda não aderiu */}
+            {!loadingAdesao && !jaAderiuSasCred && (
+              <Link 
+                href="/dashboard/adesao-sasapp"
+                className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+              >
+                Aderir ao SasCred
+              </Link>
+            )}
             
             <Link 
               href="/dashboard"
