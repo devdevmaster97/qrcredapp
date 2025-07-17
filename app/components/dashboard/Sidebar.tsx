@@ -51,6 +51,15 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
   // Hook para verificar adesão ao SasCred
   const { jaAderiu: jaAderiuSasCred, loading: loadingAdesao } = useAdesaoSasCred();
 
+  // Debug do status de adesão
+  useEffect(() => {
+    console.log('🔍 Sidebar - Status adesão SasCred:', {
+      jaAderiuSasCred,
+      loadingAdesao,
+      timestamp: new Date().toISOString()
+    });
+  }, [jaAderiuSasCred, loadingAdesao]);
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const storedUser = localStorage.getItem('qrcred_user');
@@ -295,21 +304,24 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
             </p>
             
             {/* Indicador de adesão SasCred */}
-            {!loadingAdesao && (
-              <div className="mt-2">
-                {jaAderiuSasCred ? (
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    <FaMoneyBillWave className="mr-1" size={10} />
-                    SasCred Ativo
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                    <FaFileContract className="mr-1" size={10} />
-                    Aderir SasCred
-                  </span>
-                )}
-              </div>
-            )}
+            <div className="mt-2">
+              {loadingAdesao ? (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                  <div className="animate-spin rounded-full h-2 w-2 border-b border-gray-600 mr-2"></div>
+                  Verificando...
+                </span>
+              ) : jaAderiuSasCred ? (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  <FaMoneyBillWave className="mr-1" size={10} />
+                  SasCred Ativo
+                </span>
+              ) : (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                  <FaFileContract className="mr-1" size={10} />
+                  Aderir SasCred
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Links de Navegação */}

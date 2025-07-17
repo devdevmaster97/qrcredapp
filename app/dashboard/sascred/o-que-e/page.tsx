@@ -216,14 +216,19 @@ export default function OQueESasCred() {
 
         {/* Call to Action */}
         <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            Pronto para começar?
-          </h2>
-          <p className="text-gray-600 mb-6">
-            Faça sua adesão agora e tenha acesso imediato ao adiantamento salarial
-          </p>
+          {/* Só mostrar título e texto se ainda não aderiu */}
+          {!loadingAdesao && !jaAderiuSasCred && (
+            <>
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                Pronto para começar?
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Faça sua adesão agora e tenha acesso imediato ao adiantamento salarial
+              </p>
+            </>
+          )}
           
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className={`flex flex-col sm:flex-row gap-4 justify-center ${!loadingAdesao && jaAderiuSasCred ? 'pt-4' : ''}`}>
             {/* Só mostrar botão "Aderir" se ainda não aderiu */}
             {!loadingAdesao && !jaAderiuSasCred && (
               <Link 
