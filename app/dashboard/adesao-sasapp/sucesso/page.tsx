@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaCheckCircle, FaHome, FaStar, FaExternalLinkAlt, FaSignature, FaWhatsapp } from 'react-icons/fa';
 import { isAssinaturaCompleta, marcarAssinaturaCompleta, abrirCanalAntecipacao, ZAPSIGN_URL, extrairSignerTokenDaUrl } from '@/app/utils/assinatura';
+import { markPossibleSignature, triggerSasCredVerification } from '@/app/utils/sascredNotifications';
 
 export default function SucessoAdesao() {
   const router = useRouter();
@@ -14,6 +15,9 @@ export default function SucessoAdesao() {
   };
 
   const abrirZapSign = () => {
+    // Marcar que o usuário pode assinar digitalmente
+    markPossibleSignature();
+    
     // Abrir ZapSign em nova aba para manter o app aberto
     window.open(ZAPSIGN_URL, '_blank');
   };
@@ -21,6 +25,24 @@ export default function SucessoAdesao() {
   // Verificar ao carregar a página se a assinatura já foi completa
   useEffect(() => {
     setAssinaturaCompleta(isAssinaturaCompleta());
+
+    // 🎯 LISTENER para detectar quando usuário volta após possível assinatura
+    const handleWindowFocus = () => {
+      console.log('🔍 Usuário voltou para a aba - verificando possível assinatura');
+      
+      // Se há uma possível assinatura pendente, forçar verificação
+      const possibleSignature = localStorage.getItem('sascred_possible_signature');
+      if (possibleSignature) {
+        console.log('✍️ Possível assinatura detectada - forçando verificação SasCred');
+        triggerSasCredVerification();
+      }
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+
+    return () => {
+      window.removeEventListener('focus', handleWindowFocus);
+    };
   }, []);
 
   return (

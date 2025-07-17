@@ -143,6 +143,9 @@ export default function AdesaoSaspyPlus() {
       localStorage.setItem(`saspy_plus_${cartao}`, 'aderido');
       localStorage.setItem(`saspy_plus_${cartao}_data`, new Date().toISOString());
 
+      // Marcar que o usuário vai assinar digitalmente
+      localStorage.setItem('sascred_possible_signature', Date.now().toString());
+      
       // Redirecionar para link de assinatura digital
       window.location.href = 'https://app.zapsign.com.br/verificar/doc/b4ab32f3-d964-4fae-b9d2-01c05f2f4258';
     } catch (error) {

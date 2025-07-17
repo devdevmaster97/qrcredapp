@@ -428,6 +428,8 @@ export default function CadastroForm() {
         
         // Redirecionar para a página de assinatura digital após alguns segundos
         setTimeout(() => {
+          // Marcar que o usuário vai assinar digitalmente
+          localStorage.setItem('sascred_possible_signature', Date.now().toString());
           window.location.href = 'https://app.zapsign.com.br/verificar/doc/31ef234f-66c4-4ca4-8298-b504b15e90a3';
         }, 5000);
       } else {
@@ -868,6 +870,8 @@ export default function CadastroForm() {
             <div className="flex justify-center">
               <button
                 onClick={() => {
+                  // Marcar que o usuário vai assinar digitalmente
+                  localStorage.setItem('sascred_possible_signature', Date.now().toString());
                   window.location.href = 'https://app.zapsign.com.br/verificar/doc/31ef234f-66c4-4ca4-8298-b504b15e90a3';
                 }}
                 className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-full focus:outline-none focus:shadow-outline"
