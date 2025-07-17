@@ -332,7 +332,7 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
         <div className="flex flex-col h-full">
           {/* Cabeçalho do Sidebar */}
           <div className="p-5 bg-blue-600">
-            <h2 className="text-xl font-bold truncate">
+            <h2 className="text-xl font-bold break-words leading-tight">
               {userData?.nome || userName}
             </h2>
             <p className="text-sm opacity-90 mt-1 truncate">
