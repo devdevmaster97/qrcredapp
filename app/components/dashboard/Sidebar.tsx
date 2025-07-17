@@ -47,18 +47,57 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
   const pathname = usePathname();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [assinaturaCompleta, setAssinaturaCompleta] = useState(false);
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
+  const [fallbackAdesao, setFallbackAdesao] = useState<boolean | null>(null);
   
   // Hook para verificar adesão ao SasCred
   const { jaAderiu: jaAderiuSasCred, loading: loadingAdesao } = useAdesaoSasCred();
 
-  // Debug do status de adesão
+  // Debug do status de adesão e timeout do loading
   useEffect(() => {
     console.log('🔍 Sidebar - Status adesão SasCred:', {
       jaAderiuSasCred,
       loadingAdesao,
+      loadingTimeout,
       timestamp: new Date().toISOString()
     });
-  }, [jaAderiuSasCred, loadingAdesao]);
+    
+    // Timeout para loading infinito
+    if (loadingAdesao && !loadingTimeout) {
+      const timeout = setTimeout(async () => {
+        console.warn('⚠️ SasCred loading timeout - forçando fallback');
+        setLoadingTimeout(true);
+        
+        // Verificação manual de fallback
+        try {
+          const storedUser = localStorage.getItem('qrcred_user');
+          if (storedUser) {
+            const userData = JSON.parse(storedUser);
+            if (userData.matricula) {
+              const response = await fetch('/api/verificar-adesao-sasmais-simples', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ codigo: userData.matricula.toString() })
+              });
+              const result = await response.json();
+              console.log('🔧 Fallback verification result:', result);
+              setFallbackAdesao(result.jaAderiu || false);
+            }
+          }
+        } catch (error) {
+          console.error('🔧 Fallback verification failed:', error);
+          setFallbackAdesao(false);
+        }
+      }, 10000); // 10 segundos
+      
+      return () => clearTimeout(timeout);
+    }
+    
+    // Reset timeout quando loading para
+    if (!loadingAdesao && loadingTimeout) {
+      setLoadingTimeout(false);
+    }
+  }, [jaAderiuSasCred, loadingAdesao, loadingTimeout]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -305,22 +344,37 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
             
             {/* Indicador de adesão SasCred */}
             <div className="mt-2">
-              {loadingAdesao ? (
+              {(() => {
+                const finalJaAderiu = jaAderiuSasCred || (loadingTimeout && fallbackAdesao);
+                console.log('🎯 Sidebar render - Condições:', {
+                  loadingAdesao,
+                  loadingTimeout,
+                  jaAderiuSasCred,
+                  fallbackAdesao,
+                  finalJaAderiu,
+                  resultado: (loadingAdesao && !loadingTimeout) ? 'loading' : finalJaAderiu ? 'ativo' : 'aderir'
+                });
+                return null;
+              })()}
+              {(loadingAdesao && !loadingTimeout) ? (
                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
                   <div className="animate-spin rounded-full h-2 w-2 border-b border-gray-600 mr-2"></div>
                   Verificando...
                 </span>
-              ) : jaAderiuSasCred ? (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  <FaMoneyBillWave className="mr-1" size={10} />
-                  SasCred Ativo
-                </span>
-              ) : (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                  <FaFileContract className="mr-1" size={10} />
-                  Aderir SasCred
-                </span>
-              )}
+              ) : (() => {
+                const finalJaAderiu = jaAderiuSasCred || (loadingTimeout && fallbackAdesao);
+                return finalJaAderiu ? (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <FaMoneyBillWave className="mr-1" size={10} />
+                    SasCred Ativo
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                    <FaFileContract className="mr-1" size={10} />
+                    Aderir SasCred
+                  </span>
+                );
+              })()}
             </div>
           </div>
 
