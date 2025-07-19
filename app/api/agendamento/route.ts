@@ -6,6 +6,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { cod_associado, id_empregador, cod_convenio, profissional, especialidade, convenio_nome } = body;
 
+    // Log para rastrear chamadas à API
+    console.log('📋 API Agendamento chamada:', {
+      cod_associado,
+      profissional,
+      especialidade,
+      timestamp: new Date().toISOString()
+    });
+
     // Validar dados obrigatórios
     if (!cod_associado || !id_empregador) {
       return NextResponse.json(
@@ -38,12 +46,14 @@ export async function POST(request: NextRequest) {
     );
 
     if (response.data && response.data.success) {
+      console.log('✅ Agendamento salvo com sucesso:', response.data.data?.id);
       return NextResponse.json({
         success: true,
         message: 'Agendamento solicitado com sucesso!',
         data: response.data.data
       });
     } else {
+      console.log('❌ Erro no backend:', response.data?.message);
       return NextResponse.json({
         success: false,
         message: response.data?.message || 'Erro ao processar agendamento'

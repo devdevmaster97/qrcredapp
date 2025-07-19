@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { FaSearch, FaUserMd, FaHospital, FaStethoscope, FaSpinner } from 'react-icons/fa';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -22,7 +22,21 @@ export default function ConveniosContent() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [ordenacao, setOrdenacao] = useState<OrdenacaoTipo>('convenio');
-  const [agendandoId, setAgendandoId] = useState<string | null>(null);
+  const [agendandoIds, setAgendandoIds] = useState<Set<string>>(new Set());
+  const processingRef = useRef<Set<string>>(new Set());
+  
+  // Função para limpar estados órfãos após timeout
+  const clearProcessingState = (profissionalId: string) => {
+    setTimeout(() => {
+      processingRef.current.delete(profissionalId);
+      setAgendandoIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(profissionalId);
+        return newSet;
+      });
+      console.log('🧹 Limpeza automática de estado órfão:', profissionalId);
+    }, 30000); // 30 segundos timeout
+  };
 
   // Buscar profissionais dos convênios
   const fetchProfissionais = async () => {
@@ -109,12 +123,20 @@ export default function ConveniosContent() {
     // Criar ID único para este profissional baseado nos dados
     const profissionalId = `${nomeProfissional}-${especialidade}-${convenio}`.replace(/\s+/g, '-');
     
-    // Verificar se já está processando este agendamento
-    if (agendandoId === profissionalId) {
+    // Verificar se já está processando este agendamento (dupla proteção)
+    if (processingRef.current.has(profissionalId) || agendandoIds.has(profissionalId)) {
+      console.log('🚫 Agendamento já em processamento para:', profissionalId);
       return; // Evita duplo clique
     }
     
-    setAgendandoId(profissionalId);
+    // Marcar como processando
+    processingRef.current.add(profissionalId);
+    setAgendandoIds(prev => new Set(prev).add(profissionalId));
+    
+    // Configurar limpeza automática como fallback
+    clearProcessingState(profissionalId);
+    
+    console.log('🚀 Iniciando agendamento:', profissionalId);
     
     try {
       // Buscar dados do usuário logado
@@ -179,7 +201,13 @@ export default function ConveniosContent() {
       }
     } finally {
       // Limpar o estado de agendamento para permitir novas tentativas
-      setAgendandoId(null);
+      processingRef.current.delete(profissionalId);
+      setAgendandoIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(profissionalId);
+        return newSet;
+      });
+      console.log('✅ Finalizando agendamento:', profissionalId);
     }
   };
 
@@ -294,7 +322,7 @@ export default function ConveniosContent() {
                       const especialidade = getStringValue(prof.especialidade) || 'Especialidade não informada';
                       const convenio = getStringValue(prof.convenio_nome) || 'Convênio não informado';
                       const profissionalId = `${nomeProfissional}-${especialidade}-${convenio}`.replace(/\s+/g, '-');
-                      const isAgendando = agendandoId === profissionalId;
+                      const isAgendando = agendandoIds.has(profissionalId);
                       
                       return (
                         <div key={`${nomeProfissional}-${index}`} className="bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors">
