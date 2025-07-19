@@ -152,7 +152,10 @@ export default function AgendamentosContent() {
       <div className="text-center p-8">
         <FaCalendarCheck className="mx-auto h-16 w-16 text-gray-400 mb-4" />
         <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum agendamento encontrado</h3>
-        <p className="text-gray-600">Você ainda não fez nenhuma solicitação de agendamento.</p>
+        <p className="text-gray-600 mb-4">Você ainda não fez nenhuma solicitação de agendamento.</p>
+        <p className="text-gray-600">
+          Para fazer um agendamento, vá no menu <strong>Convênios</strong>, escolha o convênio que deseja agendar e clique no botão <strong>Agendar</strong>.
+        </p>
       </div>
     );
   }
