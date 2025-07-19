@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { hasPendingSignatureCheck, startAcceleratedChecking, clearSignatureFlags } from '@/app/utils/sascredNotifications';
 
 interface UserData {
@@ -27,8 +27,28 @@ export function useAdesaoSasCred(): AdesaoStatus {
     dadosAdesao: null,
     refresh: () => {}
   });
+  
+  // Refs para evitar loops infinitos
+  const isCheckingRef = useRef(false);
+  const lastStatusRef = useRef(false);
+  const eventDispatchedRef = useRef(false);
+  const hookDestroyedRef = useRef(false);
 
-  const verificarAdesao = async (isPolling = false) => {
+  const verificarAdesao = async (isPolling = false, skipEventDispatch = false) => {
+    // Evitar verificações simultâneas ou após destruição do hook
+    if (isCheckingRef.current || hookDestroyedRef.current) {
+      // console.log('🚫 SasCred: Verificação já em andamento ou hook destruído - ignorando');
+      return lastStatusRef.current;
+    }
+    
+    // Se já aderiu e já foi despachado evento, não verificar mais
+    if (lastStatusRef.current && eventDispatchedRef.current && !isPolling) {
+      // console.log('🚫 SasCred: Já aderiu e evento já despachado - ignorando verificação');
+      return true;
+    }
+    
+    isCheckingRef.current = true;
+    
     if (!isPolling) {
       setStatus(prev => ({ ...prev, loading: true }));
     }
@@ -45,6 +65,7 @@ export function useAdesaoSasCred(): AdesaoStatus {
           error: 'Usuário não encontrado',
           dadosAdesao: null
         }));
+        lastStatusRef.current = false;
         return false;
       }
 
@@ -59,6 +80,7 @@ export function useAdesaoSasCred(): AdesaoStatus {
           error: null,
           dadosAdesao: null
         }));
+        lastStatusRef.current = false;
         return false;
       }
 
@@ -81,7 +103,7 @@ export function useAdesaoSasCred(): AdesaoStatus {
       
       if (resultado.status === 'sucesso') {
         const jaAderiu = resultado.jaAderiu === true;
-        const statusAnterior = status.jaAderiu;
+        const statusAnterior = lastStatusRef.current;
         
         setStatus(prev => ({
           ...prev,
@@ -91,9 +113,13 @@ export function useAdesaoSasCred(): AdesaoStatus {
           dadosAdesao: resultado.dados || null
         }));
 
-        // Se mudou de não aderiu para aderiu, disparar evento
-        if (!statusAnterior && jaAderiu) {
-          console.log('🎉 SasCred: Status mudou para ADERIU - disparando evento');
+        // Atualizar ref para próxima verificação
+        lastStatusRef.current = jaAderiu;
+
+        // Se mudou de não aderiu para aderiu E não devemos pular evento E ainda não foi despachado
+        if (!statusAnterior && jaAderiu && !skipEventDispatch && !eventDispatchedRef.current) {
+          console.log('🎉 SasCred: Status mudou para ADERIU - disparando evento ÚNICO');
+          eventDispatchedRef.current = true;
           window.dispatchEvent(new CustomEvent('sascred-status-changed', {
             detail: { jaAderiu: true, dados: resultado.dados }
           }));
@@ -108,6 +134,7 @@ export function useAdesaoSasCred(): AdesaoStatus {
           error: resultado.mensagem || 'Erro ao verificar adesão',
           dadosAdesao: null
         }));
+        lastStatusRef.current = false;
         return false;
       }
 
@@ -120,7 +147,11 @@ export function useAdesaoSasCred(): AdesaoStatus {
         error: error instanceof Error ? error.message : 'Erro desconhecido',
         dadosAdesao: null
       }));
+      lastStatusRef.current = false;
       return false;
+    } finally {
+      // Limpar flag de verificação
+      isCheckingRef.current = false;
     }
   };
 
@@ -135,21 +166,23 @@ export function useAdesaoSasCred(): AdesaoStatus {
       if (pollingInterval) return;
       
       pollingInterval = setInterval(async () => {
-        if (!pollingActive) return;
+        if (!pollingActive || hookDestroyedRef.current || lastStatusRef.current) return;
         
         try {
-          const jaAderiu = await verificarAdesao(true);
+          const jaAderiu = await verificarAdesao(true, true); // Skip event dispatch no polling
           
-          // Se já aderiu, parar o polling
+          // Se já aderiu, parar o polling permanentemente
           if (jaAderiu) {
-            console.log('🛑 SasCred: Usuário já aderiu - parando polling');
+            console.log('🛑 SasCred: Usuário já aderiu - parando polling DEFINITIVAMENTE');
+            pollingActive = false;
             if (pollingInterval) {
               clearInterval(pollingInterval);
               pollingInterval = null;
             }
           }
         } catch (error) {
-          console.log('Erro no polling SasCred:', error);
+          // Silenciar logs de erro no polling para evitar spam
+          // console.log('Erro no polling SasCred:', error);
         }
       }, 5000); // Verificar a cada 5 segundos
       
@@ -173,43 +206,42 @@ export function useAdesaoSasCred(): AdesaoStatus {
 
     // Listener para quando o usuário volta para a aba (pode ter assinado em outra aba)
     const handleVisibilityChange = () => {
-      if (!document.hidden && !status.jaAderiu) {
-        console.log('👀 SasCred: Usuário voltou para a aba - verificando status');
-        verificarAdesao();
+      if (!document.hidden && !lastStatusRef.current && !hookDestroyedRef.current) {
+        // console.log('👀 SasCred: Usuário voltou para a aba - verificando status');
+        verificarAdesao(false, true);
       }
     };
 
     // Listener para mudanças no localStorage
     const handleStorageChange = (e: StorageEvent) => {
+      if (hookDestroyedRef.current || lastStatusRef.current) return;
+      
       if (e.key === 'adesao_status_changed') {
-        verificarAdesao();
+        verificarAdesao(false, true);
         localStorage.removeItem('adesao_status_changed');
       }
       
       // Verificar flags de force check
       if (e.key === 'sascred_force_check') {
-        console.log('⚡ SasCred: Flag de verificação forçada detectada');
-        verificarAdesao();
+        // console.log('⚡ SasCred: Flag de verificação forçada detectada');
+        verificarAdesao(false, true);
       }
       
       // Verificar possível assinatura
       if (e.key === 'sascred_possible_signature') {
-        console.log('✍️ SasCred: Possível assinatura detectada - iniciando verificação acelerada');
+        // console.log('✍️ SasCred: Possível assinatura detectada - iniciando verificação acelerada');
         startAcceleratedChecking();
       }
     };
 
-    // Listener para eventos customizados
-    const handleCustomEvent = (e: Event) => {
-      console.log('🔄 SasCred: Evento customizado recebido - verificando status');
-      verificarAdesao();
-    };
-
+    // Remover listener de eventos customizados para evitar loop infinito
+    // O hook só DISPARA eventos, não deve ESCUTAR seus próprios eventos
+    
     window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('sascred-status-changed', handleCustomEvent);
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
+      hookDestroyedRef.current = true;
       pollingActive = false;
       if (pollingInterval) {
         clearInterval(pollingInterval);
@@ -218,7 +250,6 @@ export function useAdesaoSasCred(): AdesaoStatus {
         clearTimeout(startDelay);
       }
       window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('sascred-status-changed', handleCustomEvent);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);

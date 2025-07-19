@@ -6,12 +6,16 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { cod_associado, id_empregador, cod_convenio, profissional, especialidade, convenio_nome } = body;
 
-    // Log para rastrear chamadas à API
-    console.log('📋 API Agendamento chamada:', {
+    // Log detalhado para rastrear chamadas à API
+    const requestId = Math.random().toString(36).substr(2, 9);
+    console.log(`📋 [${requestId}] API Agendamento chamada:`, {
       cod_associado,
+      id_empregador,
       profissional,
       especialidade,
-      timestamp: new Date().toISOString()
+      convenio_nome,
+      timestamp: new Date().toISOString(),
+      userAgent: request.headers.get('user-agent')?.slice(0, 50)
     });
 
     // Validar dados obrigatórios
@@ -46,17 +50,28 @@ export async function POST(request: NextRequest) {
     );
 
     if (response.data && response.data.success) {
-      console.log('✅ Agendamento salvo com sucesso:', response.data.data?.id);
+      const isDuplicatePrevented = response.data.data?.duplicate_prevented;
+      console.log(`✅ [${requestId}] Agendamento processado:`, {
+        id: response.data.data?.id,
+        new_record: response.data.data?.new_record,
+        duplicate_prevented: isDuplicatePrevented,
+        check_level: response.data.data?.check_level
+      });
+      
       return NextResponse.json({
         success: true,
-        message: 'Agendamento solicitado com sucesso!',
-        data: response.data.data
+        message: isDuplicatePrevented 
+          ? 'Agendamento já existia (duplicação evitada)' 
+          : 'Agendamento solicitado com sucesso!',
+        data: response.data.data,
+        requestId
       });
     } else {
-      console.log('❌ Erro no backend:', response.data?.message);
+      console.log(`❌ [${requestId}] Erro no backend:`, response.data?.message);
       return NextResponse.json({
         success: false,
-        message: response.data?.message || 'Erro ao processar agendamento'
+        message: response.data?.message || 'Erro ao processar agendamento',
+        requestId
       }, { status: 500 });
     }
 

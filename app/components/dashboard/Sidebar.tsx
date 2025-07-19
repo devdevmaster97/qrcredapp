@@ -55,12 +55,13 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
 
   // Debug do status de adesão e timeout do loading
   useEffect(() => {
-    console.log('🔍 Sidebar - Status adesão SasCred:', {
-      jaAderiuSasCred,
-      loadingAdesao,
-      loadingTimeout,
-      timestamp: new Date().toISOString()
-    });
+    // Remover log excessivo para evitar spam no console
+    // console.log('🔍 Sidebar - Status adesão SasCred:', {
+    //   jaAderiuSasCred,
+    //   loadingAdesao,
+    //   loadingTimeout,
+    //   timestamp: new Date().toISOString()
+    // });
     
     // Timeout para loading infinito
     if (loadingAdesao && !loadingTimeout) {
@@ -350,18 +351,7 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
             
             {/* Indicador de adesão SasCred */}
             <div className="mt-2">
-              {(() => {
-                const finalJaAderiu = jaAderiuSasCred || (loadingTimeout && fallbackAdesao);
-                console.log('🎯 Sidebar render - Condições:', {
-                  loadingAdesao,
-                  loadingTimeout,
-                  jaAderiuSasCred,
-                  fallbackAdesao,
-                  finalJaAderiu,
-                  resultado: (loadingAdesao && !loadingTimeout) ? 'loading' : finalJaAderiu ? 'ativo' : 'aderir'
-                });
-                return null;
-              })()}
+              {/* Removido log excessivo do render para evitar spam no console */}
               {(loadingAdesao && !loadingTimeout) ? (
                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
                   <div className="animate-spin rounded-full h-2 w-2 border-b border-gray-600 mr-2"></div>

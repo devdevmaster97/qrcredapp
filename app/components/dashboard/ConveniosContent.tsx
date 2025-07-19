@@ -136,7 +136,9 @@ export default function ConveniosContent() {
     // Configurar limpeza automática como fallback
     clearProcessingState(profissionalId);
     
-    console.log('🚀 Iniciando agendamento:', profissionalId);
+    // Gerar ID único para esta requisição
+    const requestId = Math.random().toString(36).substr(2, 9);
+    console.log(`🚀 [${requestId}] Iniciando agendamento:`, profissionalId);
     
     try {
       // Buscar dados do usuário logado
@@ -177,23 +179,38 @@ export default function ConveniosContent() {
       // Enviar solicitação de agendamento
       const response = await axios.post('/api/agendamento', agendamentoData, {
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'X-Request-ID': requestId
         }
       });
 
       if (response.data.success) {
-        toast.success(`Agendamento solicitado com sucesso!\n\nProfissional: ${nomeProfissional}\nEspecialidade: ${especialidade}\nConvênio: ${convenio}`);
+        const isDuplicatePrevented = response.data.data?.duplicate_prevented;
+        console.log(`✅ [${requestId}] Resposta recebida:`, {
+          duplicate_prevented: isDuplicatePrevented,
+          new_record: response.data.data?.new_record,
+          id: response.data.data?.id
+        });
+        
+        if (isDuplicatePrevented) {
+          toast.success(`Agendamento já existia!\n\nProfissional: ${nomeProfissional}\nEspecialidade: ${especialidade}\n\n(Duplicação evitada automaticamente)`, {
+            duration: 4000
+          });
+        } else {
+          toast.success(`Agendamento solicitado com sucesso!\n\nProfissional: ${nomeProfissional}\nEspecialidade: ${especialidade}\nConvênio: ${convenio}`);
+        }
         
         // Redirecionar para a página de agendamentos
         setTimeout(() => {
           router.push('/dashboard/agendamentos');
         }, 1500);
       } else {
+        console.log(`❌ [${requestId}] Erro na resposta:`, response.data.message);
         toast.error(response.data.message || 'Erro ao solicitar agendamento');
       }
 
     } catch (error) {
-      console.error('Erro ao processar agendamento:', error);
+      console.error(`❌ [${requestId}] Erro ao processar agendamento:`, error);
       if (axios.isAxiosError(error) && error.response?.data?.message) {
         toast.error(error.response.data.message);
       } else {
@@ -207,7 +224,7 @@ export default function ConveniosContent() {
         newSet.delete(profissionalId);
         return newSet;
       });
-      console.log('✅ Finalizando agendamento:', profissionalId);
+      console.log(`✅ [${requestId}] Finalizando agendamento:`, profissionalId);
     }
   };
 
