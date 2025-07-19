@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FaSearch, FaUserMd, FaHospital, FaStethoscope } from 'react-icons/fa';
+import { FaSearch, FaUserMd, FaHospital, FaStethoscope, FaSpinner } from 'react-icons/fa';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
@@ -22,6 +22,7 @@ export default function ConveniosContent() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [ordenacao, setOrdenacao] = useState<OrdenacaoTipo>('convenio');
+  const [agendandoId, setAgendandoId] = useState<string | null>(null);
 
   // Buscar profissionais dos convênios
   const fetchProfissionais = async () => {
@@ -105,6 +106,16 @@ export default function ConveniosContent() {
     const especialidade = getStringValue(profissional.especialidade) || 'Especialidade não informada';
     const convenio = getStringValue(profissional.convenio_nome) || 'Convênio não informado';
     
+    // Criar ID único para este profissional baseado nos dados
+    const profissionalId = `${nomeProfissional}-${especialidade}-${convenio}`.replace(/\s+/g, '-');
+    
+    // Verificar se já está processando este agendamento
+    if (agendandoId === profissionalId) {
+      return; // Evita duplo clique
+    }
+    
+    setAgendandoId(profissionalId);
+    
     try {
       // Buscar dados do usuário logado
       const storedUser = localStorage.getItem('qrcred_user');
@@ -166,6 +177,9 @@ export default function ConveniosContent() {
       } else {
         toast.error('Erro ao processar agendamento. Tente novamente.');
       }
+    } finally {
+      // Limpar o estado de agendamento para permitir novas tentativas
+      setAgendandoId(null);
     }
   };
 
@@ -275,25 +289,45 @@ export default function ConveniosContent() {
                     {tipo}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {profissionaisList.map((prof, index) => (
-                      <div key={`${getStringValue(prof.profissional) || 'profissional'}-${index}`} className="bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start flex-1">
-                            <FaUserMd className="text-blue-500 mt-1 mr-3 flex-shrink-0" />
-                            <div className="flex-1">
-                              <h4 className="font-medium text-gray-900">{getStringValue(prof.profissional) || 'Nome não informado'}</h4>
-                              <p className="text-sm text-gray-600 mt-1">{getStringValue(prof.especialidade) || 'Especialidade não informada'}</p>
+                    {profissionaisList.map((prof, index) => {
+                      const nomeProfissional = getStringValue(prof.profissional) || 'Profissional não informado';
+                      const especialidade = getStringValue(prof.especialidade) || 'Especialidade não informada';
+                      const convenio = getStringValue(prof.convenio_nome) || 'Convênio não informado';
+                      const profissionalId = `${nomeProfissional}-${especialidade}-${convenio}`.replace(/\s+/g, '-');
+                      const isAgendando = agendandoId === profissionalId;
+                      
+                      return (
+                        <div key={`${nomeProfissional}-${index}`} className="bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start flex-1">
+                              <FaUserMd className="text-blue-500 mt-1 mr-3 flex-shrink-0" />
+                              <div className="flex-1">
+                                <h4 className="font-medium text-gray-900">{nomeProfissional}</h4>
+                                <p className="text-sm text-gray-600 mt-1">{especialidade}</p>
+                              </div>
                             </div>
+                            <button
+                              onClick={() => handleAgendar(prof)}
+                              disabled={isAgendando}
+                              className={`ml-3 px-4 py-2 text-white text-sm font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
+                                isAgendando 
+                                  ? 'bg-gray-400 cursor-not-allowed' 
+                                  : 'bg-green-600 hover:bg-green-700'
+                              }`}
+                            >
+                              {isAgendando ? (
+                                <div className="flex items-center">
+                                  <FaSpinner className="animate-spin mr-2" />
+                                  Agendando...
+                                </div>
+                              ) : (
+                                'Agendar'
+                              )}
+                            </button>
                           </div>
-                          <button
-                            onClick={() => handleAgendar(prof)}
-                            className="ml-3 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                          >
-                            Agendar
-                          </button>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ))}
