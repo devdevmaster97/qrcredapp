@@ -157,6 +157,12 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
       icon: <FaStore size={20} />
     },
     {
+      type: 'link',
+      href: '/dashboard/agendamentos',
+      label: 'Agendamentos',
+      icon: <FaCalendarAlt size={20} />
+    },
+    {
       type: 'submenu',
       label: 'SasCred',
       icon: <FaMoneyBillWave size={20} className="text-green-500" />,

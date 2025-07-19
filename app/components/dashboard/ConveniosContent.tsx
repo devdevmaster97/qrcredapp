@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { FaSearch, FaUserMd, FaHospital, FaStethoscope } from 'react-icons/fa';
 import axios from 'axios';
+import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
 interface ConvenioProfissional {
   convenio_nome: string;
@@ -14,6 +16,7 @@ interface ConvenioProfissional {
 type OrdenacaoTipo = 'alfabetica' | 'convenio' | 'especialidade';
 
 export default function ConveniosContent() {
+  const router = useRouter();
   const [profissionais, setProfissionais] = useState<ConvenioProfissional[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -96,13 +99,74 @@ export default function ConveniosContent() {
     }
   };
 
-  // Função para lidar com agendamento (temporária)
-  const handleAgendar = (profissional: ConvenioProfissional) => {
+  // Função para lidar com agendamento
+  const handleAgendar = async (profissional: ConvenioProfissional) => {
     const nomeProfissional = getStringValue(profissional.profissional) || 'Profissional não informado';
     const especialidade = getStringValue(profissional.especialidade) || 'Especialidade não informada';
     const convenio = getStringValue(profissional.convenio_nome) || 'Convênio não informado';
     
-    alert(`Solicitação de agendamento para:\n\nProfissional: ${nomeProfissional}\nEspecialidade: ${especialidade}\nConvênio: ${convenio}\n\nFuncionalidade em desenvolvimento...`);
+    try {
+      // Buscar dados do usuário logado
+      const storedUser = localStorage.getItem('qrcred_user');
+      if (!storedUser) {
+        toast.error('Usuário não encontrado. Faça login novamente.');
+        return;
+      }
+
+      const userData = JSON.parse(storedUser);
+      
+      // Buscar dados completos do associado
+      const localizaResponse = await axios.post('/api/localiza-associado', {
+        cartao: userData.cartao
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!localizaResponse.data || !localizaResponse.data.matricula) {
+        toast.error('Não foi possível obter dados do associado.');
+        return;
+      }
+
+      const associadoData = localizaResponse.data;
+
+      // Preparar dados para o agendamento
+      const agendamentoData = {
+        cod_associado: associadoData.matricula,
+        id_empregador: associadoData.empregador,
+        cod_convenio: '1', // Por enquanto usando 1 como padrão, pode ser ajustado conforme necessidade
+        profissional: nomeProfissional,
+        especialidade: especialidade,
+        convenio_nome: convenio
+      };
+
+      // Enviar solicitação de agendamento
+      const response = await axios.post('/api/agendamento', agendamentoData, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.data.success) {
+        toast.success(`Agendamento solicitado com sucesso!\n\nProfissional: ${nomeProfissional}\nEspecialidade: ${especialidade}\nConvênio: ${convenio}`);
+        
+        // Redirecionar para a página de agendamentos
+        setTimeout(() => {
+          router.push('/dashboard/agendamentos');
+        }, 1500);
+      } else {
+        toast.error(response.data.message || 'Erro ao solicitar agendamento');
+      }
+
+    } catch (error) {
+      console.error('Erro ao processar agendamento:', error);
+      if (axios.isAxiosError(error) && error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error('Erro ao processar agendamento. Tente novamente.');
+      }
+    }
   };
 
   // Filtrar e agrupar profissionais
