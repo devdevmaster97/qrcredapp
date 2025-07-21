@@ -45,9 +45,17 @@ export default function ConveniosContent() {
   const fetchProfissionais = async () => {
     try {
       setLoading(true);
+      console.log('🔍 BUSCANDO PROFISSIONAIS...');
       const response = await axios.post('/api/convenios');
 
+      console.log('📥 RESPOSTA DA API CONVENIOS:', {
+        dataType: typeof response.data,
+        isArray: Array.isArray(response.data),
+        length: Array.isArray(response.data) ? response.data.length : 'N/A'
+      });
+
       if (Array.isArray(response.data)) {
+        console.log('📋 DADOS RECEBIDOS DA API CONVENIOS:', response.data.slice(0, 3)); // primeiros 3 itens
         setProfissionais(response.data);
       } else {
         throw new Error('Formato de resposta inválido');
