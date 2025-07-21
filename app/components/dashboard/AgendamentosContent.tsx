@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FaCalendarCheck, FaClock, FaUserMd, FaStethoscope, FaSpinner, FaExclamationTriangle } from 'react-icons/fa';
+import { FaCalendarCheck, FaClock, FaUserMd, FaStethoscope, FaSpinner, FaExclamationTriangle, FaBuilding, FaInfoCircle } from 'react-icons/fa';
 import axios from 'axios';
 
 interface Agendamento {
@@ -27,6 +27,8 @@ export default function AgendamentosContent() {
       setLoading(true);
       setError(null);
 
+      console.log('🔍 Iniciando busca de agendamentos...');
+
       // Buscar dados do usuário logado
       const storedUser = localStorage.getItem('qrcred_user');
       if (!storedUser) {
@@ -34,6 +36,7 @@ export default function AgendamentosContent() {
       }
 
       const userData = JSON.parse(storedUser);
+      console.log('👤 Dados do usuário:', { cartao: userData.cartao });
       
       // Buscar dados completos do associado
       const localizaResponse = await axios.post('/api/localiza-associado', {
@@ -49,6 +52,10 @@ export default function AgendamentosContent() {
       }
 
       const associadoData = localizaResponse.data;
+      console.log('👤 Dados do associado:', { 
+        matricula: associadoData.matricula, 
+        empregador: associadoData.empregador 
+      });
 
       // Buscar agendamentos do associado
       const response = await axios.post('/api/agendamentos-lista', {
@@ -60,13 +67,30 @@ export default function AgendamentosContent() {
         }
       });
 
+      console.log('📋 Resposta da API de agendamentos:', response.data);
+
       if (response.data.success && Array.isArray(response.data.data)) {
-        setAgendamentos(response.data.data);
+        const agendamentosRecebidos = response.data.data;
+        console.log(`✅ ${agendamentosRecebidos.length} agendamentos recebidos`);
+        
+        // Log dos novos campos em cada agendamento
+        agendamentosRecebidos.forEach((agendamento: Agendamento, index: number) => {
+          console.log(`📋 Agendamento ${index + 1}:`, {
+            id: agendamento.id,
+            profissional: agendamento.profissional || 'NÃO INFORMADO',
+            especialidade: agendamento.especialidade || 'NÃO INFORMADO',
+            convenio_nome: agendamento.convenio_nome || 'NÃO INFORMADO',
+            status: agendamento.status
+          });
+        });
+        
+        setAgendamentos(agendamentosRecebidos);
       } else {
+        console.log('ℹ️ Nenhum agendamento encontrado ou resposta inválida');
         setAgendamentos([]);
       }
     } catch (error) {
-      console.error('Erro ao buscar agendamentos:', error);
+      console.error('❌ Erro ao buscar agendamentos:', error);
       if (axios.isAxiosError(error) && error.response?.data?.message) {
         setError(error.response.data.message);
       } else {
@@ -119,6 +143,11 @@ export default function AgendamentosContent() {
           icon: <FaExclamationTriangle className="w-4 h-4" />
         };
     }
+  };
+
+  // Função auxiliar para verificar se um campo tem valor válido
+  const hasValidValue = (value: string | undefined | null): boolean => {
+    return value !== undefined && value !== null && value.trim() !== '';
   };
 
   if (loading) {
@@ -187,36 +216,58 @@ export default function AgendamentosContent() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {agendamento.profissional && (
-                      <div className="flex items-center space-x-2">
-                        <FaUserMd className="text-blue-500 w-4 h-4" />
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{agendamento.profissional}</p>
-                          <p className="text-xs text-gray-500">Profissional</p>
-                        </div>
+                    {/* Campo Profissional */}
+                    <div className="flex items-center space-x-2">
+                      <FaUserMd className="text-blue-500 w-4 h-4" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {hasValidValue(agendamento.profissional) 
+                            ? agendamento.profissional 
+                            : 'Profissional não informado'
+                          }
+                        </p>
+                        <p className="text-xs text-gray-500">Profissional</p>
                       </div>
-                    )}
+                      {!hasValidValue(agendamento.profissional) && (
+                        <FaInfoCircle className="text-amber-400 w-3 h-3" title="Dado não disponível" />
+                      )}
+                    </div>
 
-                    {agendamento.especialidade && (
-                      <div className="flex items-center space-x-2">
-                        <FaStethoscope className="text-green-500 w-4 h-4" />
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{agendamento.especialidade}</p>
-                          <p className="text-xs text-gray-500">Especialidade</p>
-                        </div>
+                    {/* Campo Especialidade */}
+                    <div className="flex items-center space-x-2">
+                      <FaStethoscope className="text-green-500 w-4 h-4" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {hasValidValue(agendamento.especialidade) 
+                            ? agendamento.especialidade 
+                            : 'Especialidade não informada'
+                          }
+                        </p>
+                        <p className="text-xs text-gray-500">Especialidade</p>
                       </div>
-                    )}
+                      {!hasValidValue(agendamento.especialidade) && (
+                        <FaInfoCircle className="text-amber-400 w-3 h-3" title="Dado não disponível" />
+                      )}
+                    </div>
 
-                    {agendamento.convenio_nome && (
-                      <div className="flex items-center space-x-2">
-                        <div className="w-4 h-4 bg-purple-500 rounded"></div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{agendamento.convenio_nome}</p>
-                          <p className="text-xs text-gray-500">Convênio</p>
-                        </div>
+                    {/* Campo Convênio */}
+                    <div className="flex items-center space-x-2">
+                      <FaBuilding className="text-purple-500 w-4 h-4" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">
+                          {hasValidValue(agendamento.convenio_nome) 
+                            ? agendamento.convenio_nome 
+                            : 'Convênio não informado'
+                          }
+                        </p>
+                        <p className="text-xs text-gray-500">Convênio</p>
                       </div>
-                    )}
+                      {!hasValidValue(agendamento.convenio_nome) && (
+                        <FaInfoCircle className="text-amber-400 w-3 h-3" title="Dado não disponível" />
+                      )}
+                    </div>
 
+                    {/* Data da Solicitação */}
                     <div className="flex items-center space-x-2">
                       <FaClock className="text-gray-400 w-4 h-4" />
                       <div>
@@ -225,6 +276,20 @@ export default function AgendamentosContent() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Informação sobre campos em branco */}
+                  {(!hasValidValue(agendamento.profissional) || 
+                    !hasValidValue(agendamento.especialidade) || 
+                    !hasValidValue(agendamento.convenio_nome)) && (
+                    <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <FaInfoCircle className="text-amber-600 w-4 h-4" />
+                        <p className="text-sm text-amber-700">
+                          Alguns dados deste agendamento não foram informados no momento da solicitação.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
