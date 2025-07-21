@@ -166,7 +166,13 @@ export default function ConveniosContent() {
       codigoConvenio = profissional.codigo_convenio.toString();
       console.log('🔍 USANDO codigo_convenio:', codigoConvenio);
     } else {
-      console.log('🔍 NENHUM CÓDIGO ENCONTRADO, USANDO PADRÃO:', codigoConvenio);
+      // Como o backend não retorna código, vamos usar hash do nome do convênio
+      const hashConvenio = convenio.replace(/\s+/g, '').toLowerCase().split('').reduce((a, b) => {
+        a = ((a << 5) - a) + b.charCodeAt(0);
+        return a & a;
+      }, 0);
+      codigoConvenio = Math.abs(hashConvenio % 1000).toString(); // número entre 0-999
+      console.log('🔍 BACKEND NÃO TEM CÓDIGO, GERANDO HASH:', codigoConvenio, 'para convênio:', convenio);
     }
     
     console.log('🔍 CÓDIGO FINAL DO CONVÊNIO:', codigoConvenio);
