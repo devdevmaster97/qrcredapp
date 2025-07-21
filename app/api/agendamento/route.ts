@@ -19,6 +19,20 @@ export async function POST(request: NextRequest) {
       userAgent: request.headers.get('user-agent')?.slice(0, 50)
     });
 
+    // Log adicional para verificar tipos e valores exatos
+    console.log(`📋 [${requestId}] Verificação de tipos:`, {
+      profissional_type: typeof profissional,
+      profissional_value: `"${profissional}"`,
+      profissional_length: profissional?.length,
+      especialidade_type: typeof especialidade,
+      especialidade_value: `"${especialidade}"`,
+      especialidade_length: especialidade?.length,
+      convenio_nome_type: typeof convenio_nome,
+      convenio_nome_value: `"${convenio_nome}"`,
+      convenio_nome_length: convenio_nome?.length,
+      cod_convenio_value: `"${cod_convenio}"`
+    });
+
     // Validar dados obrigatórios
     if (!cod_associado || !id_empregador) {
       console.log(`❌ [${requestId}] Dados obrigatórios não fornecidos`);
@@ -29,9 +43,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Garantir que os novos campos não sejam undefined ou null
-    const profissionalLimpo = profissional?.toString().trim() || '';
-    const especialidadeLimpa = especialidade?.toString().trim() || '';
-    const convenioNomeLimpo = convenio_nome?.toString().trim() || '';
+    const profissionalLimpo = (profissional && profissional.toString().trim() !== '') ? profissional.toString().trim() : '';
+    const especialidadeLimpa = (especialidade && especialidade.toString().trim() !== '') ? especialidade.toString().trim() : '';
+    const convenioNomeLimpo = (convenio_nome && convenio_nome.toString().trim() !== '') ? convenio_nome.toString().trim() : '';
 
     // Log dos campos limpos
     console.log(`📋 [${requestId}] Campos limpos:`, {

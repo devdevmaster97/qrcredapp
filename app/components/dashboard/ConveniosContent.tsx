@@ -11,6 +11,9 @@ interface ConvenioProfissional {
   especialidade: string;
   profissional: string;
   tipo_estabelecimento: string;
+  cod_convenio?: string | number;
+  id_convenio?: string | number;
+  codigo_convenio?: string | number;
 }
 
 type OrdenacaoTipo = 'alfabetica' | 'convenio' | 'especialidade';
@@ -116,9 +119,26 @@ export default function ConveniosContent() {
 
   // Função para lidar com agendamento
   const handleAgendar = async (profissional: ConvenioProfissional) => {
+    // Log completo do objeto profissional para debug
+    console.log('🔍 Dados completos do profissional selecionado:', profissional);
+    console.log('🔍 Campos disponíveis:', Object.keys(profissional));
+    
     const nomeProfissional = getStringValue(profissional.profissional) || 'Profissional não informado';
     const especialidade = getStringValue(profissional.especialidade) || 'Especialidade não informada';
     const convenio = getStringValue(profissional.convenio_nome) || 'Convênio não informado';
+    
+    // Detectar código do convênio automaticamente dos campos disponíveis
+    let codigoConvenio = '1'; // valor padrão
+    if (profissional.cod_convenio) {
+      codigoConvenio = profissional.cod_convenio.toString();
+    } else if (profissional.id_convenio) {
+      codigoConvenio = profissional.id_convenio.toString();
+    } else if (profissional.codigo_convenio) {
+      codigoConvenio = profissional.codigo_convenio.toString();
+    }
+    
+    console.log('🔍 Código do convênio detectado:', codigoConvenio);
+    console.log('🔍 Dados extraídos:', { nomeProfissional, especialidade, convenio, codigoConvenio });
     
     // Criar ID único para este profissional baseado nos dados
     const profissionalId = `${nomeProfissional}-${especialidade}-${convenio}`.replace(/\s+/g, '-');
@@ -166,15 +186,17 @@ export default function ConveniosContent() {
 
       const associadoData = localizaResponse.data;
 
-      // Preparar dados para o agendamento
+      // Preparar dados para o agendamento com código correto do convênio
       const agendamentoData = {
         cod_associado: associadoData.matricula,
         id_empregador: associadoData.empregador,
-        cod_convenio: '1', // Por enquanto usando 1 como padrão, pode ser ajustado conforme necessidade
+        cod_convenio: codigoConvenio,
         profissional: nomeProfissional,
         especialidade: especialidade,
         convenio_nome: convenio
       };
+      
+      console.log('📤 Dados preparados para envio:', agendamentoData);
 
       // Enviar solicitação de agendamento
       const response = await axios.post('/api/agendamento', agendamentoData, {
