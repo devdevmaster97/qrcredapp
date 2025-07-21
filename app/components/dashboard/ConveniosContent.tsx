@@ -199,14 +199,20 @@ export default function ConveniosContent() {
     console.log(`🚀 [${requestId}] Iniciando agendamento:`, profissionalId);
     
     try {
+      console.log(`🔍 [${requestId}] STEP 1: Buscando dados do usuário logado...`);
+      
       // Buscar dados do usuário logado
       const storedUser = localStorage.getItem('qrcred_user');
       if (!storedUser) {
+        console.log(`❌ [${requestId}] Usuário não encontrado no localStorage`);
         toast.error('Usuário não encontrado. Faça login novamente.');
         return;
       }
 
       const userData = JSON.parse(storedUser);
+      console.log(`✅ [${requestId}] Dados do usuário obtidos:`, userData);
+      
+      console.log(`🔍 [${requestId}] STEP 2: Buscando dados do associado...`);
       
       // Buscar dados completos do associado
       const localizaResponse = await axios.post('/api/localiza-associado', {
@@ -217,12 +223,16 @@ export default function ConveniosContent() {
         }
       });
 
+      console.log(`📥 [${requestId}] Resposta do localiza-associado:`, localizaResponse.data);
+
       if (!localizaResponse.data || !localizaResponse.data.matricula) {
+        console.log(`❌ [${requestId}] Dados do associado inválidos:`, localizaResponse.data);
         toast.error('Não foi possível obter dados do associado.');
         return;
       }
 
       const associadoData = localizaResponse.data;
+      console.log(`✅ [${requestId}] Dados do associado válidos:`, associadoData);
 
       // Preparar dados para o agendamento com código correto do convênio
       const agendamentoData = {
@@ -246,7 +256,9 @@ export default function ConveniosContent() {
       });
 
       // Enviar solicitação de agendamento
-      console.log('📤 ENVIANDO PARA /api/agendamento...');
+      console.log(`🔍 [${requestId}] STEP 3: Enviando para /api/agendamento...`);
+      console.log(`📤 [${requestId}] Dados sendo enviados:`, agendamentoData);
+      
       const response = await axios.post('/api/agendamento', agendamentoData, {
         headers: {
           'Content-Type': 'application/json',
@@ -254,7 +266,11 @@ export default function ConveniosContent() {
         }
       });
 
+      console.log(`📥 [${requestId}] Resposta da API agendamento:`, response.data);
+      console.log(`📥 [${requestId}] Status da resposta:`, response.status);
+
       if (response.data.success) {
+        console.log(`✅ [${requestId}] Agendamento bem-sucedido!`);
         const isDuplicatePrevented = response.data.data?.duplicate_prevented;
         console.log(`✅ [${requestId}] Resposta recebida:`, {
           duplicate_prevented: isDuplicatePrevented,
@@ -275,18 +291,36 @@ export default function ConveniosContent() {
           router.push('/dashboard/agendamentos');
         }, 1500);
       } else {
+        console.log(`❌ [${requestId}] Agendamento falhou - Resposta completa:`, response.data);
         console.log(`❌ [${requestId}] Erro na resposta:`, response.data.message);
         toast.error(response.data.message || 'Erro ao solicitar agendamento');
       }
 
     } catch (error) {
-      console.error(`❌ [${requestId}] Erro ao processar agendamento:`, error);
-      if (axios.isAxiosError(error) && error.response?.data?.message) {
-        toast.error(error.response.data.message);
+      console.error(`❌ [${requestId}] ERRO CAPTURADO:`, error);
+      console.error(`❌ [${requestId}] Stack trace:`, error instanceof Error ? error.stack : 'N/A');
+      console.error(`❌ [${requestId}] Tipo do erro:`, typeof error);
+      
+      if (axios.isAxiosError(error)) {
+        console.error(`❌ [${requestId}] Axios Error Details:`, {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          config: error.config
+        });
+        
+        if (error.response?.data?.message) {
+          toast.error(error.response.data.message);
+        } else {
+          toast.error(`Erro de conexão: ${error.message}`);
+        }
       } else {
+        console.error(`❌ [${requestId}] Erro genérico:`, error);
         toast.error('Erro ao processar agendamento. Tente novamente.');
       }
     } finally {
+      console.log(`🔄 [${requestId}] FINALLY: Limpando estados...`);
+      
       // Limpar o estado de agendamento para permitir novas tentativas
       processingRef.current.delete(profissionalId);
       setAgendandoIds(prev => {
