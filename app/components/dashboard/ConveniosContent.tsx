@@ -120,25 +120,49 @@ export default function ConveniosContent() {
   // Função para lidar com agendamento
   const handleAgendar = async (profissional: ConvenioProfissional) => {
     // Log completo do objeto profissional para debug
-    console.log('🔍 Dados completos do profissional selecionado:', profissional);
-    console.log('🔍 Campos disponíveis:', Object.keys(profissional));
+    console.log('🔍 OBJETO PROFISSIONAL COMPLETO:', JSON.stringify(profissional, null, 2));
+    console.log('🔍 CAMPOS DISPONÍVEIS:', Object.keys(profissional));
+    console.log('🔍 VALORES BRUTOS:', {
+      profissional_bruto: profissional.profissional,
+      especialidade_bruto: profissional.especialidade,
+      convenio_nome_bruto: profissional.convenio_nome,
+      cod_convenio_bruto: profissional.cod_convenio,
+      id_convenio_bruto: profissional.id_convenio,
+      codigo_convenio_bruto: profissional.codigo_convenio
+    });
     
-    const nomeProfissional = getStringValue(profissional.profissional) || 'Profissional não informado';
-    const especialidade = getStringValue(profissional.especialidade) || 'Especialidade não informada';
-    const convenio = getStringValue(profissional.convenio_nome) || 'Convênio não informado';
+    const nomeProfissional = getStringValue(profissional.profissional);
+    const especialidade = getStringValue(profissional.especialidade);
+    const convenio = getStringValue(profissional.convenio_nome);
+    
+    console.log('🔍 VALORES APÓS getStringValue:', {
+      nomeProfissional,
+      especialidade,
+      convenio
+    });
     
     // Detectar código do convênio automaticamente dos campos disponíveis
     let codigoConvenio = '1'; // valor padrão
+    console.log('🔍 TENTANDO DETECTAR CÓDIGO DO CONVÊNIO:');
+    console.log('🔍 profissional.cod_convenio:', profissional.cod_convenio, typeof profissional.cod_convenio);
+    console.log('🔍 profissional.id_convenio:', profissional.id_convenio, typeof profissional.id_convenio);
+    console.log('🔍 profissional.codigo_convenio:', profissional.codigo_convenio, typeof profissional.codigo_convenio);
+    
     if (profissional.cod_convenio) {
       codigoConvenio = profissional.cod_convenio.toString();
+      console.log('🔍 USANDO cod_convenio:', codigoConvenio);
     } else if (profissional.id_convenio) {
       codigoConvenio = profissional.id_convenio.toString();
+      console.log('🔍 USANDO id_convenio:', codigoConvenio);
     } else if (profissional.codigo_convenio) {
       codigoConvenio = profissional.codigo_convenio.toString();
+      console.log('🔍 USANDO codigo_convenio:', codigoConvenio);
+    } else {
+      console.log('🔍 NENHUM CÓDIGO ENCONTRADO, USANDO PADRÃO:', codigoConvenio);
     }
     
-    console.log('🔍 Código do convênio detectado:', codigoConvenio);
-    console.log('🔍 Dados extraídos:', { nomeProfissional, especialidade, convenio, codigoConvenio });
+    console.log('🔍 CÓDIGO FINAL DO CONVÊNIO:', codigoConvenio);
+    console.log('🔍 DADOS EXTRAÍDOS FINAIS:', { nomeProfissional, especialidade, convenio, codigoConvenio });
     
     // Criar ID único para este profissional baseado nos dados
     const profissionalId = `${nomeProfissional}-${especialidade}-${convenio}`.replace(/\s+/g, '-');
@@ -196,9 +220,19 @@ export default function ConveniosContent() {
         convenio_nome: convenio
       };
       
-      console.log('📤 Dados preparados para envio:', agendamentoData);
+      console.log('📤 DADOS FINAIS PARA ENVIO:', JSON.stringify(agendamentoData, null, 2));
+      console.log('📤 VERIFICAÇÃO DOS CAMPOS:', {
+        profissional_length: nomeProfissional?.length || 0,
+        profissional_value: `"${nomeProfissional}"`,
+        especialidade_length: especialidade?.length || 0,
+        especialidade_value: `"${especialidade}"`,
+        convenio_nome_length: convenio?.length || 0,
+        convenio_nome_value: `"${convenio}"`,
+        cod_convenio_value: `"${codigoConvenio}"`
+      });
 
       // Enviar solicitação de agendamento
+      console.log('📤 ENVIANDO PARA /api/agendamento...');
       const response = await axios.post('/api/agendamento', agendamentoData, {
         headers: {
           'Content-Type': 'application/json',

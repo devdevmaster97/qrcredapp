@@ -4,7 +4,18 @@ import axios from 'axios';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log('📥 BODY RECEBIDO NA API:', JSON.stringify(body, null, 2));
+    
     const { cod_associado, id_empregador, cod_convenio, profissional, especialidade, convenio_nome } = body;
+    
+    console.log('📥 CAMPOS EXTRAÍDOS:', {
+      cod_associado, 
+      id_empregador, 
+      cod_convenio, 
+      profissional, 
+      especialidade, 
+      convenio_nome
+    });
 
     // Log detalhado para rastrear chamadas à API
     const requestId = Math.random().toString(36).substr(2, 9);
@@ -68,7 +79,7 @@ export async function POST(request: NextRequest) {
     params.append('convenio_nome', convenioNomeLimpo);
 
     // Log completo dos parâmetros que serão enviados
-    console.log(`📤 [${requestId}] Enviando para grava_agendamento_app.php:`, {
+    console.log(`📤 [${requestId}] PARÂMETROS PARA BACKEND PHP:`, {
       cod_associado: params.get('cod_associado'),
       id_empregador: params.get('id_empregador'),
       cod_convenio: params.get('cod_convenio'),
@@ -78,6 +89,22 @@ export async function POST(request: NextRequest) {
       especialidade: params.get('especialidade'),
       convenio_nome: params.get('convenio_nome')
     });
+    
+    console.log(`📤 [${requestId}] STRING COMPLETA ENVIADA:`, params.toString());
+    
+    // Verificar se os campos não estão vazios
+    const camposVazios = [];
+    const profissionalParam = params.get('profissional');
+    const especialidadeParam = params.get('especialidade');
+    const convenioNomeParam = params.get('convenio_nome');
+    
+    if (!profissionalParam || profissionalParam.trim() === '') camposVazios.push('profissional');
+    if (!especialidadeParam || especialidadeParam.trim() === '') camposVazios.push('especialidade');
+    if (!convenioNomeParam || convenioNomeParam.trim() === '') camposVazios.push('convenio_nome');
+    
+    if (camposVazios.length > 0) {
+      console.log(`⚠️ [${requestId}] ATENÇÃO: Campos vazios detectados:`, camposVazios);
+    }
 
     // Fazer requisição para o backend PHP
     const response = await axios.post(
