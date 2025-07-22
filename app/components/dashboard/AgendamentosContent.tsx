@@ -561,20 +561,7 @@ export default function AgendamentosContent() {
                      </div>
                   </div>
 
-                  {/* Informação sobre campos em branco */}
-                  {(!hasValidValue(agendamento.profissional) || 
-                    !hasValidValue(agendamento.especialidade) || 
-                    !hasValidValue(agendamento.convenio_nome) ||
-                    !hasValidValue(agendamento.data_agendada)) && (
-                    <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                      <div className="flex items-center space-x-2">
-                        <FaInfoCircle className="text-amber-600 w-4 h-4" />
-                        <p className="text-sm text-amber-700">
-                          Alguns dados deste agendamento não foram informados no momento da solicitação.
-                        </p>
-                      </div>
-                    </div>
-                  )}
+
 
                   {/* Botão Cancelar - Posicionado no final */}
                   <div className="mt-6 pt-4 border-t border-gray-100 flex justify-end">
