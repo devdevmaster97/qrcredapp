@@ -345,10 +345,20 @@ export default function AgendamentosContent() {
     
     console.log('🔄 Forçando atualização completa da lista de agendamentos...');
     setRefreshing(true);
+    
     try {
       await fetchAgendamentos();
       console.log('✅ Lista de agendamentos atualizada com sucesso');
-      toast.success('Lista atualizada!', { duration: 2000 });
+      
+      // Toast simples e único - garantir que só uma mensagem apareça
+      toast.dismiss(); // Remove todos os toasts antes
+      setTimeout(() => {
+        toast.success('Lista atualizada!', { 
+          duration: 2000,
+          id: 'lista-atualizada'
+        });
+      }, 50); // Pequeno delay para garantir que o dismiss aconteceu
+      
     } catch (error) {
       console.error('❌ Erro ao atualizar lista de agendamentos:', error);
       toast.error('Erro ao atualizar lista');
