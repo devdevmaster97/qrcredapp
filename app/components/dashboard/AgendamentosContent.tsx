@@ -321,38 +321,14 @@ export default function AgendamentosContent() {
             <div key={agendamento.id} className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center space-x-3">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color}`}>
-                        {statusInfo.icon}
-                        <span className="ml-1">{statusInfo.text}</span>
-                      </span>
-                      <span className="text-sm text-gray-500">
-                        #{agendamento.id}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => handleCancelar(agendamento)}
-                      disabled={isCancelando}
-                      className={`flex items-center px-3 py-1 text-sm font-medium rounded-lg transition-colors ${
-                        isCancelando 
-                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                          : 'bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-700'
-                      }`}
-                      title="Cancelar agendamento"
-                    >
-                      {isCancelando ? (
-                        <>
-                          <FaSpinner className="animate-spin w-3 h-3 mr-1" />
-                          Cancelando...
-                        </>
-                      ) : (
-                        <>
-                          <FaTrash className="w-3 h-3 mr-1" />
-                          Cancelar
-                        </>
-                      )}
-                    </button>
+                  <div className="flex items-center space-x-4 mb-4">
+                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color}`}>
+                      {statusInfo.icon}
+                      <span className="ml-1">{statusInfo.text}</span>
+                    </span>
+                    <span className="text-sm text-gray-500 font-medium">
+                      #{agendamento.id}
+                    </span>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -430,6 +406,32 @@ export default function AgendamentosContent() {
                       </div>
                     </div>
                   )}
+
+                  {/* Botão Cancelar - Posicionado no final */}
+                  <div className="mt-6 pt-4 border-t border-gray-100 flex justify-end">
+                    <button
+                      onClick={() => handleCancelar(agendamento)}
+                      disabled={isCancelando}
+                      className={`flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                        isCancelando 
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                          : 'bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-700 border border-red-200 hover:border-red-300'
+                      }`}
+                      title="Cancelar agendamento"
+                    >
+                      {isCancelando ? (
+                        <>
+                          <FaSpinner className="animate-spin w-4 h-4 mr-2" />
+                          Cancelando...
+                        </>
+                      ) : (
+                        <>
+                          <FaTrash className="w-4 h-4 mr-2" />
+                          Cancelar Agendamento
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
