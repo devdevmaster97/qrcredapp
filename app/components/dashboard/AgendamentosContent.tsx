@@ -192,7 +192,18 @@ export default function AgendamentosContent() {
         }
       });
 
-      if (response.data.success) {
+      // Verificar se o cancelamento foi bem-sucedido (mais flexível)
+      const cancelamentoSucesso = response.data.success || response.status === 200;
+      const mensagemResposta = response.data.message || '';
+      
+      console.log('📝 Resposta do cancelamento:', {
+        success: response.data.success,
+        status: response.status,
+        message: mensagemResposta,
+        data: response.data
+      });
+      
+      if (cancelamentoSucesso) {
         console.log('✅ Agendamento cancelado com sucesso no servidor');
         
         // Mostrar mensagem de sucesso
@@ -214,10 +225,24 @@ export default function AgendamentosContent() {
         // CORREÇÃO EXTRA: Forçar re-busca dos agendamentos após 2 segundos para garantir sincronização
         setTimeout(() => {
           console.log('🔄 Re-buscando agendamentos para garantir sincronização (especialmente importante no mobile)...');
-          forcarAtualizacaoLista();
+          // Buscar sem toast para evitar mensagem duplicada
+          fetchAgendamentos();
         }, 2000);
       } else {
-        throw new Error(response.data.message || 'Erro ao cancelar agendamento');
+        // Tratar mensagens específicas do backend
+        if (mensagemResposta.toLowerCase().includes('nenhum agendamento')) {
+          console.log('⚠️ Backend retornou "nenhum agendamento", mas pode ter sido cancelado. Verificando...');
+          
+          // Ainda assim remover da lista local pois pode ter sido cancelado
+          setAgendamentos(prev => prev.filter(item => item.id !== agendamento.id));
+          
+          toast.success('Agendamento removido da lista!');
+          
+          // Re-buscar para confirmar estado
+          setTimeout(() => fetchAgendamentos(), 1000);
+        } else {
+          throw new Error(mensagemResposta || 'Erro ao cancelar agendamento');
+        }
       }
 
     } catch (error) {
@@ -380,15 +405,15 @@ export default function AgendamentosContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <p className="text-gray-600">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <p className="text-gray-600 flex-shrink-0">
           {agendamentos.length} agendamento{agendamentos.length !== 1 ? 's' : ''} encontrado{agendamentos.length !== 1 ? 's' : ''}
         </p>
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-col min-[480px]:flex-row gap-2 sm:gap-2">
           <button
             onClick={forcarAtualizacaoLista}
             disabled={refreshing}
-            className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
               refreshing 
                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -396,14 +421,14 @@ export default function AgendamentosContent() {
             title="Atualizar lista de agendamentos"
           >
             <FaSyncAlt className={`mr-1 w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-            {refreshing ? 'Atualizando...' : 'Atualizar'}
+            <span className="whitespace-nowrap">{refreshing ? 'Atualizando...' : 'Atualizar'}</span>
           </button>
           <button
             onClick={() => router.push('/dashboard/convenios')}
-            className="inline-flex items-center px-3 py-2 text-sm bg-blue-100 text-blue-700 font-medium rounded-lg hover:bg-blue-200 transition-colors"
+            className="inline-flex items-center justify-center px-3 py-2 text-sm bg-blue-100 text-blue-700 font-medium rounded-lg hover:bg-blue-200 transition-colors"
           >
             <FaCalendarCheck className="mr-1 w-4 h-4" />
-            Novo Agendamento
+            <span className="whitespace-nowrap">Novo Agendamento</span>
           </button>
         </div>
       </div>
