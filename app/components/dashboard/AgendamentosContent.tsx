@@ -551,10 +551,10 @@ export default function AgendamentosContent() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Campo Profissional */}
-                    <div className="flex items-center space-x-2">
-                      <FaUserMd className="text-blue-500 w-4 h-4" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
+                    <div className="flex items-start space-x-2">
+                      <FaUserMd className="text-blue-500 w-4 h-4 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 break-words">
                           {hasValidValue(agendamento.profissional) 
                             ? agendamento.profissional 
                             : 'Profissional não informado'
@@ -563,7 +563,7 @@ export default function AgendamentosContent() {
                         <p className="text-xs text-gray-500">Profissional</p>
                       </div>
                       {!hasValidValue(agendamento.profissional) && (
-                        <FaInfoCircle className="text-amber-400 w-3 h-3" title="Dado não disponível" />
+                        <FaInfoCircle className="text-amber-400 w-3 h-3 mt-0.5 flex-shrink-0" title="Dado não disponível" />
                       )}
                     </div>
 
@@ -585,10 +585,10 @@ export default function AgendamentosContent() {
                     </div>
 
                     {/* Campo Convênio */}
-                    <div className="flex items-center space-x-2">
-                      <FaBuilding className="text-purple-500 w-4 h-4" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">
+                    <div className="flex items-start space-x-2">
+                      <FaBuilding className="text-purple-500 w-4 h-4 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 break-words">
                           {hasValidValue(agendamento.convenio_nome) 
                             ? agendamento.convenio_nome 
                             : 'Convênio não informado'
@@ -597,7 +597,7 @@ export default function AgendamentosContent() {
                         <p className="text-xs text-gray-500">Convênio</p>
                       </div>
                       {!hasValidValue(agendamento.convenio_nome) && (
-                        <FaInfoCircle className="text-amber-400 w-3 h-3" title="Dado não disponível" />
+                        <FaInfoCircle className="text-amber-400 w-3 h-3 mt-0.5 flex-shrink-0" title="Dado não disponível" />
                       )}
                     </div>
 

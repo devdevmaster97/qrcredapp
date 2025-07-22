@@ -100,7 +100,7 @@ export async function POST(request: NextRequest) {
     
     if (!profissionalParam || profissionalParam.trim() === '') camposVazios.push('profissional');
     if (!especialidadeParam || especialidadeParam.trim() === '') camposVazios.push('especialidade');
-    if (!convenioNomeParam || convenioNomeParam.trim() === '') camposVazios.push('convenio_nome');
+    if (!convenioNomeParam || convenioNomeParam.trim() === '') camposVazios.push('convenio_nome');queb
     
     if (camposVazios.length > 0) {
       console.log(`⚠️ [${requestId}] ATENÇÃO: Campos vazios detectados:`, camposVazios);
