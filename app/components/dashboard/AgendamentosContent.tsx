@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { FaCalendarCheck, FaClock, FaUserMd, FaStethoscope, FaSpinner, FaExclamationTriangle, FaBuilding, FaInfoCircle, FaTrash, FaSyncAlt } from 'react-icons/fa';
+import { FaCalendarCheck, FaClock, FaUserMd, FaStethoscope, FaSpinner, FaExclamationTriangle, FaBuilding, FaInfoCircle, FaTrash, FaSyncAlt, FaMapMarkerAlt, FaTimes, FaPhone } from 'react-icons/fa';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
@@ -19,6 +19,21 @@ interface Agendamento {
   data_agendada?: string;
 }
 
+interface ConvenioEndereco {
+  convenio_nome: string;
+  endereco: string;
+  numero: string;
+  complemento: string;
+  bairro: string;
+  cidade: string;
+  estado: string;
+  cep: string;
+  telefone: string;
+  celular: string;
+  latitude: number | null;
+  longitude: number | null;
+}
+
 export default function AgendamentosContent() {
   const router = useRouter();
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
@@ -26,6 +41,12 @@ export default function AgendamentosContent() {
   const [error, setError] = useState<string | null>(null);
   const [cancelandoIds, setCancelandoIds] = useState<Set<number>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
+  const [enderecoModal, setEnderecoModal] = useState<{ isOpen: boolean; agendamento: Agendamento | null; endereco: ConvenioEndereco | null; loading: boolean }>({
+    isOpen: false,
+    agendamento: null,
+    endereco: null,
+    loading: false
+  });
   const toastControlRef = useRef({ isShowing: false, timeoutId: null as NodeJS.Timeout | null });
 
   // Buscar agendamentos do associado
@@ -342,6 +363,52 @@ export default function AgendamentosContent() {
     return value !== undefined && value !== null && value.trim() !== '';
   };
 
+  // Função para buscar endereço do convênio
+  const buscarEnderecoConvenio = async (agendamento: Agendamento) => {
+    if (!agendamento.cod_convenio) {
+      toast.error('Código do convênio não disponível');
+      return;
+    }
+
+    setEnderecoModal({
+      isOpen: true,
+      agendamento,
+      endereco: null,
+      loading: true
+    });
+
+    try {
+      console.log(`🏥 Buscando endereço do convênio ${agendamento.cod_convenio}...`);
+      
+      const response = await axios.get(`/api/convenio-endereco?cod_convenio=${agendamento.cod_convenio}`);
+      
+      if (response.data && response.data.success) {
+        console.log('✅ Endereço do convênio carregado:', response.data.data);
+        setEnderecoModal(prev => ({
+          ...prev,
+          endereco: response.data.data,
+          loading: false
+        }));
+      } else {
+        throw new Error('Endereço não encontrado');
+      }
+    } catch (error) {
+      console.error('❌ Erro ao buscar endereço do convênio:', error);
+      toast.error('Erro ao carregar endereço do convênio');
+      setEnderecoModal(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  // Função para fechar modal de endereço
+  const fecharEnderecoModal = () => {
+    setEnderecoModal({
+      isOpen: false,
+      agendamento: null,
+      endereco: null,
+      loading: false
+    });
+  };
+
   // Função para forçar atualização da lista (especialmente útil para mobile)
   const forcarAtualizacaoLista = async () => {
     // Verificar se já está processando ou se toast já foi mostrado recentemente
@@ -546,7 +613,7 @@ export default function AgendamentosContent() {
                                          {/* Data Agendada */}
                      <div className="flex items-center space-x-2">
                        <FaCalendarCheck className="text-blue-500 w-4 h-4" />
-                       <div>
+                       <div className="flex-1">
                          <p className="text-sm font-medium text-gray-900">
                            {hasValidValue(agendamento.data_agendada) 
                              ? formatarData(agendamento.data_agendada!) 
@@ -554,10 +621,15 @@ export default function AgendamentosContent() {
                            }
                          </p>
                          <p className="text-xs text-gray-500">Data Agendada</p>
+                         {hasValidValue(agendamento.data_agendada) && (
+                           <button
+                             onClick={() => buscarEnderecoConvenio(agendamento)}
+                             className="mt-1 text-xs text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                           >
+                             Ver endereço do convênio
+                           </button>
+                         )}
                        </div>
-                       {!hasValidValue(agendamento.data_agendada) && (
-                         <FaInfoCircle className="text-amber-400 w-3 h-3" title="Dado não disponível" />
-                       )}
                      </div>
                   </div>
 
@@ -594,6 +666,120 @@ export default function AgendamentosContent() {
           );
         })}
       </div>
+
+      {/* Modal de Endereço do Convênio */}
+      {enderecoModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              {/* Cabeçalho do Modal */}
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <FaMapMarkerAlt className="mr-2 text-red-500" />
+                  Endereço do Convênio
+                </h3>
+                <button
+                  onClick={fecharEnderecoModal}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <FaTimes className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Conteúdo do Modal */}
+              {enderecoModal.loading ? (
+                <div className="flex justify-center items-center h-32">
+                  <div className="flex items-center space-x-2">
+                    <FaSpinner className="animate-spin h-5 w-5 text-blue-600" />
+                    <span className="text-gray-600">Carregando endereço...</span>
+                  </div>
+                </div>
+              ) : enderecoModal.endereco ? (
+                <div className="space-y-4">
+                  {/* Nome do Convênio */}
+                  <div>
+                    <h4 className="font-medium text-gray-900 mb-1">{enderecoModal.endereco.convenio_nome}</h4>
+                    <p className="text-sm text-gray-500">Convênio</p>
+                  </div>
+
+                  {/* Endereço Completo */}
+                  <div>
+                    <h5 className="font-medium text-gray-700 mb-2">📍 Endereço:</h5>
+                    <div className="bg-gray-50 p-3 rounded-lg space-y-1">
+                      <p className="text-sm text-gray-900">
+                        {enderecoModal.endereco.endereco}
+                        {enderecoModal.endereco.numero && `, ${enderecoModal.endereco.numero}`}
+                        {enderecoModal.endereco.complemento && ` - ${enderecoModal.endereco.complemento}`}
+                      </p>
+                      <p className="text-sm text-gray-700">
+                        {enderecoModal.endereco.bairro}
+                        {enderecoModal.endereco.cidade && ` - ${enderecoModal.endereco.cidade}`}
+                        {enderecoModal.endereco.estado && `/${enderecoModal.endereco.estado}`}
+                      </p>
+                      {enderecoModal.endereco.cep && (
+                        <p className="text-sm text-gray-700">CEP: {enderecoModal.endereco.cep}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Contatos */}
+                  {(enderecoModal.endereco.telefone || enderecoModal.endereco.celular) && (
+                    <div>
+                      <h5 className="font-medium text-gray-700 mb-2">📞 Contatos:</h5>
+                      <div className="space-y-1">
+                        {enderecoModal.endereco.telefone && (
+                          <p className="text-sm text-gray-900 flex items-center">
+                            <FaPhone className="mr-2 text-gray-400 w-3 h-3" />
+                            Telefone: {enderecoModal.endereco.telefone}
+                          </p>
+                        )}
+                        {enderecoModal.endereco.celular && (
+                          <p className="text-sm text-gray-900 flex items-center">
+                            <FaPhone className="mr-2 text-gray-400 w-3 h-3" />
+                            Celular: {enderecoModal.endereco.celular}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Botões de Ação */}
+                  <div className="pt-4 border-t border-gray-200 flex flex-col sm:flex-row gap-2">
+                    {enderecoModal.endereco.latitude && enderecoModal.endereco.longitude && (
+                      <a
+                        href={`https://www.google.com/maps?q=${enderecoModal.endereco.latitude},${enderecoModal.endereco.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        <FaMapMarkerAlt className="mr-2 w-4 h-4" />
+                        Abrir no Google Maps
+                      </a>
+                    )}
+                    <button
+                      onClick={fecharEnderecoModal}
+                      className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                      Fechar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <FaExclamationTriangle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+                  <p className="text-gray-600">Não foi possível carregar o endereço do convênio.</p>
+                  <button
+                    onClick={fecharEnderecoModal}
+                    className="mt-4 px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    Fechar
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 
