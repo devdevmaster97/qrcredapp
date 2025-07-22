@@ -81,10 +81,13 @@ export default function AgendamentosContent() {
         agendamentosRecebidos.forEach((agendamento: Agendamento, index: number) => {
           console.log(`📋 Agendamento ${index + 1}:`, {
             id: agendamento.id,
+            cod_associado: agendamento.cod_associado || 'NÃO INFORMADO',
+            id_empregador: agendamento.id_empregador || 'NÃO INFORMADO',
             profissional: agendamento.profissional || 'NÃO INFORMADO',
             especialidade: agendamento.especialidade || 'NÃO INFORMADO',
             convenio_nome: agendamento.convenio_nome || 'NÃO INFORMADO',
-            status: agendamento.status
+            status: agendamento.status,
+            allFields: Object.keys(agendamento)
           });
         });
         
@@ -158,12 +161,31 @@ export default function AgendamentosContent() {
 
       const associadoData = localizaResponse.data;
 
-      // Cancelar agendamento
-      const response = await axios.post('/api/cancelar-agendamento', {
+      // Log detalhado para debug
+      console.log('🔍 DADOS DO AGENDAMENTO PARA CANCELAR:', {
+        agendamento_id: agendamento.id,
+        agendamento_cod_associado: agendamento.cod_associado,
+        agendamento_id_empregador: agendamento.id_empregador,
+        associado_matricula: associadoData.matricula,
+        associado_empregador: associadoData.empregador
+      });
+
+      // Usar dados do agendamento quando disponíveis, senão usar dados do associado atual
+      const dadosParaCancelar = {
         id_agendamento: agendamento.id,
-        cod_associado: associadoData.matricula,
-        id_empregador: associadoData.empregador
-      }, {
+        cod_associado: agendamento.cod_associado || associadoData.matricula,
+        id_empregador: agendamento.id_empregador || associadoData.empregador
+      };
+
+      console.log('📤 DADOS SENDO ENVIADOS PARA CANCELAMENTO:', dadosParaCancelar);
+
+      // Verificar se temos todos os dados necessários
+      if (!dadosParaCancelar.cod_associado || !dadosParaCancelar.id_empregador) {
+        throw new Error('Dados insuficientes para cancelar o agendamento');
+      }
+
+      // Cancelar agendamento
+      const response = await axios.post('/api/cancelar-agendamento', dadosParaCancelar, {
         headers: {
           'Content-Type': 'application/json'
         }
@@ -194,7 +216,15 @@ export default function AgendamentosContent() {
       let errorMessage = 'Erro ao cancelar agendamento. Tente novamente.';
       
       if (axios.isAxiosError(error) && error.response?.data?.message) {
-        errorMessage = error.response.data.message;
+        const backendMessage = error.response.data.message;
+        
+        // Verificar se é erro de "não encontrado"
+        if (backendMessage.includes('não encontrado') || backendMessage.includes('não pertence')) {
+          errorMessage = 'Este agendamento não pode ser cancelado. Pode ter sido criado com dados diferentes ou já foi removido.';
+          console.error('❌ Problema de identificação do agendamento. Verifique os logs acima para mais detalhes.');
+        } else {
+          errorMessage = backendMessage;
+        }
       } else if (error instanceof Error) {
         errorMessage = error.message;
       }
