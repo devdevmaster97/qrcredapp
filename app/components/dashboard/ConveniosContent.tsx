@@ -27,17 +27,19 @@ export default function ConveniosContent() {
   const [ordenacao, setOrdenacao] = useState<OrdenacaoTipo>('convenio');
   const [agendandoIds, setAgendandoIds] = useState<Set<string>>(new Set());
   const processingRef = useRef<Set<string>>(new Set());
+  const lastRequestTime = useRef<Map<string, number>>(new Map());
   
   // Função para limpar estados órfãos após timeout
   const clearProcessingState = (profissionalId: string) => {
     setTimeout(() => {
       processingRef.current.delete(profissionalId);
+      lastRequestTime.current.delete(profissionalId);
       setAgendandoIds(prev => {
         const newSet = new Set(prev);
         newSet.delete(profissionalId);
         return newSet;
       });
-      console.log('🧹 Limpeza automática de estado órfão:', profissionalId);
+      console.log('🧹 Limpeza automática completa:', profissionalId);
     }, 30000); // 30 segundos timeout
   };
 
@@ -127,44 +129,19 @@ export default function ConveniosContent() {
 
   // Função para lidar com agendamento
   const handleAgendar = async (profissional: ConvenioProfissional) => {
-    // Log completo do objeto profissional para debug
-    console.log('🔍 OBJETO PROFISSIONAL COMPLETO:', JSON.stringify(profissional, null, 2));
-    console.log('🔍 CAMPOS DISPONÍVEIS:', Object.keys(profissional));
-    console.log('🔍 VALORES BRUTOS:', {
-      profissional_bruto: profissional.profissional,
-      especialidade_bruto: profissional.especialidade,
-      convenio_nome_bruto: profissional.convenio_nome,
-      cod_convenio_bruto: profissional.cod_convenio,
-      id_convenio_bruto: profissional.id_convenio,
-      codigo_convenio_bruto: profissional.codigo_convenio
-    });
-    
     const nomeProfissional = getStringValue(profissional.profissional);
     const especialidade = getStringValue(profissional.especialidade);
     const convenio = getStringValue(profissional.convenio_nome);
     
-    console.log('🔍 VALORES APÓS getStringValue:', {
-      nomeProfissional,
-      especialidade,
-      convenio
-    });
-    
     // Detectar código do convênio automaticamente dos campos disponíveis
     let codigoConvenio = '1'; // valor padrão
-    console.log('🔍 TENTANDO DETECTAR CÓDIGO DO CONVÊNIO:');
-    console.log('🔍 profissional.cod_convenio:', profissional.cod_convenio, typeof profissional.cod_convenio);
-    console.log('🔍 profissional.id_convenio:', profissional.id_convenio, typeof profissional.id_convenio);
-    console.log('🔍 profissional.codigo_convenio:', profissional.codigo_convenio, typeof profissional.codigo_convenio);
     
     if (profissional.cod_convenio) {
       codigoConvenio = profissional.cod_convenio.toString();
-      console.log('🔍 USANDO cod_convenio:', codigoConvenio);
     } else if (profissional.id_convenio) {
       codigoConvenio = profissional.id_convenio.toString();
-      console.log('🔍 USANDO id_convenio:', codigoConvenio);
     } else if (profissional.codigo_convenio) {
       codigoConvenio = profissional.codigo_convenio.toString();
-      console.log('🔍 USANDO codigo_convenio:', codigoConvenio);
     } else {
       // Como o backend não retorna código, vamos usar hash do nome do convênio
       const hashConvenio = convenio.replace(/\s+/g, '').toLowerCase().split('').reduce((a, b) => {
@@ -172,24 +149,34 @@ export default function ConveniosContent() {
         return a & a;
       }, 0);
       codigoConvenio = Math.abs(hashConvenio % 1000).toString(); // número entre 0-999
-      console.log('🔍 BACKEND NÃO TEM CÓDIGO, GERANDO HASH:', codigoConvenio, 'para convênio:', convenio);
     }
-    
-    console.log('🔍 CÓDIGO FINAL DO CONVÊNIO:', codigoConvenio);
-    console.log('🔍 DADOS EXTRAÍDOS FINAIS:', { nomeProfissional, especialidade, convenio, codigoConvenio });
     
     // Criar ID único para este profissional baseado nos dados
     const profissionalId = `${nomeProfissional}-${especialidade}-${convenio}`.replace(/\s+/g, '-');
+    const now = Date.now();
     
-    // Verificar se já está processando este agendamento (dupla proteção)
+    // PROTEÇÃO TRIPLA CONTRA DUPLICAÇÃO
+    // 1. Verificar se já está processando
     if (processingRef.current.has(profissionalId) || agendandoIds.has(profissionalId)) {
-      console.log('🚫 Agendamento já em processamento para:', profissionalId);
-      return; // Evita duplo clique
+      console.log('🚫 DUPLICAÇÃO BLOQUEADA - Agendamento já em processamento:', profissionalId);
+      toast.error('Aguarde! Este agendamento já está sendo processado.');
+      return;
     }
     
-    // Marcar como processando
+    // 2. Verificar se houve uma requisição muito recente (menos de 3 segundos)
+    const lastTime = lastRequestTime.current.get(profissionalId);
+    if (lastTime && (now - lastTime) < 3000) {
+      console.log('🚫 DUPLICAÇÃO BLOQUEADA - Requisição muito recente:', profissionalId);
+      toast.error('Aguarde alguns segundos antes de tentar novamente.');
+      return;
+    }
+    
+    // 3. Registrar tempo da requisição e marcar como processando IMEDIATAMENTE
+    lastRequestTime.current.set(profissionalId, now);
     processingRef.current.add(profissionalId);
     setAgendandoIds(prev => new Set(prev).add(profissionalId));
+    
+    console.log(`🔒 BLOQUEIO ATIVADO para ${profissionalId} às ${new Date().toISOString()}`);
     
     // Configurar limpeza automática como fallback
     clearProcessingState(profissionalId);
@@ -321,14 +308,26 @@ export default function ConveniosContent() {
     } finally {
       console.log(`🔄 [${requestId}] FINALLY: Limpando estados...`);
       
-      // Limpar o estado de agendamento para permitir novas tentativas
+      // Limpar TODOS os estados de processamento
       processingRef.current.delete(profissionalId);
       setAgendandoIds(prev => {
         const newSet = new Set(prev);
         newSet.delete(profissionalId);
         return newSet;
       });
-      console.log(`✅ [${requestId}] Finalizando agendamento:`, profissionalId);
+      
+      // Timeout extra para garantir limpeza (fallback)
+      setTimeout(() => {
+        processingRef.current.delete(profissionalId);
+        setAgendandoIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(profissionalId);
+          return newSet;
+        });
+        console.log(`🧹 [${requestId}] Limpeza extra concluída para:`, profissionalId);
+      }, 1000);
+      
+      console.log(`✅ [${requestId}] Estados liberados para:`, profissionalId);
     }
   };
 
