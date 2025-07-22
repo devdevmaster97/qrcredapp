@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FaCalendarCheck, FaClock, FaUserMd, FaStethoscope, FaSpinner, FaExclamationTriangle, FaBuilding, FaInfoCircle, FaTrash } from 'react-icons/fa';
+import { FaCalendarCheck, FaClock, FaUserMd, FaStethoscope, FaSpinner, FaExclamationTriangle, FaBuilding, FaInfoCircle, FaTrash, FaSyncAlt } from 'react-icons/fa';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
@@ -24,6 +24,7 @@ export default function AgendamentosContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cancelandoIds, setCancelandoIds] = useState<Set<number>>(new Set());
+  const [refreshing, setRefreshing] = useState(false);
 
   // Buscar agendamentos do associado
   const fetchAgendamentos = async () => {
@@ -192,9 +193,9 @@ export default function AgendamentosContent() {
       });
 
       if (response.data.success) {
-        console.log('✅ Agendamento cancelado com sucesso');
+        console.log('✅ Agendamento cancelado com sucesso no servidor');
         
-        // Mostrar mensagem de sucesso imediatamente
+        // Mostrar mensagem de sucesso
         toast.success(
           `Agendamento cancelado com sucesso!\n\n` +
           `Profissional: ${agendamento.profissional || 'Não informado'}\n` +
@@ -202,10 +203,19 @@ export default function AgendamentosContent() {
           { duration: 4000 }
         );
         
-        // Remover da lista local após pequeno delay para feedback visual
+        // CORREÇÃO: Remover IMEDIATAMENTE da lista local (sem setTimeout)
+        console.log('🔄 Removendo agendamento da lista local (ID:', agendamento.id, ')');
+        setAgendamentos(prev => {
+          const novaLista = prev.filter(item => item.id !== agendamento.id);
+          console.log('📝 Lista atualizada. Antes:', prev.length, 'Depois:', novaLista.length);
+          return novaLista;
+        });
+        
+        // CORREÇÃO EXTRA: Forçar re-busca dos agendamentos após 2 segundos para garantir sincronização
         setTimeout(() => {
-          setAgendamentos(prev => prev.filter(item => item.id !== agendamento.id));
-        }, 1000);
+          console.log('🔄 Re-buscando agendamentos para garantir sincronização (especialmente importante no mobile)...');
+          forcarAtualizacaoLista();
+        }, 2000);
       } else {
         throw new Error(response.data.message || 'Erro ao cancelar agendamento');
       }
@@ -232,11 +242,26 @@ export default function AgendamentosContent() {
       toast.error(errorMessage);
     } finally {
       // Remover do estado de cancelando
+      console.log('🧹 Limpando estado de cancelamento para ID:', agendamento.id);
       setCancelandoIds(prev => {
         const newSet = new Set(prev);
         newSet.delete(agendamento.id);
+        console.log('🧹 IDs ainda cancelando:', Array.from(newSet));
         return newSet;
       });
+      
+      // CORREÇÃO MOBILE: Verificação adicional do estado da lista
+      setTimeout(() => {
+        setAgendamentos(current => {
+          const temAgendamento = current.find(item => item.id === agendamento.id);
+          if (temAgendamento) {
+            console.log('⚠️ MOBILE FIX: Agendamento ainda na lista, removendo novamente...', agendamento.id);
+            return current.filter(item => item.id !== agendamento.id);
+          }
+          console.log('✅ MOBILE CHECK: Agendamento removido corretamente da lista');
+          return current;
+        });
+      }, 500);
     }
   };
 
@@ -287,6 +312,24 @@ export default function AgendamentosContent() {
   // Função auxiliar para verificar se um campo tem valor válido
   const hasValidValue = (value: string | undefined | null): boolean => {
     return value !== undefined && value !== null && value.trim() !== '';
+  };
+
+  // Função para forçar atualização da lista (especialmente útil para mobile)
+  const forcarAtualizacaoLista = async () => {
+    if (refreshing) return; // Evitar múltiplas atualizações simultâneas
+    
+    console.log('🔄 Forçando atualização completa da lista de agendamentos...');
+    setRefreshing(true);
+    try {
+      await fetchAgendamentos();
+      console.log('✅ Lista de agendamentos atualizada com sucesso');
+      toast.success('Lista atualizada!', { duration: 2000 });
+    } catch (error) {
+      console.error('❌ Erro ao atualizar lista de agendamentos:', error);
+      toast.error('Erro ao atualizar lista');
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   if (loading) {
@@ -341,13 +384,28 @@ export default function AgendamentosContent() {
         <p className="text-gray-600">
           {agendamentos.length} agendamento{agendamentos.length !== 1 ? 's' : ''} encontrado{agendamentos.length !== 1 ? 's' : ''}
         </p>
-        <button
-          onClick={() => router.push('/dashboard/convenios')}
-          className="inline-flex items-center px-3 py-2 text-sm bg-blue-100 text-blue-700 font-medium rounded-lg hover:bg-blue-200 transition-colors"
-        >
-          <FaCalendarCheck className="mr-1 w-4 h-4" />
-          Novo Agendamento
-        </button>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={forcarAtualizacaoLista}
+            disabled={refreshing}
+            className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+              refreshing 
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+            title="Atualizar lista de agendamentos"
+          >
+            <FaSyncAlt className={`mr-1 w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Atualizando...' : 'Atualizar'}
+          </button>
+          <button
+            onClick={() => router.push('/dashboard/convenios')}
+            className="inline-flex items-center px-3 py-2 text-sm bg-blue-100 text-blue-700 font-medium rounded-lg hover:bg-blue-200 transition-colors"
+          >
+            <FaCalendarCheck className="mr-1 w-4 h-4" />
+            Novo Agendamento
+          </button>
+        </div>
       </div>
 
       <div className="space-y-4">
