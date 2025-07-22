@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FaCalendarCheck, FaClock, FaUserMd, FaStethoscope, FaSpinner, FaExclamationTriangle, FaBuilding, FaInfoCircle } from 'react-icons/fa';
+import { FaCalendarCheck, FaClock, FaUserMd, FaStethoscope, FaSpinner, FaExclamationTriangle, FaBuilding, FaInfoCircle, FaTrash } from 'react-icons/fa';
 import axios from 'axios';
 
 interface Agendamento {
@@ -20,6 +20,7 @@ export default function AgendamentosContent() {
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cancelandoIds, setCancelandoIds] = useState<Set<number>>(new Set());
 
   // Buscar agendamentos do associado
   const fetchAgendamentos = async () => {
@@ -98,6 +99,104 @@ export default function AgendamentosContent() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Função para cancelar agendamento
+  const handleCancelar = async (agendamento: Agendamento) => {
+    // Confirmação antes de cancelar
+    const confirmar = window.confirm(
+      `🚨 CONFIRMAÇÃO DE CANCELAMENTO\n\n` +
+      `Tem certeza que deseja CANCELAR este agendamento?\n` +
+      `Esta ação NÃO PODE ser desfeita!\n\n` +
+      `📋 DETALHES DO AGENDAMENTO:\n` +
+      `👨‍⚕️ Profissional: ${agendamento.profissional || 'Não informado'}\n` +
+      `🩺 Especialidade: ${agendamento.especialidade || 'Não informado'}\n` +
+      `🏥 Convênio: ${agendamento.convenio_nome || 'Não informado'}\n` +
+      `📅 Data: ${formatarData(agendamento.data_solicitacao)}\n\n` +
+      `Clique em OK para CANCELAR ou Cancelar para manter o agendamento.`
+    );
+
+    if (!confirmar) {
+      return;
+    }
+
+    // Verificar se já está cancelando
+    if (cancelandoIds.has(agendamento.id)) {
+      return;
+    }
+
+    // Marcar como cancelando
+    setCancelandoIds(prev => new Set(prev).add(agendamento.id));
+
+    try {
+      console.log('🗑️ Iniciando cancelamento do agendamento:', agendamento.id);
+
+      // Buscar dados do usuário logado
+      const storedUser = localStorage.getItem('qrcred_user');
+      if (!storedUser) {
+        throw new Error('Usuário não encontrado. Faça login novamente.');
+      }
+
+      const userData = JSON.parse(storedUser);
+      
+      // Buscar dados completos do associado
+      const localizaResponse = await axios.post('/api/localiza-associado', {
+        cartao: userData.cartao
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!localizaResponse.data || !localizaResponse.data.matricula) {
+        throw new Error('Não foi possível obter dados do associado.');
+      }
+
+      const associadoData = localizaResponse.data;
+
+      // Cancelar agendamento
+      const response = await axios.post('/api/cancelar-agendamento', {
+        id_agendamento: agendamento.id,
+        cod_associado: associadoData.matricula,
+        id_empregador: associadoData.empregador
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.data.success) {
+        console.log('✅ Agendamento cancelado com sucesso');
+        
+        // Remover da lista local
+        setAgendamentos(prev => prev.filter(item => item.id !== agendamento.id));
+        
+        // Mostrar mensagem de sucesso
+        alert('Agendamento cancelado com sucesso!');
+      } else {
+        throw new Error(response.data.message || 'Erro ao cancelar agendamento');
+      }
+
+    } catch (error) {
+      console.error('❌ Erro ao cancelar agendamento:', error);
+      
+      let errorMessage = 'Erro ao cancelar agendamento. Tente novamente.';
+      
+      if (axios.isAxiosError(error) && error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      alert(errorMessage);
+    } finally {
+      // Remover do estado de cancelando
+      setCancelandoIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(agendamento.id);
+        return newSet;
+      });
     }
   };
 
@@ -200,19 +299,44 @@ export default function AgendamentosContent() {
       <div className="space-y-4">
         {agendamentos.map((agendamento) => {
           const statusInfo = getStatusInfo(agendamento.status);
+          const isCancelando = cancelandoIds.has(agendamento.id);
           
           return (
             <div key={agendamento.id} className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-3">
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color}`}>
-                      {statusInfo.icon}
-                      <span className="ml-1">{statusInfo.text}</span>
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      #{agendamento.id}
-                    </span>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-3">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${statusInfo.color}`}>
+                        {statusInfo.icon}
+                        <span className="ml-1">{statusInfo.text}</span>
+                      </span>
+                      <span className="text-sm text-gray-500">
+                        #{agendamento.id}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => handleCancelar(agendamento)}
+                      disabled={isCancelando}
+                      className={`flex items-center px-3 py-1 text-sm font-medium rounded-lg transition-colors ${
+                        isCancelando 
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                          : 'bg-red-100 text-red-600 hover:bg-red-200 hover:text-red-700'
+                      }`}
+                      title="Cancelar agendamento"
+                    >
+                      {isCancelando ? (
+                        <>
+                          <FaSpinner className="animate-spin w-3 h-3 mr-1" />
+                          Cancelando...
+                        </>
+                      ) : (
+                        <>
+                          <FaTrash className="w-3 h-3 mr-1" />
+                          Cancelar
+                        </>
+                      )}
+                    </button>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
