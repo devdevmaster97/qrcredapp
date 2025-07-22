@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { FaCalendarCheck, FaClock, FaUserMd, FaStethoscope, FaSpinner, FaExclamationTriangle, FaBuilding, FaInfoCircle, FaTrash } from 'react-icons/fa';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
 
 interface Agendamento {
   id: number;
@@ -171,11 +172,18 @@ export default function AgendamentosContent() {
       if (response.data.success) {
         console.log('✅ Agendamento cancelado com sucesso');
         
-        // Remover da lista local
-        setAgendamentos(prev => prev.filter(item => item.id !== agendamento.id));
+        // Mostrar mensagem de sucesso imediatamente
+        toast.success(
+          `Agendamento cancelado com sucesso!\n\n` +
+          `Profissional: ${agendamento.profissional || 'Não informado'}\n` +
+          `Especialidade: ${agendamento.especialidade || 'Não informado'}`,
+          { duration: 4000 }
+        );
         
-        // Mostrar mensagem de sucesso
-        alert('Agendamento cancelado com sucesso!');
+        // Remover da lista local após pequeno delay para feedback visual
+        setTimeout(() => {
+          setAgendamentos(prev => prev.filter(item => item.id !== agendamento.id));
+        }, 1000);
       } else {
         throw new Error(response.data.message || 'Erro ao cancelar agendamento');
       }
@@ -191,7 +199,7 @@ export default function AgendamentosContent() {
         errorMessage = error.message;
       }
       
-      alert(errorMessage);
+      toast.error(errorMessage);
     } finally {
       // Remover do estado de cancelando
       setCancelandoIds(prev => {
