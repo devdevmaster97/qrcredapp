@@ -16,6 +16,7 @@ interface Agendamento {
   profissional?: string;
   especialidade?: string;
   convenio_nome?: string;
+  data_agendada?: string;
 }
 
 export default function AgendamentosContent() {
@@ -88,6 +89,7 @@ export default function AgendamentosContent() {
             profissional: agendamento.profissional || 'NÃO INFORMADO',
             especialidade: agendamento.especialidade || 'NÃO INFORMADO',
             convenio_nome: agendamento.convenio_nome || 'NÃO INFORMADO',
+            data_agendada: agendamento.data_agendada || 'NÃO INFORMADO',
             status: agendamento.status,
             allFields: Object.keys(agendamento)
           });
@@ -540,12 +542,30 @@ export default function AgendamentosContent() {
                         <p className="text-xs text-gray-500">Data da solicitação</p>
                       </div>
                     </div>
+
+                                         {/* Data Agendada */}
+                     <div className="flex items-center space-x-2">
+                       <FaCalendarCheck className="text-blue-500 w-4 h-4" />
+                       <div>
+                         <p className="text-sm font-medium text-gray-900">
+                           {hasValidValue(agendamento.data_agendada) 
+                             ? formatarData(agendamento.data_agendada!) 
+                             : 'Data agendada não disponível'
+                           }
+                         </p>
+                         <p className="text-xs text-gray-500">Data Agendada</p>
+                       </div>
+                       {!hasValidValue(agendamento.data_agendada) && (
+                         <FaInfoCircle className="text-amber-400 w-3 h-3" title="Dado não disponível" />
+                       )}
+                     </div>
                   </div>
 
                   {/* Informação sobre campos em branco */}
                   {(!hasValidValue(agendamento.profissional) || 
                     !hasValidValue(agendamento.especialidade) || 
-                    !hasValidValue(agendamento.convenio_nome)) && (
+                    !hasValidValue(agendamento.convenio_nome) ||
+                    !hasValidValue(agendamento.data_agendada)) && (
                     <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                       <div className="flex items-center space-x-2">
                         <FaInfoCircle className="text-amber-600 w-4 h-4" />

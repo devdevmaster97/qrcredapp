@@ -69,6 +69,7 @@ export async function POST(request: NextRequest) {
           profissional: agendamento.profissional || 'NÃO INFORMADO',
           especialidade: agendamento.especialidade || 'NÃO INFORMADO',
           convenio_nome: agendamento.convenio_nome || 'NÃO INFORMADO',
+          data_agendada: agendamento.data_agendada || 'NÃO INFORMADO',
           // Todos os campos para debug
           allFields: Object.keys(agendamento)
         });
