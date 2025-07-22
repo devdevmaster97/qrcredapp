@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { FaCalendarCheck, FaClock, FaUserMd, FaStethoscope, FaSpinner, FaExclamationTriangle, FaBuilding, FaInfoCircle, FaTrash } from 'react-icons/fa';
 import axios from 'axios';
+import { useRouter } from 'next/navigation';
 
 interface Agendamento {
   id: number;
@@ -17,6 +18,7 @@ interface Agendamento {
 }
 
 export default function AgendamentosContent() {
+  const router = useRouter();
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -281,9 +283,16 @@ export default function AgendamentosContent() {
         <FaCalendarCheck className="mx-auto h-16 w-16 text-gray-400 mb-4" />
         <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum agendamento encontrado</h3>
         <p className="text-gray-600 mb-4">Você ainda não fez nenhuma solicitação de agendamento.</p>
-        <p className="text-gray-600">
+        <p className="text-gray-600 mb-4">
           Para fazer um agendamento, vá no menu <strong>Convênios</strong>, escolha o convênio que deseja agendar e clique no botão <strong>Agendar</strong>.
         </p>
+        <button
+          onClick={() => router.push('/dashboard/convenios')}
+          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <FaCalendarCheck className="mr-2" />
+          Ir para Convênios
+        </button>
       </div>
     );
   }
@@ -294,6 +303,13 @@ export default function AgendamentosContent() {
         <p className="text-gray-600">
           {agendamentos.length} agendamento{agendamentos.length !== 1 ? 's' : ''} encontrado{agendamentos.length !== 1 ? 's' : ''}
         </p>
+        <button
+          onClick={() => router.push('/dashboard/convenios')}
+          className="inline-flex items-center px-3 py-2 text-sm bg-blue-100 text-blue-700 font-medium rounded-lg hover:bg-blue-200 transition-colors"
+        >
+          <FaCalendarCheck className="mr-1 w-4 h-4" />
+          Novo Agendamento
+        </button>
       </div>
 
       <div className="space-y-4">
