@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { FaCalendarCheck, FaClock, FaUserMd, FaStethoscope, FaSpinner, FaExclamationTriangle, FaBuilding, FaInfoCircle, FaTrash, FaSyncAlt } from 'react-icons/fa';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
@@ -25,6 +25,7 @@ export default function AgendamentosContent() {
   const [error, setError] = useState<string | null>(null);
   const [cancelandoIds, setCancelandoIds] = useState<Set<number>>(new Set());
   const [refreshing, setRefreshing] = useState(false);
+  const toastControlRef = useRef({ isShowing: false, timeoutId: null as NodeJS.Timeout | null });
 
   // Buscar agendamentos do associado
   const fetchAgendamentos = async () => {
@@ -341,29 +342,46 @@ export default function AgendamentosContent() {
 
   // Função para forçar atualização da lista (especialmente útil para mobile)
   const forcarAtualizacaoLista = async () => {
-    if (refreshing) return; // Evitar múltiplas atualizações simultâneas
+    // Verificar se já está processando ou se toast já foi mostrado recentemente
+    if (refreshing || toastControlRef.current.isShowing) {
+      console.log('🚫 Bloqueando chamada duplicada de forcarAtualizacaoLista');
+      return;
+    }
     
     console.log('🔄 Forçando atualização completa da lista de agendamentos...');
     setRefreshing(true);
+    toastControlRef.current.isShowing = true;
+    
+    // Limpar timeout anterior se existir
+    if (toastControlRef.current.timeoutId) {
+      clearTimeout(toastControlRef.current.timeoutId);
+    }
     
     try {
       await fetchAgendamentos();
       console.log('✅ Lista de agendamentos atualizada com sucesso');
       
-      // Toast simples e único - garantir que só uma mensagem apareça
-      toast.dismiss(); // Remove todos os toasts antes
-      setTimeout(() => {
-        toast.success('Lista atualizada!', { 
-          duration: 2000,
-          id: 'lista-atualizada'
-        });
-      }, 50); // Pequeno delay para garantir que o dismiss aconteceu
+      // Remover todos os toasts antes de mostrar o novo
+      toast.dismiss();
+      
+      // Toast único com ID baseado em timestamp
+      const toastId = 'lista-atualizada-' + Date.now();
+      toast.success('Lista atualizada!', { 
+        duration: 2000,
+        id: toastId
+      });
       
     } catch (error) {
       console.error('❌ Erro ao atualizar lista de agendamentos:', error);
       toast.error('Erro ao atualizar lista');
     } finally {
       setRefreshing(false);
+      
+      // Reset do controle de toast após 1 segundo
+      toastControlRef.current.timeoutId = setTimeout(() => {
+        toastControlRef.current.isShowing = false;
+        console.log('🔓 Liberando controle de toast');
+      }, 1000);
     }
   };
 
