@@ -126,6 +126,16 @@ export async function POST(request: NextRequest) {
       headers: response.headers
     });
 
+    // Log específico para debug de gravação
+    console.log(`🔍 [${requestId}] ANÁLISE DA RESPOSTA DO PHP:`, {
+      success: response.data?.success,
+      message: response.data?.message,
+      id_gerado: response.data?.data?.id,
+      duplicate_prevented: response.data?.data?.duplicate_prevented,
+      new_record: response.data?.data?.new_record,
+      dados_retornados: response.data?.data
+    });
+
     if (response.data && response.data.success) {
       const isDuplicatePrevented = response.data.data?.duplicate_prevented;
       console.log(`✅ [${requestId}] Agendamento processado com sucesso:`, {
