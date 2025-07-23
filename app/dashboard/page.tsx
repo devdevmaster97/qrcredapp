@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { FaMoneyBillWave, FaStore, FaQrcode, FaClipboardList, FaWallet, FaUser, FaPhone, FaHistory, FaClock, FaStar, FaShieldAlt, FaMobileAlt, FaArrowRight, FaChartLine, FaGift } from 'react-icons/fa';
 import { useAdesaoSasCred } from '@/app/hooks/useAdesaoSasCred';
+import NotificationManager from '@/app/components/NotificationManager';
 
 export default function DashboardPage() {
   const { jaAderiu } = useAdesaoSasCred();
@@ -19,6 +20,11 @@ export default function DashboardPage() {
             Sua plataforma completa para gestão financeira, convênios e serviços digitais. 
             Tudo o que você precisa em um só lugar.
           </p>
+        </div>
+
+        {/* Gerenciador de Notificações */}
+        <div className="mb-8">
+          <NotificationManager />
         </div>
 
         {/* Funcionalidades Principais */}
