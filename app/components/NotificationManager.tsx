@@ -36,11 +36,10 @@ export default function NotificationManager() {
       
       if ('serviceWorker' in navigator && Notification.permission === 'granted') {
         try {
-          const registration = await navigator.serviceWorker.getRegistration();
-          if (registration) {
-            const subscription = await registration.pushManager.getSubscription();
-            setIsSubscribed(!!subscription);
-          }
+          const registration = await getServiceWorkerRegistration();
+          const subscription = await registration.pushManager.getSubscription();
+          setIsSubscribed(!!subscription);
+          console.log('📱 Status da subscription:', subscription ? 'ATIVA' : 'INATIVA');
         } catch (error) {
           console.error('Erro ao verificar subscription:', error);
         }
@@ -65,6 +64,31 @@ export default function NotificationManager() {
   const saveSettings = (newSettings: NotificationSettings) => {
     setSettings(newSettings);
     localStorage.setItem('notification_settings', JSON.stringify(newSettings));
+  };
+
+  // Função auxiliar para obter service worker registration
+  const getServiceWorkerRegistration = async () => {
+    if (!('serviceWorker' in navigator)) {
+      throw new Error('Service Worker não suportado neste navegador');
+    }
+
+    // Aguardar service worker estar pronto
+    await navigator.serviceWorker.ready;
+    
+    let registration = await navigator.serviceWorker.getRegistration();
+    
+    if (!registration) {
+      console.log('🔄 Service Worker não encontrado, registrando...');
+      registration = await navigator.serviceWorker.register('/service-worker.js');
+      await navigator.serviceWorker.ready; // Aguardar estar pronto
+      console.log('✅ Service Worker registrado com sucesso');
+    }
+
+    if (!registration.active) {
+      throw new Error('Service Worker não está ativo');
+    }
+
+    return registration;
   };
 
   // Solicitar permissão para notificações
@@ -100,13 +124,11 @@ export default function NotificationManager() {
     }
 
     try {
-      const registration = await navigator.serviceWorker.getRegistration();
-      if (!registration) {
-        throw new Error('Service Worker não registrado');
-      }
+      const registration = await getServiceWorkerRegistration();
 
-      // Configuração VAPID (você precisará gerar essas chaves)
-      const vapidPublicKey = 'BL5nPz8nVoQXxwMNF_0x8jMJF-qhVaNTN8Zu-Dt4yFzGXm0UOYJi7hPxn7B4c8WOWmZLZQgV4F8BqN8xM8x8N8x';
+      // SUBSTITUA PELA SUA CHAVE VAPID REAL!
+      // Gere em: https://web-push-codelab.glitch.me/
+      const vapidPublicKey = 'BB09BGw6YoGPQTptvPegyTdVykQXjuKyR_Y8ZhnJR30OtTeImtqrR12a_f_z3Sc86M_IsJ4y0dtMH7KqIEMx6q4';
       
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
@@ -146,12 +168,11 @@ export default function NotificationManager() {
     try {
       setLoading(true);
       
-      const registration = await navigator.serviceWorker.getRegistration();
-      if (registration) {
-        const subscription = await registration.pushManager.getSubscription();
-        if (subscription) {
-          await subscription.unsubscribe();
-        }
+      const registration = await getServiceWorkerRegistration();
+      const subscription = await registration.pushManager.getSubscription();
+      if (subscription) {
+        await subscription.unsubscribe();
+        console.log('📱 Subscription removida do navegador');
       }
 
       // Remover do servidor
