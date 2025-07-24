@@ -128,7 +128,7 @@ export default function NotificationManager() {
 
       // SUBSTITUA PELA SUA CHAVE VAPID REAL!
       // Gere em: https://web-push-codelab.glitch.me/
-      const vapidPublicKey = 'BChWQEOWSzn13UVuKKAfRN7M9Ahb029hFkImsQO0l8csgMyNaF0SFjNVvDVbNlnruYep5a-FQ5iz9SnhvEDSydU';
+      const vapidPublicKey = 'BJJmOHkytqi0v_7sfKNkxjt1ID_w9nGpra4SHpi_Eu_qgdc9W5SDjkTwr7l_fa-TE6D53VfXs_S3cBSeq2OrF4o';
       
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
