@@ -6,9 +6,9 @@ export async function GET(request: NextRequest) {
   try {
     console.log('🚀 Iniciando verificação de notificações de agendamentos...');
 
-    // Chamar o script PHP que monitora agendamentos
-    const response = await axios.get(
-      'https://sas.makecard.com.br/check_agendamentos_notifications.php',
+                   // Chamar o script PHP FINAL CORRIGIDO (JOIN triplo para número do cartão correto)
+      const response = await axios.get(
+        'https://sas.makecard.com.br/check_agendamentos_notifications_final.php',
       {
         timeout: 30000,
         headers: {
@@ -62,9 +62,9 @@ export async function POST(request: NextRequest) {
   try {
     console.log('🔄 Verificação manual de agendamentos solicitada...');
     
-    // Mesmo processamento do GET
-    const response = await axios.get(
-      'https://sas.makecard.com.br/check_agendamentos_notifications.php',
+                   // Mesmo processamento do GET (versão final corrigida)
+      const response = await axios.get(
+        'https://sas.makecard.com.br/check_agendamentos_notifications_final.php',
       {
         timeout: 30000,
         headers: {
