@@ -17,6 +17,7 @@ export default function NotificationManager() {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [autoActivating, setAutoActivating] = useState(false);
   const [settings, setSettings] = useState<NotificationSettings>({
     enabled: false,
     agendamentoConfirmado: true,
@@ -27,7 +28,43 @@ export default function NotificationManager() {
   useEffect(() => {
     checkNotificationStatus();
     loadSettings();
+    // 🎯 AUTO-ATIVAÇÃO: Verificar e ativar automaticamente se já tem permissão
+    autoActivateIfGranted();
   }, []);
+
+  // 🚀 NOVA FUNÇÃO: Auto-ativação inteligente
+  const autoActivateIfGranted = async () => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try {
+        // Aguardar um pouco para garantir que checkNotificationStatus terminou
+        setTimeout(async () => {
+          const registration = await getServiceWorkerRegistration();
+          const subscription = await registration.pushManager.getSubscription();
+          
+          if (!subscription && !isSubscribed) {
+            console.log('🎯 Permissão já concedida - ativando automaticamente...');
+            setAutoActivating(true);
+            
+            try {
+              await subscribeToPush();
+              toast.success('✅ Notificações ativadas automaticamente!', {
+                duration: 4000,
+                icon: '🔔'
+              });
+            } catch (error) {
+              console.log('⚠️ Erro ao ativar automaticamente:', error);
+              toast.error('❌ Erro ao ativar notificações automaticamente');
+            } finally {
+              setAutoActivating(false);
+            }
+          }
+        }, 1500); // Delay de 1.5s para garantir que tudo foi carregado
+      } catch (error) {
+        console.log('⚠️ Erro na auto-ativação:', error);
+        setAutoActivating(false);
+      }
+    }
+  };
 
   // Verificar status atual das notificações
   const checkNotificationStatus = async () => {
@@ -250,9 +287,11 @@ export default function NotificationManager() {
           <div>
             <h3 className="font-medium text-gray-900">Notificações de Agendamentos</h3>
             <p className="text-sm text-gray-500">
-              {notificationPermission === 'granted' && isSubscribed 
-                ? 'Ativas - Você será notificado sobre seus agendamentos'
-                : 'Receba alertas quando seus agendamentos forem confirmados'
+              {autoActivating 
+                ? '🔄 Ativando automaticamente suas notificações...'
+                : notificationPermission === 'granted' && isSubscribed 
+                  ? 'Ativas - Você será notificado sobre seus agendamentos'
+                  : 'Receba alertas quando seus agendamentos forem confirmados'
               }
             </p>
           </div>
@@ -272,15 +311,15 @@ export default function NotificationManager() {
           {notificationPermission === 'default' || (notificationPermission === 'granted' && !isSubscribed) ? (
             <button
               onClick={requestNotificationPermission}
-              disabled={loading}
+              disabled={loading || autoActivating}
               className="flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
             >
-              {loading ? (
+              {loading || autoActivating ? (
                 <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
               ) : (
                 <FaBell className="w-4 h-4 mr-2" />
               )}
-              Ativar Notificações
+              {autoActivating ? 'Ativando automaticamente...' : 'Ativar Notificações'}
             </button>
           ) : notificationPermission === 'granted' && isSubscribed ? (
             <button
