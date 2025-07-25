@@ -277,16 +277,17 @@ export default function NotificationManager() {
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-3">
+      {/* Layout responsivo - empilha em telas pequenas */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+        <div className="flex items-center space-x-3 min-w-0 flex-1">
           {notificationPermission === 'granted' && isSubscribed ? (
-            <FaBell className="text-green-500 w-5 h-5" />
+            <FaBell className="text-green-500 w-5 h-5 flex-shrink-0" />
           ) : (
-            <FaBellSlash className="text-gray-400 w-5 h-5" />
+            <FaBellSlash className="text-gray-400 w-5 h-5 flex-shrink-0" />
           )}
-          <div>
-            <h3 className="font-medium text-gray-900">Notificações de Agendamentos</h3>
-            <p className="text-sm text-gray-500">
+          <div className="min-w-0 flex-1">
+            <h3 className="font-medium text-gray-900 truncate">Notificações de Agendamentos</h3>
+            <p className="text-sm text-gray-500 break-words">
               {autoActivating 
                 ? '🔄 Ativando automaticamente suas notificações...'
                 : notificationPermission === 'granted' && isSubscribed 
@@ -297,11 +298,11 @@ export default function NotificationManager() {
           </div>
         </div>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center justify-end space-x-2 flex-shrink-0">
           {notificationPermission === 'granted' && isSubscribed && (
             <button
               onClick={() => setShowSettings(!showSettings)}
-              className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+              className="p-2 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0"
               title="Configurações"
             >
               <FaCog className="w-4 h-4" />
@@ -312,32 +313,39 @@ export default function NotificationManager() {
             <button
               onClick={requestNotificationPermission}
               disabled={loading || autoActivating}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              className="flex items-center px-3 py-2 bg-blue-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors whitespace-nowrap flex-shrink-0"
             >
               {loading || autoActivating ? (
-                <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2" />
+                <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full mr-2 flex-shrink-0" />
               ) : (
-                <FaBell className="w-4 h-4 mr-2" />
+                <FaBell className="w-4 h-4 mr-2 flex-shrink-0" />
               )}
-              {autoActivating ? 'Ativando automaticamente...' : 'Ativar Notificações'}
+              <span className="hidden sm:inline">
+                {autoActivating ? 'Ativando automaticamente...' : 'Ativar Notificações'}
+              </span>
+              <span className="sm:hidden">
+                {autoActivating ? 'Ativando...' : 'Ativar'}
+              </span>
             </button>
           ) : notificationPermission === 'granted' && isSubscribed ? (
             <button
               onClick={unsubscribeFromPush}
               disabled={loading}
-              className="flex items-center px-4 py-2 bg-red-100 text-red-600 text-sm font-medium rounded-lg hover:bg-red-200 disabled:opacity-50 transition-colors"
+              className="flex items-center px-3 py-2 bg-red-100 text-red-600 text-xs sm:text-sm font-medium rounded-lg hover:bg-red-200 disabled:opacity-50 transition-colors whitespace-nowrap flex-shrink-0"
             >
               {loading ? (
-                <div className="animate-spin w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full mr-2" />
+                <div className="animate-spin w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full mr-2 flex-shrink-0" />
               ) : (
-                <FaBellSlash className="w-4 h-4 mr-2" />
+                <FaBellSlash className="w-4 h-4 mr-2 flex-shrink-0" />
               )}
-              Desativar
+              <span className="hidden sm:inline">Desativar</span>
+              <span className="sm:hidden">Off</span>
             </button>
           ) : (
-            <div className="flex items-center text-red-600 text-sm">
-              <FaTimes className="w-4 h-4 mr-1" />
-              Bloqueadas
+            <div className="flex items-center text-red-600 text-xs sm:text-sm whitespace-nowrap">
+              <FaTimes className="w-4 h-4 mr-1 flex-shrink-0" />
+              <span className="hidden sm:inline">Bloqueadas</span>
+              <span className="sm:hidden">Bloq.</span>
             </div>
           )}
         </div>
@@ -348,7 +356,7 @@ export default function NotificationManager() {
         <div className="border-t border-gray-200 pt-4 mt-4">
           <h4 className="font-medium text-gray-900 mb-3">Configurações de Notificação</h4>
           <div className="space-y-3">
-            <label className="flex items-center">
+            <label className="flex items-start sm:items-center">
               <input
                 type="checkbox"
                 checked={settings.agendamentoConfirmado}
@@ -356,14 +364,14 @@ export default function NotificationManager() {
                   ...settings,
                   agendamentoConfirmado: e.target.checked
                 })}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-0.5 sm:mt-0 flex-shrink-0"
               />
-              <span className="ml-2 text-sm text-gray-700">
+              <span className="ml-2 text-sm text-gray-700 break-words">
                 Agendamento confirmado (quando data é definida)
               </span>
             </label>
             
-            <label className="flex items-center">
+            <label className="flex items-start sm:items-center">
               <input
                 type="checkbox"
                 checked={settings.lembrete24h}
@@ -371,14 +379,14 @@ export default function NotificationManager() {
                   ...settings,
                   lembrete24h: e.target.checked
                 })}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-0.5 sm:mt-0 flex-shrink-0"
               />
-              <span className="ml-2 text-sm text-gray-700">
+              <span className="ml-2 text-sm text-gray-700 break-words">
                 Lembrete 24 horas antes do agendamento
               </span>
             </label>
             
-            <label className="flex items-center">
+            <label className="flex items-start sm:items-center">
               <input
                 type="checkbox"
                 checked={settings.lembrete1h}
@@ -386,9 +394,9 @@ export default function NotificationManager() {
                   ...settings,
                   lembrete1h: e.target.checked
                 })}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-0.5 sm:mt-0 flex-shrink-0"
               />
-              <span className="ml-2 text-sm text-gray-700">
+              <span className="ml-2 text-sm text-gray-700 break-words">
                 Lembrete 1 hora antes do agendamento
               </span>
             </label>
@@ -400,14 +408,14 @@ export default function NotificationManager() {
       {notificationPermission === 'denied' && (
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-4">
           <div className="flex items-start">
-            <div className="text-yellow-600">
+            <div className="text-yellow-600 flex-shrink-0">
               <FaTimes className="w-5 h-5" />
             </div>
-            <div className="ml-3">
-              <p className="text-sm text-yellow-800">
-                <strong>Notificações bloqueadas</strong>
+            <div className="ml-3 min-w-0 flex-1">
+              <p className="text-sm text-yellow-800 font-medium">
+                Notificações bloqueadas
               </p>
-              <p className="text-sm text-yellow-700 mt-1">
+              <p className="text-sm text-yellow-700 mt-1 break-words">
                 Para ativar, clique no ícone de cadeado na barra de endereço e permita notificações.
               </p>
             </div>
