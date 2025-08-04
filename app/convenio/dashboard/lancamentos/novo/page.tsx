@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { Html5Qrcode } from 'html5-qrcode';
 
 interface AssociadoData {
+  id?: number; // ID do associado da tabela sind.associado
   nome: string;
   matricula: string;
   empregador: string;
@@ -385,6 +386,7 @@ export default function NovoLancamentoPage() {
     
     // Criar objeto com todos os dados necessários
     const associadoData: AssociadoData = {
+      id: data.id, // ID do associado da tabela sind.associado
       nome: data.nome,
       matricula: data.matricula || data.codigo, // Aceita tanto matricula quanto codigo
       empregador: data.empregador,
@@ -1084,7 +1086,8 @@ export default function NovoLancamentoPage() {
             primeiro_mes: mesCorrente, // Usando o mês corrente como primeiro mês
             qtde_parcelas: parcelas.toString(),
             uri_cupom: '', // Campo obrigatório
-            descricao: descricao || 'Lançamento via QRCred App'
+            descricao: descricao || 'Lançamento via QRCred App',
+            id_associado: associado.id || null // ID do associado para integridade referencial
           };
           
           console.log('📝 Dados para gravação de venda:', dadosVenda);
