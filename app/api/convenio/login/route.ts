@@ -44,10 +44,30 @@ export async function POST(request: NextRequest) {
       data: response.data
     });
 
-    if (response.data.tipo_login === 'login sucesso') {
+    // Extrair JSON válido da resposta, ignorando warnings HTML
+    let jsonData;
+    try {
+      const responseText = response.data;
+      // Procurar pelo início do JSON na resposta
+      const jsonStart = responseText.indexOf('{');
+      if (jsonStart !== -1) {
+        const jsonString = responseText.substring(jsonStart);
+        jsonData = JSON.parse(jsonString);
+      } else {
+        throw new Error('JSON não encontrado na resposta');
+      }
+    } catch (parseError) {
+      console.error('Erro ao fazer parse do JSON:', parseError);
+      return NextResponse.json({
+        success: false,
+        message: 'Erro no formato da resposta do servidor'
+      }, { status: 500 });
+    }
+
+    if (jsonData.tipo_login === 'login sucesso') {
       // Criar um token JWT ou qualquer outro identificador único
       const token = btoa(JSON.stringify({
-        id: response.data.cod_convenio,
+        id: jsonData.cod_convenio,
         user: usuario,
         senha: senha,
         timestamp: new Date().getTime()
@@ -66,22 +86,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         data: {
-          cod_convenio: response.data.cod_convenio,
-          razaosocial: response.data.razaosocial,
-          nome_fantasia: response.data.nomefantasia,
-          endereco: response.data.endereco,
-          bairro: response.data.bairro,
-          cidade: response.data.cidade,
-          estado: response.data.estado,
-          cnpj: response.data.cnpj,
-          cpf: response.data.cpf
+          cod_convenio: jsonData.cod_convenio,
+          razaosocial: jsonData.razaosocial,
+          nome_fantasia: jsonData.nomefantasia,
+          endereco: jsonData.endereco,
+          bairro: jsonData.bairro,
+          cidade: jsonData.cidade,
+          estado: jsonData.estado,
+          cnpj: jsonData.cnpj,
+          cpf: jsonData.cpf
         }
       });
     } else {
-      console.log('❌ Login falhou:', response.data.tipo_login);
+      console.log('❌ Login falhou:', jsonData.tipo_login);
       return NextResponse.json({
         success: false,
-        message: response.data.tipo_login === 'login incorreto' 
+        message: jsonData.tipo_login === 'login incorreto' 
           ? 'Usuário ou senha inválidos' 
           : 'Erro ao realizar login'
       }, { status: 401 });

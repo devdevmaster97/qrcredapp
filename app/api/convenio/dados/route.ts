@@ -37,35 +37,54 @@ export async function GET(request: NextRequest) {
 
     console.log('Resposta API Dados:', response.data);
 
+    // Extrair JSON válido da resposta, ignorando warnings HTML
+    let jsonData;
+    try {
+      const responseText = response.data;
+      const jsonStart = responseText.indexOf('{');
+      if (jsonStart !== -1) {
+        const jsonString = responseText.substring(jsonStart);
+        jsonData = JSON.parse(jsonString);
+      } else {
+        throw new Error('JSON não encontrado na resposta');
+      }
+    } catch (parseError) {
+      console.error('Erro ao fazer parse do JSON:', parseError);
+      return NextResponse.json({
+        success: false,
+        message: 'Erro no formato da resposta do servidor'
+      }, { status: 500 });
+    }
+
     // Verificar se os dados foram retornados corretamente
-    if (response.data && response.data.tipo_login === 'login sucesso') {
+    if (jsonData && jsonData.tipo_login === 'login sucesso') {
       // Se a chamada for bem-sucedida, retornar os dados do convênio
       return NextResponse.json({
         success: true,
         data: {
-          cod_convenio: response.data.cod_convenio,
-          razaosocial: response.data.razaosocial,
-          nome_fantasia: response.data.nomefantasia,
-          endereco: response.data.endereco,
-          bairro: response.data.bairro,
-          cidade: response.data.cidade,
-          estado: response.data.estado,
-          cnpj: response.data.cnpj,
-          cpf: response.data.cpf,
-          numero: response.data.numero,
-          cep: response.data.cep,
-          cel: response.data.cel,
-          tel: response.data.tel,
-          email: response.data.email,
-          parcelas: response.data.parcela_conv,
-          divulga: response.data.divulga,
-          pede_senha: response.data.pede_senha,
-          latitude: response.data.latitude,
-          longitude: response.data.longitude,
-          id_categoria: response.data.id_categoria,
-          contato: response.data.contato,
-          senha: response.data.senha,
-          aceito_termo: response.data.aceita_termo
+          cod_convenio: jsonData.cod_convenio,
+          razaosocial: jsonData.razaosocial,
+          nome_fantasia: jsonData.nomefantasia,
+          endereco: jsonData.endereco,
+          bairro: jsonData.bairro,
+          cidade: jsonData.cidade,
+          estado: jsonData.estado,
+          cnpj: jsonData.cnpj,
+          cpf: jsonData.cpf,
+          numero: jsonData.numero,
+          cep: jsonData.cep,
+          cel: jsonData.cel,
+          tel: jsonData.tel,
+          email: jsonData.email,
+          parcelas: jsonData.parcela_conv,
+          divulga: jsonData.divulga,
+          pede_senha: jsonData.pede_senha,
+          latitude: jsonData.latitude,
+          longitude: jsonData.longitude,
+          id_categoria: jsonData.id_categoria,
+          contato: jsonData.contato,
+          senha: jsonData.senha,
+          aceito_termo: jsonData.aceita_termo
         }
       });
     } else {

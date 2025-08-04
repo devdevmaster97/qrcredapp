@@ -45,8 +45,27 @@ export async function GET() {
       }
     );
 
+    // Extrair JSON válido da resposta, ignorando warnings HTML
+    let jsonData;
+    try {
+      const responseText = response.data;
+      const jsonStart = responseText.indexOf('{');
+      if (jsonStart !== -1) {
+        const jsonString = responseText.substring(jsonStart);
+        jsonData = JSON.parse(jsonString);
+      } else {
+        throw new Error('JSON não encontrado na resposta');
+      }
+    } catch (parseError) {
+      console.error('Erro ao fazer parse do JSON:', parseError);
+      return NextResponse.json({
+        success: false,
+        message: 'Erro no formato da resposta do servidor'
+      }, { status: 500 });
+    }
+
     // Verificar se a resposta foi bem-sucedida
-    if (response.data && response.data.tipo_login === 'login sucesso') {
+    if (jsonData && jsonData.tipo_login === 'login sucesso') {
       // Buscar dados adicionais para o dashboard se necessário
       // Por enquanto, vamos simular os dados do dashboard com valores mockados
       // Estes valores podem ser substituídos por dados reais quando a API estiver disponível
@@ -54,10 +73,10 @@ export async function GET() {
       return NextResponse.json({
         success: true,
         data: {
-          totalLancamentos: response.data.total_lancamentos || 0,
-          totalVendas: response.data.total_vendas || 0,
-          totalEstornos: response.data.total_estornos || 0,
-          totalAssociados: response.data.total_associados || 0
+          totalLancamentos: jsonData.total_lancamentos || 0,
+          totalVendas: jsonData.total_vendas || 0,
+          totalEstornos: jsonData.total_estornos || 0,
+          totalAssociados: jsonData.total_associados || 0
         }
       });
     } else {
