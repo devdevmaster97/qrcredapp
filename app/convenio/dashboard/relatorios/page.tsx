@@ -47,15 +47,33 @@ export default function RelatoriosPage() {
         const data = await response.json();
 
         if (data.success) {
+          // LOGS DE DEBUG - Para investigar problema com AGO/2025
+          console.log('🔍 DEBUG RELATÓRIOS - Dados recebidos da API:', data);
+          console.log('🔍 DEBUG RELATÓRIOS - Total de lançamentos:', data.data?.length || 0);
+          console.log('🔍 DEBUG RELATÓRIOS - Tem AGO/2025?', data.data?.some((l: Lancamento) => l.mes === 'AGO/2025') || false);
+          
           setLancamentos(data.data);
           // Extrair meses únicos dos lançamentos
           const meses = Array.from(new Set(data.data.map((l: Lancamento) => l.mes))) as string[];
+          
+          // LOGS DE DEBUG - Para investigar problema com AGO/2025
+          console.log('🔍 DEBUG RELATÓRIOS - Meses extraídos:', meses);
+          console.log('🔍 DEBUG RELATÓRIOS - AGO/2025 na lista?', meses.includes('AGO/2025'));
+          
           // Ordenar meses do mais recente para o mais antigo
           const mesesOrdenados = meses.sort().reverse();
           setMesesDisponiveis(mesesOrdenados);
           
+          // LOGS DE DEBUG - Para investigar problema com AGO/2025
+          console.log('🔍 DEBUG RELATÓRIOS - Meses ordenados:', mesesOrdenados);
+          
           // Definir o mês corrente como padrão
           const mesCorrente = gerarMesCorrente();
+          
+          // LOGS DE DEBUG - Para investigar problema com AGO/2025
+          console.log('🔍 DEBUG RELATÓRIOS - Mês corrente gerado:', mesCorrente);
+          console.log('🔍 DEBUG RELATÓRIOS - AGO/2025 nos meses disponíveis?', mesesOrdenados.includes('AGO/2025'));
+          
           setMesSelecionado(mesCorrente);
         } else {
           toast.error(data.message || 'Erro ao buscar lançamentos');

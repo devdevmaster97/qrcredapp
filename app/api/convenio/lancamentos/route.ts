@@ -37,6 +37,16 @@ export async function GET(request: NextRequest) {
 
     console.log('Resposta API Lançamentos:', response.data);
 
+    // DEBUG: Verificar especificamente AGO/2025
+    if (response.data.lancamentos) {
+      const temAgo2025 = response.data.lancamentos.some((l: any) => l.mes === 'AGO/2025');
+      const mesesUnicos = Array.from(new Set(response.data.lancamentos.map((l: any) => l.mes)));
+      console.log('🔍 DEBUG API - Total lançamentos retornados:', response.data.lancamentos.length);
+      console.log('🔍 DEBUG API - Tem AGO/2025 na resposta?', temAgo2025);
+      console.log('🔍 DEBUG API - Meses únicos na resposta:', mesesUnicos);
+      console.log('🔍 DEBUG API - Código do convênio:', codConvenio);
+    }
+
     if (response.data.success) {
       return NextResponse.json({
         success: true,
