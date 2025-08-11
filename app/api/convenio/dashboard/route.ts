@@ -71,6 +71,9 @@ export async function GET() {
         const codConvenio = jsonData.cod_convenio;
         const mesCorrente = jsonData.mes_corrente;
 
+        console.log('🔍 Dashboard Debug - codConvenio:', codConvenio, 'mesCorrente:', mesCorrente);
+        console.log('🔍 Dashboard Debug - jsonData completo:', JSON.stringify(jsonData, null, 2));
+
         // Buscar dados das APIs em paralelo
         const [lancamentosResponse, vendasResponse, estornosResponse] = await Promise.allSettled([
           // Total de Lançamentos
@@ -105,6 +108,15 @@ export async function GET() {
         let totalLancamentos = 0;
         let totalVendas = 0;
         let totalEstornos = 0;
+
+        console.log('🔍 Resposta Lançamentos:', lancamentosResponse.status, 
+          lancamentosResponse.status === 'fulfilled' ? lancamentosResponse.value.data : lancamentosResponse.reason);
+        
+        console.log('🔍 Resposta Vendas:', vendasResponse.status, 
+          vendasResponse.status === 'fulfilled' ? vendasResponse.value.data : vendasResponse.reason);
+        
+        console.log('🔍 Resposta Estornos:', estornosResponse.status, 
+          estornosResponse.status === 'fulfilled' ? estornosResponse.value.data : estornosResponse.reason);
 
         if (lancamentosResponse.status === 'fulfilled' && lancamentosResponse.value.data?.success) {
           totalLancamentos = lancamentosResponse.value.data.total_lancamentos || 0;
