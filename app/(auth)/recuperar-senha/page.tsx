@@ -104,7 +104,7 @@ export default function RecuperarSenhaPage() {
                     value={numeroCartao}
                     onChange={(e) => setNumeroCartao(e.target.value)}
                     className="bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5" 
-                    placeholder="Digite o número do cartão"
+                    placeholder="Número do cartão"
                   />
                 </div>
               </div>
