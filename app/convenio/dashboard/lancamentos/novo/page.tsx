@@ -1248,6 +1248,23 @@ export default function NovoLancamentoPage() {
           const valorLimpo = valor.replace(/[R$\s.]/g, '').replace(',', '.');
           const valorParcelaLimpo = valorParcela.toString().replace(',', '.');
           
+          // Validar e limitar a 2 casas decimais
+          const valorNumerico = parseFloat(valorLimpo);
+          if (isNaN(valorNumerico)) {
+            toast.error('Valor inválido');
+            setLoading(false);
+            return;
+          }
+          
+          // Arredondar para 2 casas decimais e converter de volta para string
+          const valorFormatado = valorNumerico.toFixed(2);
+          const valorParcelaNumerico = parseFloat(valorParcelaLimpo);
+          const valorParcelaFormatado = isNaN(valorParcelaNumerico) ? '0.00' : valorParcelaNumerico.toFixed(2);
+          
+          console.log('💰 Valor original:', valorLimpo);
+          console.log('💰 Valor formatado (2 casas decimais):', valorFormatado);
+          console.log('💰 Valor parcela formatado (2 casas decimais):', valorParcelaFormatado);
+          
           // Log explícito para depurar o valor final de codConvenio
           console.log('📊 VALOR FINAL DO CÓDIGO DO CONVÊNIO:', codConvenio);
           
@@ -1259,8 +1276,8 @@ export default function NovoLancamentoPage() {
             nome: associado.nome,
             cartao: cartao,
             empregador: associado.empregador,
-            valor_pedido: valorLimpo,
-            valor_parcela: valorParcelaLimpo,
+            valor_pedido: valorFormatado, // Usar valor com exatamente 2 casas decimais
+            valor_parcela: valorParcelaFormatado, // Usar valor parcela com exatamente 2 casas decimais
             mes_corrente: mesCorrente,
             primeiro_mes: mesCorrente, // Usando o mês corrente como primeiro mês
             qtde_parcelas: parcelas.toString(),
