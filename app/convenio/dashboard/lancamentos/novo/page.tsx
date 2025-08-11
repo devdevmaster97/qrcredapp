@@ -1314,7 +1314,7 @@ export default function NovoLancamentoPage() {
             <div className="border-b border-gray-200 pb-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Configuração do Pagamento</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-6">
                 <div>
                   <label htmlFor="valor" className="block text-sm font-medium text-gray-700 mb-1">
                     Valor Total da Compra
@@ -1360,9 +1360,9 @@ export default function NovoLancamentoPage() {
                     Mês Atual
                   </label>
                   <div className="mt-1">
-                    <div className="flex items-center h-10 px-4 border border-gray-300 rounded-md bg-blue-50">
-                      <FaCalendarAlt className="text-blue-500 mr-2" />
-                      <span className="text-sm text-blue-700 font-medium">
+                    <div className="flex items-center h-12 px-4 border border-gray-300 rounded-md bg-blue-50 min-w-0">
+                      <FaCalendarAlt className="text-blue-500 mr-2 flex-shrink-0" />
+                      <span className="text-lg text-blue-700 font-medium truncate">
                         {mesCorrente || 'Aguardando dados...'}
                       </span>
                     </div>
@@ -1382,7 +1382,7 @@ export default function NovoLancamentoPage() {
                   </div>
                 )}
                 
-                <div className="col-span-2">
+                <div>
                   <label htmlFor="descricao" className="block text-sm font-medium text-gray-700 mb-1">
                     Descrição da Compra (opcional)
                   </label>
@@ -1391,7 +1391,7 @@ export default function NovoLancamentoPage() {
                       id="descricao"
                       name="descricao"
                       rows={2}
-                      className="focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                      className="focus:ring-blue-500 focus:border-blue-500 block w-full text-lg py-3 border-2 border-gray-400 rounded-md font-medium"
                       placeholder="Descreva os itens ou referência da compra"
                       value={descricao}
                       onChange={(e) => setDescricao(e.target.value)}
