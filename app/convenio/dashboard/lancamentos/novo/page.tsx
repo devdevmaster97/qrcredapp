@@ -1258,7 +1258,7 @@ export default function NovoLancamentoPage() {
                         type="text"
                         id="cartao"
                         name="cartao"
-                        className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md"
+                        className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 text-lg py-3 border-2 border-gray-400 rounded-md font-medium"
                         placeholder="Digite o número do cartão"
                         value={cartao}
                         onChange={(e) => setCartao(e.target.value)}
@@ -1324,7 +1324,7 @@ export default function NovoLancamentoPage() {
                       type="text"
                       id="valor"
                       name="valor"
-                      className="focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                      className="focus:ring-blue-500 focus:border-blue-500 block w-full text-lg py-3 border-2 border-gray-400 rounded-md font-medium"
                       placeholder="R$ 0,00"
                       value={valor}
                       onChange={handleValorChange}
@@ -1341,7 +1341,7 @@ export default function NovoLancamentoPage() {
                     <select
                       id="parcelas"
                       name="parcelas"
-                      className="focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                      className="focus:ring-blue-500 focus:border-blue-500 block w-full text-lg py-3 border-2 border-gray-400 rounded-md font-medium"
                       value={parcelas}
                       onChange={(e) => setParcelas(Number(e.target.value))}
                       disabled={!associado}
@@ -1416,7 +1416,7 @@ export default function NovoLancamentoPage() {
                       type="password"
                       id="senha"
                       name="senha"
-                      className="focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md"
+                      className="focus:ring-blue-500 focus:border-blue-500 block w-full text-lg py-3 border-2 border-gray-400 rounded-md font-medium"
                       placeholder="Digite a senha de 6 dígitos"
                       value={senha}
                       onChange={(e) => setSenha(e.target.value)}

@@ -46,33 +46,22 @@ export default function RelatoriosPage() {
         const response = await fetch('/api/convenio/lancamentos');
         const data = await response.json();
 
-        // DEBUG TEMPORÁRIO - Para identificar problema
-        console.log('🔍 RESPOSTA COMPLETA DA API:', data);
-        console.log('🔍 SUCCESS:', data.success);
-        console.log('🔍 DATA:', data.data);
-        console.log('🔍 TOTAL ITENS:', data.data?.length || 0);
-
         if (data.success) {
-          console.log('🔍 PROCESSANDO DADOS...');
           setLancamentos(data.data);
           // Extrair meses únicos dos lançamentos
           const meses = Array.from(new Set(data.data.map((l: Lancamento) => l.mes))) as string[];
-          console.log('🔍 MESES EXTRAÍDOS:', meses);
           // Ordenar meses do mais recente para o mais antigo
           const mesesOrdenados = meses.sort().reverse();
           setMesesDisponiveis(mesesOrdenados);
-          console.log('🔍 MESES ORDENADOS:', mesesOrdenados);
           
           // Definir o mês corrente como padrão
           const mesCorrente = gerarMesCorrente();
-          console.log('🔍 MÊS CORRENTE:', mesCorrente);
           setMesSelecionado(mesCorrente);
         } else {
-          console.log('🔍 ERRO NA RESPOSTA:', data.message);
           toast.error(data.message || 'Erro ao buscar lançamentos');
         }
       } catch (error) {
-        console.error('🔍 ERRO CATCH:', error);
+        console.error('Erro ao buscar lançamentos:', error);
         toast.error('Erro ao conectar com o servidor');
       } finally {
         setLoadingLancamentos(false);
@@ -87,12 +76,7 @@ export default function RelatoriosPage() {
     ? lancamentos.filter(l => l.mes === mesSelecionado)
     : lancamentos;
 
-  // DEBUG TEMPORÁRIO - Para verificar filtro
-  console.log('🔍 FILTRO - Mês selecionado:', mesSelecionado);
-  console.log('🔍 FILTRO - Total lançamentos:', lancamentos.length);
-  console.log('🔍 FILTRO - Lançamentos filtrados:', lancamentosFiltrados.length);
-  console.log('🔍 FILTRO - Primeiros 3 lançamentos:', lancamentos.slice(0, 3));
-  console.log('🔍 FILTRO - Primeiros 3 filtrados:', lancamentosFiltrados.slice(0, 3));
+
 
   // Abrir modal de confirmação antes de estornar
   const confirmarEstorno = (lancamento: Lancamento) => {

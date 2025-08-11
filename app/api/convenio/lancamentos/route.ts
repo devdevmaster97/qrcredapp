@@ -35,24 +35,14 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    console.log('🔍 RESPOSTA BRUTA PHP:', response.data);
-    console.log('🔍 SUCCESS PHP:', response.data?.success);
-    console.log('🔍 LANÇAMENTOS PHP:', response.data?.lancamentos?.length || 0);
-    console.log('🔍 MESSAGE PHP:', response.data?.message);
+    console.log('Resposta API Lançamentos:', response.data);
 
     if (response.data.success) {
-      console.log('🔍 RETORNANDO DADOS PARA FRONTEND:', {
-        success: true,
-        data: response.data.lancamentos,
-        total: response.data.lancamentos?.length || 0
-      });
-      
       return NextResponse.json({
         success: true,
         data: response.data.lancamentos
       });
     } else {
-      console.log('🔍 ERRO DO PHP:', response.data?.message);
       return NextResponse.json({
         success: false,
         message: response.data.message || 'Erro ao buscar lançamentos'
