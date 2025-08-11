@@ -1259,7 +1259,7 @@ export default function NovoLancamentoPage() {
                         id="cartao"
                         name="cartao"
                         className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 text-lg py-3 border-2 border-gray-400 rounded-md font-medium"
-                        placeholder="Digite o número do cartão"
+                        placeholder="Digite o cartão"
                         value={cartao}
                         onChange={(e) => setCartao(e.target.value)}
                         maxLength={10}
