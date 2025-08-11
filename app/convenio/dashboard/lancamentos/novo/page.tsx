@@ -42,6 +42,7 @@ export default function NovoLancamentoPage() {
   const API_URL = `${BASE_URL}/localizaasapp.php`;
   const API_MESES = `${BASE_URL}/meses_corrente_app.php`;
   const API_CONTA = `${BASE_URL}/conta_app.php`;
+  const API_CONTA_SALDO = `${BASE_URL}/conta_saldo_app.php`; // API simplificada para cálculo de saldo
   const API_SENHA = `${BASE_URL}/consulta_pass_assoc.php`;
   const API_GRAVA_VENDA = `${BASE_URL}/grava_venda_app.php`;
 
@@ -600,6 +601,81 @@ export default function NovoLancamentoPage() {
     });
   };
 
+  // Função para consultar conta com SQL simplificado
+  const consultarContaSaldoXHR = (matricula: string, empregador: string, mes: string): Promise<any> => {
+    return new Promise((resolve, reject) => {
+      console.log('💰 XHR SALDO: Consultando conta simplificada:', { matricula, empregador, mes });
+      const xhr = new XMLHttpRequest();
+      
+      xhr.timeout = 25000;
+      xhr.open('POST', API_CONTA_SALDO, true);
+      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+      
+      xhr.onload = function() {
+        console.log('💰 XHR SALDO: Resposta recebida:', {
+          status: xhr.status,
+          statusText: xhr.statusText,
+          responseText: xhr.responseText.substring(0, 200)
+        });
+        
+        console.log('💰 XHR SALDO: Resposta COMPLETA:', xhr.responseText);
+        
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const jsonResponse = JSON.parse(xhr.responseText);
+            resolve(jsonResponse);
+          } catch (e) {
+            resolve(xhr.responseText);
+          }
+        } else {
+          reject({
+            status: xhr.status,
+            statusText: xhr.statusText,
+            responseText: xhr.responseText
+          });
+        }
+      };
+      
+      xhr.onerror = function() {
+        console.error('💰 XHR SALDO: Erro de rede:', {
+          matricula,
+          empregador,
+          mes,
+          status: xhr.status,
+          statusText: xhr.statusText
+        });
+        reject({
+          status: xhr.status,
+          statusText: xhr.statusText,
+          error: 'Erro de rede'
+        });
+      };
+      
+      xhr.ontimeout = function() {
+        console.error('💰 XHR SALDO: Timeout');
+        reject({
+          error: 'Timeout',
+          message: 'A requisição excedeu o tempo limite'
+        });
+      };
+      
+      // Preparar dados para envio
+      const params = new URLSearchParams();
+      params.append('matricula', matricula);
+      params.append('empregador', empregador.toString());
+      params.append('mes', mes);
+      
+      console.log('💰 XHR SALDO: Parâmetros enviados:', {
+        matricula: matricula,
+        empregador: empregador,
+        mes: mes,
+        params_string: params.toString()
+      });
+      
+      xhr.send(params.toString());
+    });
+  };
+
   // Função para verificar senha usando XMLHttpRequest
   const verificarSenhaXHR = (matricula: string, empregador: string, senha: string): Promise<any> => {
     return new Promise((resolve, reject) => {
@@ -742,7 +818,15 @@ export default function NovoLancamentoPage() {
         try {
           console.log('💰 Consultando conta para:', { matricula, empregador, mes: mesAtual });
           console.log('💰 URL da API Conta:', API_CONTA);
-          const dadosConta = await consultarContaXHR(matricula, empregador, mesAtual);
+          
+          // Primeiro, tentar a API original
+          let dadosConta = await consultarContaXHR(matricula, empregador, mesAtual);
+          
+          // Se não retornar dados, tentar consulta mais simples
+          if (Array.isArray(dadosConta) && dadosConta.length === 0) {
+            console.log('⚠️ API original retornou vazio. Tentando consulta simplificada...');
+            dadosConta = await consultarContaSaldoXHR(matricula, empregador, mesAtual);
+          }
           console.log('💰 Resposta da API Conta (tipo):', typeof dadosConta);
           console.log('💰 Resposta da API Conta (é array?):', Array.isArray(dadosConta));
           console.log('💰 Resposta da API Conta (primeira linha):', JSON.stringify(dadosConta, null, 2).substring(0, 500));
