@@ -1577,7 +1577,7 @@ export default function NovoLancamentoPage() {
                 </div>
                 
                 {parcelas > 1 && valorParcela > 0 && (
-                  <div className="col-span-2 bg-blue-50 p-3 rounded-md">
+                  <div className="bg-blue-50 p-3 rounded-md">
                     <p className="text-sm text-blue-700">
                       Pagamento em <strong>{parcelas}x</strong> de <strong>
                         {valorParcela.toLocaleString('pt-BR', {
