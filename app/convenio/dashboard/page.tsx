@@ -80,7 +80,12 @@ export default function DashboardPage() {
             </div>
             <div className="ml-4">
               <h2 className="text-sm font-medium text-gray-600">Total de Vendas</h2>
-              <p className="text-2xl font-semibold text-gray-900">{dashboardData.totalVendas}</p>
+              <p className="text-2xl font-semibold text-gray-900">
+                {dashboardData.totalVendas.toLocaleString('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL'
+                })}
+              </p>
             </div>
           </div>
         </div>
@@ -89,7 +94,7 @@ export default function DashboardPage() {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-red-100">
-              <FaChartLine className="h-6 w-6 text-red-600" />
+              <FaUndo className="h-6 w-6 text-red-600" />
             </div>
             <div className="ml-4">
               <h2 className="text-sm font-medium text-gray-600">Total de Estornos</h2>

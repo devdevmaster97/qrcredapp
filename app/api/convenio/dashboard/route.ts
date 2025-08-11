@@ -66,19 +66,84 @@ export async function GET() {
 
     // Verificar se a resposta foi bem-sucedida
     if (jsonData && jsonData.tipo_login === 'login sucesso') {
-      // Buscar dados adicionais para o dashboard se necessário
-      // Por enquanto, vamos simular os dados do dashboard com valores mockados
-      // Estes valores podem ser substituídos por dados reais quando a API estiver disponível
-      
-      return NextResponse.json({
-        success: true,
-        data: {
-          totalLancamentos: jsonData.total_lancamentos || 0,
-          totalVendas: jsonData.total_vendas || 0,
-          totalEstornos: jsonData.total_estornos || 0,
-          totalAssociados: jsonData.total_associados || 0
+      // Buscar dados reais para o dashboard usando as novas APIs
+      try {
+        const codConvenio = jsonData.cod_convenio;
+        const mesCorrente = jsonData.mes_corrente;
+
+        // Buscar dados das APIs em paralelo
+        const [lancamentosResponse, vendasResponse, estornosResponse] = await Promise.allSettled([
+          // Total de Lançamentos
+          axios.post('https://sas.makecard.com.br/total_lancamentos_convenio_app.php', 
+            new URLSearchParams({
+              convenio: codConvenio.toString(),
+              mes: mesCorrente
+            }), 
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+          ),
+          
+          // Total de Vendas
+          axios.post('https://sas.makecard.com.br/total_vendas_convenio_app.php', 
+            new URLSearchParams({
+              convenio: codConvenio.toString(),
+              mes: mesCorrente
+            }), 
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+          ),
+          
+          // Total de Estornos
+          axios.post('https://sas.makecard.com.br/total_estornos_convenio_app.php', 
+            new URLSearchParams({
+              convenio: codConvenio.toString(),
+              mes: mesCorrente
+            }), 
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+          )
+        ]);
+
+        // Processar resultados
+        let totalLancamentos = 0;
+        let totalVendas = 0;
+        let totalEstornos = 0;
+
+        if (lancamentosResponse.status === 'fulfilled' && lancamentosResponse.value.data?.success) {
+          totalLancamentos = lancamentosResponse.value.data.total_lancamentos || 0;
         }
-      });
+
+        if (vendasResponse.status === 'fulfilled' && vendasResponse.value.data?.success) {
+          totalVendas = vendasResponse.value.data.total_vendas || 0;
+        }
+
+        if (estornosResponse.status === 'fulfilled' && estornosResponse.value.data?.success) {
+          totalEstornos = estornosResponse.value.data.total_estornos || 0;
+        }
+
+        return NextResponse.json({
+          success: true,
+          data: {
+            totalLancamentos,
+            totalVendas,
+            totalEstornos,
+            totalAssociados: jsonData.total_associados || 0,
+            mesCorrente,
+            codConvenio
+          }
+        });
+      } catch (dashboardError) {
+        console.error('Erro ao buscar dados do dashboard:', dashboardError);
+        // Em caso de erro, retornar valores padrão
+        return NextResponse.json({
+          success: true,
+          data: {
+            totalLancamentos: 0,
+            totalVendas: 0,
+            totalEstornos: 0,
+            totalAssociados: 0,
+            mesCorrente: jsonData.mes_corrente || '',
+            codConvenio: jsonData.cod_convenio || 0
+          }
+        });
+      }
     } else {
       return NextResponse.json({
         success: false,
