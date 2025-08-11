@@ -328,7 +328,9 @@ export default function NovoLancamentoPage() {
             
             // Verificação simplificada - apenas verificamos se o nome não é incorreto ou vazio
             if (data && data.nome && data.nome !== 'login incorreto' && data.nome !== "login fazio") {
+              console.log('✅ Dados do associado válidos, iniciando processamento...');
               await processarDadosAssociado(data);
+              console.log('✅ Processamento do associado concluído');
               setLoadingCartao(false);
               return;
             } else {
@@ -408,14 +410,14 @@ export default function NovoLancamentoPage() {
     
     console.log('🔍 Verificação de campos necessários:', camposNecessarios);
     
-    // Atualizar o estado com os dados básicos garantindo que a atualização seja concluída
-    setAssociado(associadoData);
+    // NÃO atualizar o estado ainda - aguardar cálculo do saldo primeiro
     
     // Verificar se campos necessários estão presentes
     if (associadoData.matricula && associadoData.empregador) {
       console.log('🚀 INICIANDO CAPTURA DO MÊS CORRENTE COM:', {
         matricula: associadoData.matricula,
-        empregador: associadoData.empregador
+        empregador: associadoData.empregador,
+        limite: associadoData.limite
       });
       
       // Aguardar a conclusão da captura do mês corrente antes de finalizar
@@ -424,6 +426,9 @@ export default function NovoLancamentoPage() {
       } catch (error) {
         console.error('❌ Erro ao capturar mês corrente:', error);
         toast.error('Erro ao obter dados completos do associado');
+        
+        // Em caso de erro, atualizar com saldo 0
+        setAssociado(associadoData);
       }
     } else {
       console.error('❌ DADOS DO ASSOCIADO INCOMPLETOS:', {
@@ -726,7 +731,11 @@ export default function NovoLancamentoPage() {
       if (matricula && empregador && mesAtual) {
         try {
           console.log('💰 Consultando conta para:', { matricula, empregador, mes: mesAtual });
+          console.log('💰 URL da API Conta:', API_CONTA);
           const dadosConta = await consultarContaXHR(matricula, empregador, mesAtual);
+          console.log('💰 Resposta da API Conta (tipo):', typeof dadosConta);
+          console.log('💰 Resposta da API Conta (é array?):', Array.isArray(dadosConta));
+          console.log('💰 Resposta da API Conta (primeira linha):', JSON.stringify(dadosConta, null, 2).substring(0, 500));
           
           // Processar os dados da conta conforme especificação
           if (Array.isArray(dadosConta)) {
@@ -768,52 +777,47 @@ export default function NovoLancamentoPage() {
                 console.log('💰 Cálculo do saldo: Limite (', limiteNumerico, ') - Gastos (', totalGastosMes, ') = Saldo (', saldoDisponivel, ')');
                 
                 // Atualizar associado com saldo calculado
-                setAssociado(prev => {
-                  if (prev) {
-                    const novoAssociado = { ...prev, saldo: Math.max(0, saldoDisponivel) }; // Garantir que saldo não seja negativo
-                    console.log('💰 Associado atualizado com saldo calculado:', novoAssociado);
-                    return novoAssociado;
-                  }
-                  return prev;
-                });
+                const associadoFinal = associadoCompleto || associado;
+                if (associadoFinal) {
+                  const novoAssociado = { ...associadoFinal, saldo: Math.max(0, saldoDisponivel) }; // Garantir que saldo não seja negativo
+                  console.log('💰 Associado atualizado com saldo calculado:', novoAssociado);
+                  setAssociado(novoAssociado);
+                  
+                  // Toast para confirmar que o saldo foi calculado
+                  toast.success(`Saldo calculado: ${saldoDisponivel.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`);
+                } else {
+                  console.warn('⚠️ Nenhum associado disponível para atualizar');
+                }
               } else {
                 console.warn('⚠️ Limite não é um número válido:', associadoAtual.limite);
-                // Em caso de erro, usar limite como saldo
-                setAssociado(prev => {
-                  if (prev) {
-                    return { ...prev, saldo: 0 };
-                  }
-                  return prev;
-                });
+                // Em caso de erro, usar o associado com saldo 0
+                const associadoFinal = associadoCompleto || associado;
+                if (associadoFinal) {
+                  setAssociado({ ...associadoFinal, saldo: 0 });
+                }
               }
             } else {
               console.warn('⚠️ Associado ou limite não disponível para calcular saldo');
-              setAssociado(prev => {
-                if (prev) {
-                  return { ...prev, saldo: 0 };
-                }
-                return prev;
-              });
+              const associadoFinal = associadoCompleto || associado;
+              if (associadoFinal) {
+                setAssociado({ ...associadoFinal, saldo: 0 });
+              }
             }
           } else {
             console.warn('⚠️ Dados da conta não estão no formato esperado:', dadosConta);
-            // Usar o saldo do associado diretamente se disponível ou definir como 0
-            setAssociado(prev => {
-              if (prev) {
-                return { ...prev };
-              }
-              return prev;
-            });
+            // Usar o associado com saldo 0
+            const associadoFinal = associadoCompleto || associado;
+            if (associadoFinal) {
+              setAssociado({ ...associadoFinal, saldo: 0 });
+            }
           }
         } catch (errorConta) {
           console.error('❌ Erro ao consultar conta:', errorConta);
-          // Manter o saldo atual do associado ou definir como 0
-          setAssociado(prev => {
-            if (prev) {
-              return { ...prev };
-            }
-            return prev;
-          });
+          // Em caso de erro, usar o associado com saldo 0
+          const associadoFinal = associadoCompleto || associado;
+          if (associadoFinal) {
+            setAssociado({ ...associadoFinal, saldo: 0 });
+          }
         }
       }
       
@@ -821,16 +825,14 @@ export default function NovoLancamentoPage() {
     } catch (error) {
       console.error('❌ Erro geral na captura de mês corrente:', error);
       
-      // Em caso de erro, usar mês local apenas
+      // Em caso de erro, usar mês local e associado com saldo 0
       const mesLocal = gerarMesCorrenteLocal();
       setMesCorrente(mesLocal);
       
-      setAssociado(prev => {
-        if (prev) {
-          return { ...prev };
-        }
-        return prev;
-      });
+      const associadoFinal = associadoCompleto || associado;
+      if (associadoFinal) {
+        setAssociado({ ...associadoFinal, saldo: 0 });
+      }
       
       toast.error('Não foi possível obter dados completos.');
       throw error; // Re-throw para ser capturado na função chamadora
