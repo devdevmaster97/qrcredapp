@@ -1541,24 +1541,36 @@ export default function NovoLancamentoPage() {
                 </div>
                 
                 <div>
-                  <label htmlFor="parcelas" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Quantidade de Parcelas
                   </label>
                   <div className="mt-1">
-                    <select
-                      id="parcelas"
-                      name="parcelas"
-                      className="focus:ring-blue-500 focus:border-blue-500 block w-full text-lg py-3 border-2 border-gray-400 rounded-md font-medium"
-                      value={parcelas}
-                      onChange={(e) => setParcelas(Number(e.target.value))}
-                      disabled={!associado}
-                    >
+                    {/* Lista horizontal de parcelas com scroll */}
+                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                       {Array.from({ length: maxParcelas }, (_, i) => i + 1).map((num) => (
-                        <option key={num} value={num}>
-                          {num}x {num > 1 ? 'parcelas' : 'à vista'}
-                        </option>
+                        <button
+                          key={num}
+                          type="button"
+                          onClick={() => setParcelas(num)}
+                          disabled={!associado}
+                          className={`
+                            flex-shrink-0 px-4 py-3 rounded-lg border-2 font-medium text-sm min-w-[120px] text-center transition-all duration-200
+                            ${parcelas === num 
+                              ? 'bg-blue-600 text-white border-blue-600 shadow-lg transform scale-105' 
+                              : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                            }
+                            ${!associado ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-md'}
+                          `}
+                        >
+                          <div className="flex flex-col items-center">
+                            <span className="font-bold text-lg">{num}x</span>
+                            <span className="text-xs opacity-90">
+                              {num === 1 ? 'à vista' : 'parcelas'}
+                            </span>
+                          </div>
+                        </button>
                       ))}
-                    </select>
+                    </div>
                   </div>
                   
                   {/* Informação das parcelas logo abaixo do campo */}
