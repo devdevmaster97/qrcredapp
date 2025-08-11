@@ -539,6 +539,8 @@ export default function NovoLancamentoPage() {
           responseText: xhr.responseText.substring(0, 200)
         });
         
+        console.log('💰 XHR: Resposta COMPLETA da API conta:', xhr.responseText);
+        
         if (xhr.status >= 200 && xhr.status < 300) {
           try {
             // Tenta parsear como JSON
@@ -583,8 +585,16 @@ export default function NovoLancamentoPage() {
       // Preparar dados para envio
       const params = new URLSearchParams();
       params.append('matricula', matricula);
-      params.append('empregador', empregador);
+      params.append('empregador', empregador.toString()); // Garantir que seja string
       params.append('mes', mes);
+      
+      console.log('💰 XHR: Parâmetros enviados:', {
+        matricula: matricula,
+        empregador: empregador,
+        empregador_tipo: typeof empregador,
+        mes: mes,
+        params_string: params.toString()
+      });
       
       xhr.send(params.toString());
     });
@@ -736,6 +746,25 @@ export default function NovoLancamentoPage() {
           console.log('💰 Resposta da API Conta (tipo):', typeof dadosConta);
           console.log('💰 Resposta da API Conta (é array?):', Array.isArray(dadosConta));
           console.log('💰 Resposta da API Conta (primeira linha):', JSON.stringify(dadosConta, null, 2).substring(0, 500));
+          
+          // Se não retornou dados, vamos testar algumas variações para debug
+          if (Array.isArray(dadosConta) && dadosConta.length === 0) {
+            console.log('⚠️ API retornou array vazio. Testando variações dos parâmetros...');
+            
+            // Teste 1: Sem aspas na matrícula (caso seja numérica)
+            console.log('🔍 Teste SQL sugerido 1: WHERE associado.codigo = ' + matricula + ' AND associado.empregador = ' + empregador + ' AND conta.mes = \'' + mesAtual + '\'');
+            
+            // Teste 2: Com aspas na matrícula
+            console.log('🔍 Teste SQL sugerido 2: WHERE associado.codigo = \'' + matricula + '\' AND associado.empregador = ' + empregador + ' AND conta.mes = \'' + mesAtual + '\'');
+            
+            // Teste 3: Verificar outros meses
+            console.log('🔍 Sugestão: Verifique se há dados para outros meses além de ' + mesAtual);
+            
+            console.log('🔍 Parâmetros exatos enviados:');
+            console.log('   matricula (tipo ' + typeof matricula + '):', matricula);
+            console.log('   empregador (tipo ' + typeof empregador + '):', empregador);
+            console.log('   mes (tipo ' + typeof mesAtual + '):', mesAtual);
+          }
           
           // Processar os dados da conta conforme especificação
           if (Array.isArray(dadosConta)) {
