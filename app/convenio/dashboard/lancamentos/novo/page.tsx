@@ -1504,8 +1504,8 @@ export default function NovoLancamentoPage() {
                       <p className="text-lg font-medium text-gray-900">{associado.nome}</p>
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-500">Saldo Disponível</p>
-                      <p className="text-lg font-medium text-green-600">
+                      <p className="text-base font-semibold text-gray-600">Saldo Disponível</p>
+                      <p className="text-2xl font-bold text-green-600">
                         {associado.saldo.toLocaleString('pt-BR', {
                           style: 'currency',
                           currency: 'BRL'
