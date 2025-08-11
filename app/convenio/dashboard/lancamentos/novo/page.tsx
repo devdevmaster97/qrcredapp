@@ -728,65 +728,72 @@ export default function NovoLancamentoPage() {
           console.log('💰 Consultando conta para:', { matricula, empregador, mes: mesAtual });
           const dadosConta = await consultarContaXHR(matricula, empregador, mesAtual);
           
-          // Processar os dados da conta para calcular saldo
+          // Processar os dados da conta conforme especificação
           if (Array.isArray(dadosConta)) {
-            let totalGastos = 0;
+            let totalGastosMes = 0;
             
-            // Calcular total de gastos
+            console.log('💰 Dados da conta recebidos:', dadosConta);
+            
+            // Somar todos os valores do mês corrente
             dadosConta.forEach(item => {
               if (item.valor) {
-                const valorLimpo = item.valor.toString().replace(/[^\d.]/g, '');
+                // Limpar e converter o valor
+                const valorLimpo = item.valor.toString().replace(/[^\d.,]/g, '').replace(',', '.');
                 const valorNumerico = parseFloat(valorLimpo);
-                if (!isNaN(valorNumerico)) {
-                  totalGastos += valorNumerico;
+                
+                if (!isNaN(valorNumerico) && valorNumerico > 0) {
+                  totalGastosMes += valorNumerico;
+                  console.log('💰 Somando valor:', valorNumerico, 'Total acumulado:', totalGastosMes);
                 }
               }
             });
             
+            console.log('💰 Total de gastos do mês:', totalGastosMes);
+            
             // Usar o limite do associado atual OU do objeto passado como parâmetro
             const associadoAtual = associadoCompleto || associado;
             
-            // Calcular saldo disponível
+            // Calcular saldo disponível: Limite - Gastos do Mês = Saldo
             if (associadoAtual && associadoAtual.limite) {
-              const limiteLimpo = associadoAtual.limite.toString().replace(/[^\d.]/g, '');
+              const limiteLimpo = associadoAtual.limite.toString().replace(/[^\d.,]/g, '').replace(',', '.');
               const limiteNumerico = parseFloat(limiteLimpo);
               
-              console.log('💰 Processando saldo com limite:', limiteNumerico, 'e gastos:', totalGastos);
+              console.log('💰 Limite do associado:', limiteNumerico);
+              console.log('💰 Total gastos do mês:', totalGastosMes);
               
               if (!isNaN(limiteNumerico)) {
-                const saldoDisponivel = limiteNumerico - totalGastos;
+                // Fórmula: Saldo = Limite - Gastos do Mês
+                const saldoDisponivel = limiteNumerico - totalGastosMes;
                 
-                // Verificar se é um array vazio ou se não há gastos
-                if (dadosConta.length === 0 || totalGastos === 0) {
-                  console.log('💰 Nenhum gasto identificado, usando limite como saldo disponível:', limiteNumerico);
-                  
-                  // Atualizar associado com o limite como saldo
-                  setAssociado(prev => {
-                    if (prev) {
-                      const novoAssociado = { ...prev, saldo: limiteNumerico };
-                      console.log('💰 Associado atualizado com limite como saldo:', novoAssociado);
-                      return novoAssociado;
-                    }
-                    return prev;
-                  });
-                } else {
-                  // Atualizar associado com saldo calculado
-                  setAssociado(prev => {
-                    if (prev) {
-                      const novoAssociado = { ...prev, saldo: saldoDisponivel };
-                      console.log('💰 Associado atualizado com saldo calculado:', novoAssociado);
-                      return novoAssociado;
-                    }
-                    return prev;
-                  });
-                  
-                  console.log('💰 Saldo calculado:', saldoDisponivel);
-                }
+                console.log('💰 Cálculo do saldo: Limite (', limiteNumerico, ') - Gastos (', totalGastosMes, ') = Saldo (', saldoDisponivel, ')');
+                
+                // Atualizar associado com saldo calculado
+                setAssociado(prev => {
+                  if (prev) {
+                    const novoAssociado = { ...prev, saldo: Math.max(0, saldoDisponivel) }; // Garantir que saldo não seja negativo
+                    console.log('💰 Associado atualizado com saldo calculado:', novoAssociado);
+                    return novoAssociado;
+                  }
+                  return prev;
+                });
               } else {
                 console.warn('⚠️ Limite não é um número válido:', associadoAtual.limite);
+                // Em caso de erro, usar limite como saldo
+                setAssociado(prev => {
+                  if (prev) {
+                    return { ...prev, saldo: 0 };
+                  }
+                  return prev;
+                });
               }
             } else {
               console.warn('⚠️ Associado ou limite não disponível para calcular saldo');
+              setAssociado(prev => {
+                if (prev) {
+                  return { ...prev, saldo: 0 };
+                }
+                return prev;
+              });
             }
           } else {
             console.warn('⚠️ Dados da conta não estão no formato esperado:', dadosConta);
@@ -958,6 +965,63 @@ export default function NovoLancamentoPage() {
     });
   };
 
+  // Função para recalcular saldo após lançamento seguindo a mesma lógica da especificação
+  const recalcularSaldoAposLancamento = async () => {
+    try {
+      if (!associado || !mesCorrente) {
+        console.warn('⚠️ Dados insuficientes para recalcular saldo');
+        return;
+      }
+
+      console.log('💰 Recalculando saldo após lançamento...');
+      
+      // Consultar novamente a conta para obter dados atualizados
+      const dadosContaAtualizados = await consultarContaXHR(associado.matricula, associado.empregador, mesCorrente);
+      
+      if (Array.isArray(dadosContaAtualizados)) {
+        let totalGastosMesAtualizado = 0;
+        
+        // Somar todos os valores do mês (incluindo o lançamento recém feito)
+        dadosContaAtualizados.forEach(item => {
+          if (item.valor) {
+            const valorLimpo = item.valor.toString().replace(/[^\d.,]/g, '').replace(',', '.');
+            const valorNumerico = parseFloat(valorLimpo);
+            
+            if (!isNaN(valorNumerico) && valorNumerico > 0) {
+              totalGastosMesAtualizado += valorNumerico;
+            }
+          }
+        });
+        
+        console.log('💰 Total de gastos atualizado do mês:', totalGastosMesAtualizado);
+        
+        // Calcular novo saldo: Limite - Gastos Atualizados
+        if (associado.limite) {
+          const limiteLimpo = associado.limite.toString().replace(/[^\d.,]/g, '').replace(',', '.');
+          const limiteNumerico = parseFloat(limiteLimpo);
+        
+          if (!isNaN(limiteNumerico)) {
+            const novoSaldo = limiteNumerico - totalGastosMesAtualizado;
+            
+            console.log('💰 Recálculo do saldo: Limite (', limiteNumerico, ') - Gastos Atualizados (', totalGastosMesAtualizado, ') = Novo Saldo (', novoSaldo, ')');
+            
+            // Atualizar o estado com o saldo recalculado
+            setAssociado(prev => {
+              if (prev) {
+                const associadoAtualizado = { ...prev, saldo: Math.max(0, novoSaldo) };
+                console.log('💰 Saldo recalculado e atualizado:', associadoAtualizado);
+                return associadoAtualizado;
+              }
+              return prev;
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('❌ Erro ao recalcular saldo após lançamento:', error);
+    }
+  };
+
   // Modifique a função handleSubmit para usar verificarSenhaXHR
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1107,12 +1171,15 @@ export default function NovoLancamentoPage() {
               console.log('✅ Venda registrada com sucesso! Registro:', resultadoVenda.registrolan);
               toast.success('Pagamento realizado com sucesso!');
               
-              // Salvar dados da venda
+                            // Salvar dados da venda
               if (resultadoVenda.registrolan) {
                 console.log('✅ Registro de lançamento:', resultadoVenda.registrolan);
                 // Aqui poderia armazenar o registro para exibição ou referência futura
               }
               
+              // Recalcular saldo após lançamento bem-sucedido
+              await recalcularSaldoAposLancamento();
+                
               // Exibir tela de confirmação
               setValorPagamento(valor);
               setShowConfirmacao(true);
@@ -1125,6 +1192,10 @@ export default function NovoLancamentoPage() {
               // Caso em que recebemos texto, mas assumimos sucesso
               console.log('✅ Venda possivelmente registrada (resposta em texto)');
               toast.success('Pagamento processado!');
+              
+              // Recalcular saldo após lançamento bem-sucedido
+              await recalcularSaldoAposLancamento();
+              
               setValorPagamento(valor);
               setShowConfirmacao(true);
             } else {
@@ -1136,6 +1207,10 @@ export default function NovoLancamentoPage() {
             // Resposta é string não vazia, assumimos sucesso
             console.log('✅ Resposta em formato de texto:', resultadoVenda);
             toast.success('Pagamento processado!');
+            
+            // Recalcular saldo após lançamento bem-sucedido
+            await recalcularSaldoAposLancamento();
+            
             setValorPagamento(valor);
             setShowConfirmacao(true);
           } else {
