@@ -1560,6 +1560,20 @@ export default function NovoLancamentoPage() {
                       ))}
                     </select>
                   </div>
+                  
+                  {/* Informação das parcelas logo abaixo do campo */}
+                  {parcelas > 1 && valorParcela > 0 && (
+                    <div className="mt-2 bg-blue-50 p-3 rounded-md">
+                      <p className="text-sm text-blue-700">
+                        Pagamento em <strong>{parcelas}x</strong> de <strong>
+                          {valorParcela.toLocaleString('pt-BR', {
+                            style: 'currency',
+                            currency: 'BRL'
+                          })}
+                        </strong>
+                      </p>
+                    </div>
+                  )}
                 </div>
                 
                 <div>
@@ -1575,19 +1589,6 @@ export default function NovoLancamentoPage() {
                     </div>
                   </div>
                 </div>
-                
-                {parcelas > 1 && valorParcela > 0 && (
-                  <div className="bg-blue-50 p-3 rounded-md">
-                    <p className="text-sm text-blue-700">
-                      Pagamento em <strong>{parcelas}x</strong> de <strong>
-                        {valorParcela.toLocaleString('pt-BR', {
-                          style: 'currency',
-                          currency: 'BRL'
-                        })}
-                      </strong>
-                    </p>
-                  </div>
-                )}
                 
                 <div>
                   <label htmlFor="descricao" className="block text-sm font-medium text-gray-700 mb-1">
