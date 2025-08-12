@@ -269,7 +269,7 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
             <div className="flex items-center">
               <span className="mr-3">{item.icon}</span>
               {item.label}
-              {!loadingAdesao && !jaAderiuSasCred && (
+              {!loadingAdesao && !jaAderiuSasCred && item.label === 'SasCred' && (
                 <span className="ml-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
                   Novo
                 </span>
