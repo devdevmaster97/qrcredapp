@@ -25,7 +25,8 @@ import {
   FaMoneyBillWave,
   FaHistory,
   FaClock,
-  FaFileContract
+  FaFileContract,
+  FaShieldAlt
 } from 'react-icons/fa';
 
 type SidebarProps = {
@@ -44,6 +45,7 @@ interface UserData {
 export default function Sidebar({ userName, cardNumber, company }: SidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSasCredOpen, setIsSasCredOpen] = useState(false);
+  const [isProtecaoFamiliarOpen, setIsProtecaoFamiliarOpen] = useState(false);
   const pathname = usePathname();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [assinaturaCompleta, setAssinaturaCompleta] = useState(false);
@@ -137,6 +139,10 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
     setIsSasCredOpen(!isSasCredOpen);
   };
 
+  const toggleProtecaoFamiliar = () => {
+    setIsProtecaoFamiliarOpen(!isProtecaoFamiliarOpen);
+  };
+
   // Menu principal (ordem conforme solicitado)
   const menuItems = [
     {
@@ -152,16 +158,28 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
       icon: <FaUser size={20} />
     },
     {
-      type: 'link', 
-      href: '/dashboard/convenios',
-      label: 'Convênios',
-      icon: <FaStore size={20} />
-    },
-    {
-      type: 'link',
-      href: '/dashboard/agendamentos',
-      label: 'Agendamentos',
-      icon: <FaCalendarAlt size={20} />
+      type: 'submenu',
+      label: 'Proteção Familiar',
+      icon: <FaShieldAlt size={20} className="text-blue-500" />,
+      isOpen: isProtecaoFamiliarOpen,
+      toggle: toggleProtecaoFamiliar,
+      items: [
+        {
+          href: '/dashboard/protecao-familiar/o-que-e',
+          label: 'O que é',
+          icon: <FaInfoCircle size={16} />
+        },
+        {
+          href: '/dashboard/convenios',
+          label: 'Convênios',
+          icon: <FaStore size={16} />
+        },
+        {
+          href: '/dashboard/agendamentos',
+          label: 'Agendamentos',
+          icon: <FaCalendarAlt size={16} />
+        }
+      ]
     },
     {
       type: 'submenu',
