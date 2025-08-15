@@ -156,14 +156,14 @@ try {
         ]);
     }
 
-    // Filtrar apenas documentos com nome "Termo Adesão SasPyx"
-    if ($docName !== 'Termo Adesão SasPyx') {
-        writeLog("INFO: Documento ignorado - nome do documento: '{$docName}' - Apenas 'Termo Adesão SasPyx' são processados");
+    // Filtrar apenas documentos com nome "Contrato de Antecipação Salarial"
+    if ($docName !== 'Contrato de Antecipação Salarial') {
+        writeLog("INFO: Documento ignorado - nome do documento: '{$docName}' - Apenas 'Contrato de Antecipação Salarial' são processados");
         jsonResponse([
             'status' => 'sucesso',
             'mensagem' => 'Documento processado (ignorado por filtro de nome)',
             'doc_name' => $docName,
-            'filtro' => 'Apenas documentos "Termo Adesão SasPyx" são processados'
+            'filtro' => 'Apenas documentos "Contrato de Antecipação Salarial" são processados'
         ]);
     }
 
