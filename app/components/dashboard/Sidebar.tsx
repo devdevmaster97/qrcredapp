@@ -29,7 +29,8 @@ import {
   FaShieldAlt,
   FaHeart,
   FaUserPlus,
-  FaEnvelope
+  FaEnvelope,
+  FaSignature
 } from 'react-icons/fa';
 
 type SidebarProps = {
@@ -50,6 +51,7 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
   const [isSasCredOpen, setIsSasCredOpen] = useState(false);
   const [isProtecaoFamiliarOpen, setIsProtecaoFamiliarOpen] = useState(false);
   const [isProgramadoOpen, setIsProgramadoOpen] = useState(false);
+  const [isAntecipacaoOpen, setIsAntecipacaoOpen] = useState(false);
   const pathname = usePathname();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [assinaturaCompleta, setAssinaturaCompleta] = useState(false);
@@ -156,6 +158,10 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
     setIsProgramadoOpen(!isProgramadoOpen);
   };
 
+  const toggleAntecipacao = () => {
+    setIsAntecipacaoOpen(!isAntecipacaoOpen);
+  };
+
   // Menu principal (ordem conforme solicitado)
   const menuItems = [
     {
@@ -237,9 +243,26 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
             icon: <FaStore size={16} />
           },
           {
-            href: '/dashboard/antecipacao',
+            type: 'submenu',
             label: 'Antecipação',
-            icon: <FaHistory size={16} />
+            icon: <FaHistory size={16} />,
+            isOpen: isAntecipacaoOpen,
+            toggle: toggleAntecipacao,
+            items: [
+              {
+                href: '/dashboard/sascred/antecipacao/aderir',
+                label: 'Aderir',
+                icon: <FaFileContract size={14} className="text-blue-500" />
+              },
+              // Só mostrar "Antecipar" se assinatura digital foi completa
+              ...(assinaturaCompleta ? [
+                {
+                  href: '/dashboard/sascred/antecipacao/antecipar',
+                  label: 'Antecipar',
+                  icon: <FaSignature size={14} className="text-green-500" />
+                }
+              ] : [])
+            ]
           }
         ] : [])
       ]
@@ -321,21 +344,65 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
           {/* Submenu items */}
           {item.isOpen && (
             <ul className="bg-gray-700">
-              {item.items.map((subItem: any) => (
-                <li key={subItem.href}>
-                  <Link href={subItem.href} passHref>
-                    <div
-                      className={`flex items-center px-8 py-2 text-sm transition-colors hover:bg-blue-700 ${
-                        pathname === subItem.href ? 'bg-blue-700' : ''
-                      }`}
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <span className="mr-3">{subItem.icon}</span>
-                      {subItem.label}
-                    </div>
-                  </Link>
-                </li>
-              ))}
+              {item.items.map((subItem: any) => {
+                // Se o subItem é um submenu (como Antecipação)
+                if (subItem.type === 'submenu') {
+                  return (
+                    <li key={subItem.label}>
+                      <button
+                        onClick={subItem.toggle}
+                        className={`flex items-center justify-between w-full px-8 py-2 text-sm text-left transition-colors hover:bg-blue-700 ${
+                          pathname.includes('/dashboard/sascred/antecipacao') ? 'bg-blue-700' : ''
+                        }`}
+                      >
+                        <div className="flex items-center">
+                          <span className="mr-3">{subItem.icon}</span>
+                          {subItem.label}
+                        </div>
+                        {subItem.isOpen ? <FaChevronDown size={10} /> : <FaChevronRight size={10} />}
+                      </button>
+                      
+                      {/* Sub-submenu items */}
+                      {subItem.isOpen && (
+                        <ul className="bg-gray-600">
+                          {subItem.items.map((subSubItem: any) => (
+                            <li key={subSubItem.href}>
+                              <Link href={subSubItem.href} passHref>
+                                <div
+                                  className={`flex items-center px-12 py-2 text-xs transition-colors hover:bg-blue-700 ${
+                                    pathname === subSubItem.href ? 'bg-blue-700' : ''
+                                  }`}
+                                  onClick={() => setIsOpen(false)}
+                                >
+                                  <span className="mr-2">{subSubItem.icon}</span>
+                                  {subSubItem.label}
+                                </div>
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  );
+                }
+                
+                // Item de link normal
+                return (
+                  <li key={subItem.href}>
+                    <Link href={subItem.href} passHref>
+                      <div
+                        className={`flex items-center px-8 py-2 text-sm transition-colors hover:bg-blue-700 ${
+                          pathname === subItem.href ? 'bg-blue-700' : ''
+                        }`}
+                        onClick={() => setIsOpen(false)}
+                      >
+                        <span className="mr-3">{subItem.icon}</span>
+                        {subItem.label}
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
               
               {/* Mostrar mensagem se não aderiu ainda (só para SasCred) */}
               {!loadingAdesao && !jaAderiuSasCred && item.label === 'SasCred' && item.items.length === 2 && (
