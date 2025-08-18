@@ -1458,19 +1458,25 @@ export default function NovoLancamentoPage() {
                   </label>
                   <div className="mt-1 flex rounded-md shadow-sm">
                     <div className="relative flex items-stretch flex-grow">
+                      {/* Campos "isca" escondidos para enganar o Chrome */}
+                      <input type="text" style={{display: "none"}} autoComplete="cc-number" tabIndex={-1} />
+                      <input type="text" style={{display: "none"}} autoComplete="cc-name" tabIndex={-1} />
+                      
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <FaCreditCard className="text-gray-400" />
                       </div>
                       <input
                         type="text"
                         id="cartao"
-                        name="cartao"
+                        name="numeroIdentificacao"
                         className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 text-lg py-3 border-2 border-gray-400 rounded-md font-medium"
                         placeholder="Digite o cartão"
                         value={cartao}
                         onChange={(e) => setCartao(e.target.value)}
                         maxLength={10}
-                        autoComplete="nope"
+                        autoComplete="off"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         autoCorrect="off"
                         autoCapitalize="off"
                         spellCheck="false"
@@ -1643,22 +1649,28 @@ export default function NovoLancamentoPage() {
               <h3 className="text-lg font-medium text-gray-900 mb-4">Autorização da Transação</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
+                                <div>
                   <label htmlFor="senha" className="block text-sm font-medium text-gray-700 mb-1">
                     Senha do Cartão
                   </label>
                   <div className="mt-1">
+                    {/* Campos "isca" escondidos para enganar o Chrome */}
+                    <input type="text" style={{display: "none"}} autoComplete="username" tabIndex={-1} />
+                    <input type="password" style={{display: "none"}} autoComplete="new-password" tabIndex={-1} />
+                    
                     <input
                       type="password"
                       id="senha"
-                      name="senha"
+                      name="pinCartao"
                       className="focus:ring-blue-500 focus:border-blue-500 block w-full text-lg py-3 border-2 border-gray-400 rounded-md font-medium"
                       placeholder="Digite a senha de 6 dígitos"
                       value={senha}
                       onChange={(e) => setSenha(e.target.value)}
                       maxLength={6}
-                     //disabled={!associado}
-                      autoComplete="nope"
+                      disabled={!associado}
+                      autoComplete="new-password"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       autoCorrect="off"
                       autoCapitalize="off"
                       spellCheck="false"
@@ -1674,8 +1686,6 @@ export default function NovoLancamentoPage() {
                       aria-autocomplete="none"
                       readOnly
                       onFocus={(e) => e.target.removeAttribute('readOnly')}
-
-                     
                     />
                   </div>
                 </div>
