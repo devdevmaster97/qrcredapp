@@ -1470,7 +1470,7 @@ export default function NovoLancamentoPage() {
                         value={cartao}
                         onChange={(e) => setCartao(e.target.value)}
                         maxLength={10}
-                        autoComplete="off"
+                        autoComplete="nope"
                         autoCorrect="off"
                         autoCapitalize="off"
                         spellCheck="false"
@@ -1479,8 +1479,13 @@ export default function NovoLancamentoPage() {
                         data-1p-ignore
                         data-dashlane-ignore="true"
                         data-bitwarden-watching="false"
+                        data-chrome-autofill="false"
+                        data-password-manager-ignore="true"
+                        data-ms-editor="false"
                         role="textbox"
                         aria-autocomplete="none"
+                        readOnly
+                        onFocus={(e) => e.target.removeAttribute('readOnly')}
                       />
                     </div>
                   </div>
@@ -1653,7 +1658,7 @@ export default function NovoLancamentoPage() {
                       onChange={(e) => setSenha(e.target.value)}
                       maxLength={6}
                       disabled={!associado}
-                      autoComplete="off"
+                      autoComplete="nope"
                       autoCorrect="off"
                       autoCapitalize="off"
                       spellCheck="false"
@@ -1662,8 +1667,13 @@ export default function NovoLancamentoPage() {
                       data-1p-ignore
                       data-dashlane-ignore="true"
                       data-bitwarden-watching="false"
+                      data-chrome-autofill="false"
+                      data-password-manager-ignore="true"
+                      data-ms-editor="false"
                       role="textbox"
                       aria-autocomplete="none"
+                      readOnly
+                      onFocus={(e) => e.target.removeAttribute('readOnly')}
                     />
                   </div>
                 </div>
