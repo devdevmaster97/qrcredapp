@@ -229,7 +229,7 @@ export async function obterDetalhesSignatario(signerToken: string) {
   }
 }
 
-/**
+/** teste
  * URL do ZapSign para verificação de assinatura
  * O signer_token será extraído automaticamente desta URL
  * esta url correponde a um documento com o nome TERMO DE ADESÃO DO CARTÃO CONVÊNIO do zap sign com o token do modelo 762dbe4c-654b-432b-a7a9-38435966e0aa
