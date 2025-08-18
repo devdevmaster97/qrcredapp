@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { shouldForceAntecipacaoCheck, markAntecipacaoChecked } from '@/app/utils/antecipacaoNotifications';
+import { verificarAssinaturaPorUrl } from '@/app/utils/assinatura';
 
 interface UseAntecipacaoAprovadaResult {
   aprovada: boolean;
@@ -87,22 +88,42 @@ export function useAntecipacaoAprovada(): UseAntecipacaoAprovadaResult {
         });
 
         if (isMounted) {
-          let isAprovada = aprovacaoData.aprovada || false;
+          let isAprovada = false;
           
-          // SOLUÇÃO: Verificar localStorage para override manual
-          const manualApproval = localStorage.getItem(`antecipacao_aprovada_${localizaData.matricula}`);
-          if (manualApproval === 'true') {
-            isAprovada = true;
-            console.log('🔧 Aprovação manual encontrada no localStorage para:', localizaData.matricula);
-          }
+          // VERIFICAÇÃO DUPLA OBRIGATÓRIA:
+          // 1. Valor aprovado preenchido no banco (API)
+          // 2. Assinatura digital completa no ZapSign
           
-          // TEMPORÁRIO: Forçar para código 222222 até API funcionar
-          if (localizaData.matricula === '222222') {
-            isAprovada = true;
-            console.log('🔥 FORÇANDO aprovada=true para código 222222 (TEMPORÁRIO)');
-            console.log('📋 Dados do usuário 222222 - antecipação habilitada por ter valor_aprovado preenchido');
-            // Salvar no localStorage para persistir
-            localStorage.setItem(`antecipacao_aprovada_${localizaData.matricula}`, 'true');
+          const valorAprovadoOk = aprovacaoData.aprovada || false;
+          
+          // Verificar assinatura digital específica da antecipação
+          const urlAntecipacao = "https://app.zapsign.com.br/verificar/doc/762dbe4c-654b-432b-a7a9-38435966e0aa";
+          
+          try {
+            console.log('🔍 Verificando assinatura digital da antecipação...');
+            const assinaturaCompleta = await verificarAssinaturaPorUrl(urlAntecipacao);
+            
+            console.log('📊 Status das verificações:', {
+              valorAprovadoOk,
+              assinaturaCompleta,
+              codigo: localizaData.matricula
+            });
+            
+            // Só aprovar se AMBOS forem verdadeiros
+            if (valorAprovadoOk && assinaturaCompleta) {
+              isAprovada = true;
+              console.log('✅ ANTECIPAÇÃO TOTALMENTE APROVADA: assinatura digital + valor aprovado');
+            } else if (valorAprovadoOk && !assinaturaCompleta) {
+              console.log('⚠️ Valor aprovado OK, mas assinatura digital pendente');
+            } else if (!valorAprovadoOk && assinaturaCompleta) {
+              console.log('⚠️ Assinatura digital OK, mas valor aprovado pendente');
+            } else {
+              console.log('❌ Ambos pendentes: assinatura digital e valor aprovado');
+            }
+            
+          } catch (error) {
+            console.error('❌ Erro ao verificar assinatura digital:', error);
+            isAprovada = false;
           }
           
           console.log('✅ Definindo antecipacaoAprovada como:', isAprovada);
