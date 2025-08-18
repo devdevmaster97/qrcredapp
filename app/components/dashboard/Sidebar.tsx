@@ -135,6 +135,11 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
       if (pathname.includes('/dashboard/programado')) {
         setIsProgramadoOpen(true);
       }
+
+      // Expandir automaticamente o submenu Antecipação se estiver em uma página relacionada
+      if (pathname.includes('/dashboard/sascred/antecipacao')) {
+        setIsAntecipacaoOpen(true);
+      }
     }, [pathname]);
 
   const handleAntecipacao = () => {

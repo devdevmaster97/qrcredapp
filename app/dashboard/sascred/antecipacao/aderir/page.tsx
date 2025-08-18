@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { FaArrowLeft, FaFileContract, FaSignature, FaCheckCircle, FaExternalLinkAlt } from 'react-icons/fa';
+import { FaArrowLeft, FaFileContract, FaSignature, FaCheckCircle, FaMoneyBillWave, FaShieldAlt, FaClock } from 'react-icons/fa';
 
 export default function AderirAntecipacao() {
   const [isChecked, setIsChecked] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleAceitarEAderir = () => {
+  const handleAceitarEAderirAntecipacao = () => {
     if (!isChecked) {
       alert('Você deve aceitar os termos para prosseguir.');
       return;
@@ -16,7 +16,7 @@ export default function AderirAntecipacao() {
 
     setIsLoading(true);
     
-    // Redirecionar para ZapSign para assinatura digital
+    // Redirecionar para ZapSign para assinatura digital da antecipação
     const zapSignUrl = "https://app.zapsign.com.br/verificar/doc/762dbe4c-654b-432b-a7a9-38435966e0aa";
     window.open(zapSignUrl, '_blank');
     
@@ -52,20 +52,20 @@ export default function AderirAntecipacao() {
         {/* Introdução */}
         <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
           <div className="flex items-center mb-6">
-            <FaFileContract className="text-blue-500 text-3xl mr-4" />
+            <FaMoneyBillWave className="text-green-500 text-3xl mr-4" />
             <h2 className="text-2xl font-bold text-gray-900">
-              Termo de Adesão - Antecipação Salarial
+              Antecipação Salarial SasCred
             </h2>
           </div>
           
           <div className="text-lg text-gray-700 leading-relaxed space-y-4">
             <p>
-              O <strong>SasCred Antecipação</strong> permite que você receba parte do seu salário antes do fechamento do mês, oferecendo uma solução prática para imprevistos e necessidades financeiras urgentes.
+              A <strong>Antecipação SasCred</strong> permite que você receba parte do seu salário antes do fechamento do mês, oferecendo uma solução prática para imprevistos e necessidades financeiras urgentes.
             </p>
             
             <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
               <p className="text-blue-800 font-medium">
-                💡 <strong>Importante:</strong> O SasCred não é um empréstimo! É o seu próprio salário sendo antecipado.
+                💡 <strong>Importante:</strong> A Antecipação SasCred não é um empréstimo! É o seu próprio salário sendo antecipado.
               </p>
             </div>
           </div>
@@ -90,21 +90,21 @@ export default function AderirAntecipacao() {
             
             <div className="text-center">
               <div className="bg-blue-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <FaSignature className="text-blue-600 text-xl" />
+                <FaClock className="text-blue-600 text-xl" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">100% Digital</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">Liberação Rápida</h3>
               <p className="text-gray-600 text-sm">
-                Processo completamente digital com assinatura eletrônica
+                Aprovação em minutos e dinheiro na conta no mesmo dia
               </p>
             </div>
             
             <div className="text-center">
               <div className="bg-purple-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <FaExternalLinkAlt className="text-purple-600 text-xl" />
+                <FaSignature className="text-purple-600 text-xl" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Liberação Rápida</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">100% Digital</h3>
               <p className="text-gray-600 text-sm">
-                Aprovação em minutos e dinheiro na conta no mesmo dia
+                Processo completamente digital com assinatura eletrônica
               </p>
             </div>
           </div>
@@ -113,7 +113,7 @@ export default function AderirAntecipacao() {
         {/* Regras e Limites */}
         <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">
-            Regras e Limites
+            Regras e Limites da Antecipação
           </h2>
           
           <div className="grid md:grid-cols-2 gap-8">
@@ -155,31 +155,65 @@ export default function AderirAntecipacao() {
           </div>
         </div>
 
-        {/* Termos de Adesão */}
+        {/* Termos Específicos da Antecipação */}
         <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">
-            Termos de Adesão
+            Termos Específicos da Antecipação Salarial
           </h2>
           
-          <div className="space-y-4 text-gray-700">
-            <div className="flex items-start">
+          <div className="text-gray-700 leading-relaxed space-y-4">
+            <section>
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">1. Sobre a Antecipação Salarial</h3>
+              <p className="text-justify">
+                A Antecipação Salarial SasCred permite ao usuário receber parte de seu salário futuro de forma antecipada, 
+                mediante desconto automático na folha de pagamento do mês subsequente.
+              </p>
+            </section>
+
+            <section>
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">2. Condições de Antecipação</h3>
+              <ul className="list-disc list-inside space-y-2 ml-4">
+                <li>O valor antecipado será limitado a 40% do salário líquido mensal</li>
+                <li>Taxa de administração será aplicada conforme tabela vigente</li>
+                <li>Desconto automático será realizado na próxima folha de pagamento</li>
+                <li>Assinatura digital é obrigatória para cada solicitação</li>
+              </ul>
+            </section>
+
+            <section>
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">3. Autorização de Desconto</h3>
+              <p className="text-justify">
+                O usuário autoriza expressamente sua empregadora a efetuar o desconto dos valores antecipados 
+                diretamente em sua folha de pagamento, conforme Artigo 462 da CLT.
+              </p>
+            </section>
+
+            <section>
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">4. Assinatura Digital</h3>
+              <p className="text-justify">
+                Para garantir a segurança e validade jurídica da operação, é obrigatória a assinatura digital 
+                do contrato de antecipação através da plataforma ZapSign.
+              </p>
+            </section>
+          </div>
+        </div>
+
+        {/* Checkbox de Aceitação */}
+        <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+          <div className="bg-blue-50 p-6 rounded-lg">
+            <label className="flex items-start space-x-3 cursor-pointer">
               <input
                 type="checkbox"
-                id="aceito-termos"
                 checked={isChecked}
                 onChange={(e) => setIsChecked(e.target.checked)}
-                className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="mt-1 h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <label htmlFor="aceito-termos" className="ml-3 text-sm">
-                <span className="font-medium">Eu aceito os termos e condições</span> da Antecipação Salarial SasCred e autorizo:
-                <ul className="mt-2 ml-4 space-y-1 text-xs text-gray-600">
-                  <li>• O desconto automático dos valores antecipados em minha folha de pagamento</li>
-                  <li>• A consulta aos meus dados trabalhistas para análise de crédito</li>
-                  <li>• O processamento dos meus dados conforme a LGPD</li>
-                  <li>• A assinatura digital do contrato de antecipação</li>
-                </ul>
-              </label>
-            </div>
+              <span className="text-sm text-gray-700 leading-relaxed">
+                <strong>☑ Declaro que li, entendi e concordo com os termos da Antecipação Salarial SasCred, 
+                ciente de que a aceitação implica minha adesão ao serviço de antecipação e autorizo minha empregadora 
+                a efetivar o desconto em folha dos valores antecipados e das taxas de administração aplicáveis.</strong>
+              </span>
+            </label>
           </div>
         </div>
 
@@ -196,7 +230,7 @@ export default function AderirAntecipacao() {
           </p>
           
           <button
-            onClick={handleAceitarEAderir}
+            onClick={handleAceitarEAderirAntecipacao}
             disabled={!isChecked || isLoading}
             className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 px-8 rounded-lg flex items-center mx-auto transition-colors"
           >
@@ -215,8 +249,22 @@ export default function AderirAntecipacao() {
           
           <div className="mt-8 p-4 bg-yellow-50 rounded-lg">
             <p className="text-sm text-gray-700">
-              <strong>Importante:</strong> Você será redirecionado para a plataforma ZapSign para assinar digitalmente o contrato. 
+              <strong>Importante:</strong> Você será redirecionado para a plataforma ZapSign para assinar digitalmente o contrato de antecipação. 
               Após a assinatura, a funcionalidade "Antecipar" ficará disponível no menu.
+            </p>
+          </div>
+        </div>
+
+        {/* Segurança */}
+        <div className="bg-gradient-to-r from-blue-50 to-green-50 rounded-lg p-8 mt-8">
+          <div className="text-center">
+            <FaShieldAlt className="text-blue-600 text-4xl mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Segurança e Proteção de Dados
+            </h2>
+            <p className="text-gray-700 max-w-2xl mx-auto">
+              Todos os dados são protegidos com criptografia de ponta e o sistema segue as normas 
+              da LGPD. Suas informações financeiras estão sempre seguras conosco.
             </p>
           </div>
         </div>
