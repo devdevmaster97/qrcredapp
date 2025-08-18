@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { shouldForceAntecipacaoCheck, markAntecipacaoChecked } from '@/app/utils/antecipacaoNotifications';
 
 interface UseAntecipacaoAprovadaResult {
   aprovada: boolean;
@@ -13,6 +14,7 @@ export function useAntecipacaoAprovada(): UseAntecipacaoAprovadaResult {
 
   useEffect(() => {
     let isMounted = true;
+    let intervalId: NodeJS.Timeout;
 
     const verificarAprovacao = async () => {
       try {
@@ -77,10 +79,20 @@ export function useAntecipacaoAprovada(): UseAntecipacaoAprovadaResult {
 
         const aprovacaoData = await aprovacaoResponse.json();
         
-        console.log('🔍 Hook useAntecipacaoAprovada - Resultado:', aprovacaoData);
+        console.log('🔍 Hook useAntecipacaoAprovada - Dados completos:', {
+          codigo: localizaData.matricula,
+          aprovacaoData: aprovacaoData,
+          aprovada: aprovacaoData.aprovada,
+          success: aprovacaoData.success
+        });
 
         if (isMounted) {
-          setAprovada(aprovacaoData.aprovada || false);
+          const isAprovada = aprovacaoData.aprovada || false;
+          console.log('✅ Definindo antecipacaoAprovada como:', isAprovada);
+          setAprovada(isAprovada);
+          
+          // Marcar que a verificação foi realizada
+          markAntecipacaoChecked();
         }
 
       } catch (err) {
@@ -96,10 +108,50 @@ export function useAntecipacaoAprovada(): UseAntecipacaoAprovadaResult {
       }
     };
 
+    // Verificação inicial
     verificarAprovacao();
+
+    // Configurar verificação periódica a cada 15 segundos (mais frequente)
+    intervalId = setInterval(() => {
+      if (isMounted) {
+        // Verificar se deve forçar uma nova verificação
+        const shouldForce = shouldForceAntecipacaoCheck();
+        if (shouldForce) {
+          console.log('🔔 Verificação forçada da aprovação da antecipação');
+          verificarAprovacao();
+        } else {
+          console.log('🔄 Verificação periódica da aprovação da antecipação');
+          verificarAprovacao();
+        }
+      }
+    }, 15000); // 15 segundos
+
+    // Listener para verificação quando a janela recebe foco
+    const handleWindowFocus = () => {
+      if (isMounted) {
+        console.log('👁️ Janela recebeu foco - verificando aprovação da antecipação');
+        verificarAprovacao();
+      }
+    };
+
+    // Listener para evento customizado de mudança de status
+    const handleAntecipacaoStatusChanged = () => {
+      if (isMounted) {
+        console.log('🔔 Evento de mudança de status da antecipação recebido');
+        verificarAprovacao();
+      }
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+    window.addEventListener('antecipacaoStatusChanged', handleAntecipacaoStatusChanged);
 
     return () => {
       isMounted = false;
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+      window.removeEventListener('focus', handleWindowFocus);
+      window.removeEventListener('antecipacaoStatusChanged', handleAntecipacaoStatusChanged);
     };
   }, []);
 

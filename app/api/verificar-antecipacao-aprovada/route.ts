@@ -19,10 +19,10 @@ export async function POST(request: NextRequest) {
     // Fazer requisição para API PHP que verifica assinaturas digitais aprovadas
     const params = new URLSearchParams();
     params.append('codigo', codigo.toString());
-    params.append('tipo', 'antecipacao'); // Filtrar apenas assinaturas do tipo "antecipacao"
+    params.append('tipo', 'antecipação'); // Usar com acento como provavelmente está no banco
 
     const response = await axios.post(
-      'https://sas.makecard.com.br/verificar_assinatura_aprovada.php',
+      'https://sas.makecard.com.br/verificar_assinatura_aprovada_debug.php',
       params,
       {
         headers: {
