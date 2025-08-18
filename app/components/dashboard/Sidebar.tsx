@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { isAssinaturaCompleta, abrirCanalAntecipacao } from '@/app/utils/assinatura';
 import { useAdesaoSasCred } from '@/app/hooks/useAdesaoSasCred';
+import { useAntecipacaoAprovada } from '@/app/hooks/useAntecipacaoAprovada';
 import { 
   FaWallet, 
   FaClipboardList, 
@@ -60,6 +61,9 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
   
   // Hook para verificar adesão ao SasCred
   const { jaAderiu: jaAderiuSasCred, loading: loadingAdesao } = useAdesaoSasCred();
+  
+  // Hook para verificar se antecipação foi aprovada
+  const { aprovada: antecipacaoAprovada, loading: loadingAntecipacao } = useAntecipacaoAprovada();
 
   // Debug do status de adesão e timeout do loading
   useEffect(() => {
@@ -259,8 +263,8 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
                 label: 'Aderir',
                 icon: <FaFileContract size={14} className="text-blue-500" />
               },
-              // Só mostrar "Antecipar" se assinatura digital foi completa
-              ...(assinaturaCompleta ? [
+              // Só mostrar "Antecipar" se antecipação foi aprovada (tipo "antecipacao" com Valor Aprovado e Data Pgto)
+              ...(antecipacaoAprovada ? [
                 {
                   href: '/dashboard/sascred/antecipacao/antecipar',
                   label: 'Antecipar',

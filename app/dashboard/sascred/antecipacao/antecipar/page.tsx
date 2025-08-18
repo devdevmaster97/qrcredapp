@@ -2,17 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { FaArrowLeft, FaMoneyBillWave, FaCalculator, FaWhatsapp, FaShieldAlt, FaCheckCircle } from 'react-icons/fa';
+import { FaArrowLeft, FaMoneyBillWave, FaCalculator, FaWhatsapp, FaShieldAlt, FaCheckCircle, FaFileContract } from 'react-icons/fa';
 import { isAssinaturaCompleta, abrirCanalAntecipacao } from '@/app/utils/assinatura';
+import { useAntecipacaoAprovada } from '@/app/hooks/useAntecipacaoAprovada';
 
 export default function AnteciparSasCred() {
-  const [assinaturaCompleta, setAssinaturaCompleta] = useState(false);
   const [valor, setValor] = useState('');
   const [simulacao, setSimulacao] = useState<any>(null);
-
-  useEffect(() => {
-    setAssinaturaCompleta(isAssinaturaCompleta());
-  }, []);
+  
+  // Hook para verificar se antecipação foi aprovada
+  const { aprovada: antecipacaoAprovada, loading: loadingAntecipacao } = useAntecipacaoAprovada();
 
   const calcularSimulacao = () => {
     const valorNumerico = parseFloat(valor.replace(/[^\d,]/g, '').replace(',', '.'));
@@ -35,8 +34,16 @@ export default function AnteciparSasCred() {
     abrirCanalAntecipacao();
   };
 
-  // Se não tem assinatura digital completa, redirecionar para aderir
-  if (!assinaturaCompleta) {
+  // Se antecipação não foi aprovada, redirecionar para aderir
+  if (loadingAntecipacao) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-pulse text-xl text-gray-500">Verificando aprovação da antecipação...</div>
+      </div>
+    );
+  }
+
+  if (!antecipacaoAprovada) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -54,11 +61,11 @@ export default function AnteciparSasCred() {
             <FaShieldAlt className="text-yellow-500 text-6xl mx-auto mb-6" />
             
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              Assinatura Digital Necessária
+              Antecipação Não Aprovada
             </h2>
             
             <p className="text-gray-600 mb-8">
-              Para acessar a funcionalidade de antecipação, você precisa primeiro fazer a adesão com assinatura digital.
+              Para acessar a funcionalidade de antecipação, você precisa primeiro fazer a adesão e ter sua antecipação aprovada pela administração.
             </p>
             
             <Link 
@@ -66,7 +73,7 @@ export default function AnteciparSasCred() {
               className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg inline-flex items-center transition-colors"
             >
               <FaFileContract className="mr-3" />
-              Fazer Adesão com Assinatura Digital
+              Fazer Adesão à Antecipação
             </Link>
           </div>
         </div>
@@ -102,11 +109,11 @@ export default function AnteciparSasCred() {
           <div className="flex items-center justify-center mb-4">
             <FaCheckCircle className="text-green-500 text-3xl mr-3" />
             <h2 className="text-2xl font-bold text-green-700">
-              Assinatura Digital Completa
+              Antecipação Aprovada
             </h2>
           </div>
           <p className="text-center text-gray-600">
-            Parabéns! Sua assinatura digital foi validada e você já pode solicitar antecipações.
+            Parabéns! Sua antecipação foi aprovada pela administração e você já pode solicitar antecipações salariais.
           </p>
         </div>
 
