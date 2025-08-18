@@ -1646,7 +1646,7 @@ export default function NovoLancamentoPage() {
                       onChange={(e) => setSenha(e.target.value)}
                       maxLength={6}
                       disabled={!associado}
-                      autoComplete="new-password"
+                      autoComplete="off"
                       data-form-type="other"
                       data-lpignore="true"
                       data-1p-ignore
