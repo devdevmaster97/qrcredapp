@@ -1657,7 +1657,7 @@ export default function NovoLancamentoPage() {
                       value={senha}
                       onChange={(e) => setSenha(e.target.value)}
                       maxLength={6}
-                      disabled={!associado}
+                     //disabled={!associado}
                       autoComplete="nope"
                       autoCorrect="off"
                       autoCapitalize="off"
@@ -1674,6 +1674,8 @@ export default function NovoLancamentoPage() {
                       aria-autocomplete="none"
                       readOnly
                       onFocus={(e) => e.target.removeAttribute('readOnly')}
+
+                     
                     />
                   </div>
                 </div>
