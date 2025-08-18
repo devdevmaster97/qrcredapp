@@ -1470,6 +1470,10 @@ export default function NovoLancamentoPage() {
                         value={cartao}
                         onChange={(e) => setCartao(e.target.value)}
                         maxLength={10}
+                        autoComplete="off"
+                        data-form-type="other"
+                        data-lpignore="true"
+                        data-1p-ignore
                       />
                     </div>
                   </div>
@@ -1642,6 +1646,10 @@ export default function NovoLancamentoPage() {
                       onChange={(e) => setSenha(e.target.value)}
                       maxLength={6}
                       disabled={!associado}
+                      autoComplete="new-password"
+                      data-form-type="other"
+                      data-lpignore="true"
+                      data-1p-ignore
                     />
                   </div>
                 </div>

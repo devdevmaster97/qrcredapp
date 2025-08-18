@@ -133,7 +133,7 @@ export default function DashboardLayout({
 
   const menuItems = [
     {
-      name: 'Dashboard',
+      name: 'Página Principal',
       href: '/convenio/dashboard',
       icon: <FaChartLine className="w-5 h-5" />,
       current: pathname === '/convenio/dashboard'
