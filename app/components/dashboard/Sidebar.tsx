@@ -26,7 +26,10 @@ import {
   FaHistory,
   FaClock,
   FaFileContract,
-  FaShieldAlt
+  FaShieldAlt,
+  FaHeart,
+  FaUserPlus,
+  FaEnvelope
 } from 'react-icons/fa';
 
 type SidebarProps = {
@@ -46,6 +49,7 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
   const [isOpen, setIsOpen] = useState(false);
   const [isSasCredOpen, setIsSasCredOpen] = useState(false);
   const [isProtecaoFamiliarOpen, setIsProtecaoFamiliarOpen] = useState(false);
+  const [isProgramadoOpen, setIsProgramadoOpen] = useState(false);
   const pathname = usePathname();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [assinaturaCompleta, setAssinaturaCompleta] = useState(false);
@@ -122,9 +126,14 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
         pathname.includes('/dashboard/qrcode') ||
         pathname.includes('/dashboard/antecipacao') ||
         pathname.includes('/dashboard/adesao-sasapp')) {
-      setIsSasCredOpen(true);
-    }
-  }, [pathname]);
+              setIsSasCredOpen(true);
+      }
+
+      // Expandir automaticamente o menu Programado se estiver em uma página relacionada
+      if (pathname.includes('/dashboard/programado')) {
+        setIsProgramadoOpen(true);
+      }
+    }, [pathname]);
 
   const handleAntecipacao = () => {
     abrirCanalAntecipacao();
@@ -141,6 +150,10 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
 
   const toggleProtecaoFamiliar = () => {
     setIsProtecaoFamiliarOpen(!isProtecaoFamiliarOpen);
+  };
+
+  const toggleProgramado = () => {
+    setIsProgramadoOpen(!isProgramadoOpen);
   };
 
   // Menu principal (ordem conforme solicitado)
@@ -227,13 +240,38 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
             href: '/dashboard/antecipacao',
             label: 'Antecipação',
             icon: <FaHistory size={16} />
-          },
-          {
-            href: '/dashboard/sascred/programado',
-            label: 'Programado',
-            icon: <FaClock size={16} />
           }
         ] : [])
+      ]
+    },
+    // PROGRAMADO como submenu independente
+    {
+      type: 'submenu',
+      label: 'Programado',
+      icon: <FaHeart size={20} className="text-red-500" />,
+      isOpen: isProgramadoOpen,
+      toggle: toggleProgramado,
+      items: [
+        {
+          href: '/dashboard/programado/o-que-e',
+          label: 'O que é',
+          icon: <FaInfoCircle size={16} />
+        },
+        {
+          href: '/dashboard/programado/aderir',
+          label: 'Aderir',
+          icon: <FaFileContract size={16} className="text-green-500" />
+        },
+        {
+          href: '/dashboard/programado/adicionar-dependente',
+          label: 'Adicionar Dependente',
+          icon: <FaUserPlus size={16} className="text-blue-500" />
+        },
+        {
+          href: '/dashboard/programado/solicitar-beneficio',
+          label: 'Solicitar Benefício',
+          icon: <FaEnvelope size={16} className="text-purple-500" />
+        }
       ]
     },
     {
@@ -258,12 +296,14 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
           <button
             onClick={item.toggle}
             className={`flex items-center justify-between w-full px-5 py-3 text-left transition-colors hover:bg-blue-700 ${
-              pathname.includes('/dashboard/sascred') || 
-              pathname.includes('/dashboard/saldo') ||
-              pathname.includes('/dashboard/extrato') ||
-              pathname.includes('/dashboard/qrcode') ||
-              pathname.includes('/dashboard/antecipacao') ||
-              pathname.includes('/dashboard/adesao-sasapp') ? 'bg-blue-700' : ''
+              (pathname.includes('/dashboard/sascred') || 
+               pathname.includes('/dashboard/saldo') ||
+               pathname.includes('/dashboard/extrato') ||
+               pathname.includes('/dashboard/qrcode') ||
+               pathname.includes('/dashboard/antecipacao') ||
+               pathname.includes('/dashboard/adesao-sasapp')) && item.label === 'SasCred' ? 'bg-blue-700' : ''
+            } ${
+              pathname.includes('/dashboard/programado') && item.label === 'Programado' ? 'bg-blue-700' : ''
             }`}
           >
             <div className="flex items-center">
@@ -297,8 +337,8 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
                 </li>
               ))}
               
-              {/* Mostrar mensagem se não aderiu ainda */}
-              {!loadingAdesao && !jaAderiuSasCred && item.items.length === 2 && (
+              {/* Mostrar mensagem se não aderiu ainda (só para SasCred) */}
+              {!loadingAdesao && !jaAderiuSasCred && item.label === 'SasCred' && item.items.length === 2 && (
                 <li className="px-8 py-2 text-xs text-gray-300 border-t border-gray-600 mt-1">
                   <FaInfoCircle className="inline mr-1" />
                   Faça a adesão para acessar mais opções
