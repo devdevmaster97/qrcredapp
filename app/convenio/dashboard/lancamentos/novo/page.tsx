@@ -1471,9 +1471,16 @@ export default function NovoLancamentoPage() {
                         onChange={(e) => setCartao(e.target.value)}
                         maxLength={10}
                         autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="off"
+                        spellCheck="false"
                         data-form-type="other"
                         data-lpignore="true"
                         data-1p-ignore
+                        data-dashlane-ignore="true"
+                        data-bitwarden-watching="false"
+                        role="textbox"
+                        aria-autocomplete="none"
                       />
                     </div>
                   </div>
@@ -1647,9 +1654,16 @@ export default function NovoLancamentoPage() {
                       maxLength={6}
                       disabled={!associado}
                       autoComplete="off"
+                      autoCorrect="off"
+                      autoCapitalize="off"
+                      spellCheck="false"
                       data-form-type="other"
                       data-lpignore="true"
                       data-1p-ignore
+                      data-dashlane-ignore="true"
+                      data-bitwarden-watching="false"
+                      role="textbox"
+                      aria-autocomplete="none"
                     />
                   </div>
                 </div>
