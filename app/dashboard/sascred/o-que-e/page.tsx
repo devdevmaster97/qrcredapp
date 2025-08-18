@@ -23,10 +23,10 @@ export default function OQueESasCred() {
           
           <div className="text-center">
             <h1 className="text-3xl font-bold text-gray-900 mb-4">
-              O que é o SasCred?
+              O que é?
             </h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Conheça o sistema de adiantamento salarial que oferece mais flexibilidade financeira para associados
+              Sistema de Administração de Convênios entre a empresa e estabelecimentos comerciais
             </p>
           </div>
         </div>
@@ -36,19 +36,25 @@ export default function OQueESasCred() {
           <div className="flex items-center mb-6">
             <FaMoneyBillWave className="text-green-500 text-3xl mr-4" />
             <h2 className="text-2xl font-bold text-gray-900">
-              Adiantamento Salarial Inteligente
+              Sistema de Convênios
             </h2>
           </div>
           
-          <p className="text-lg text-gray-700 leading-relaxed mb-6">
-            O <strong>SasCred</strong> é um sistema inovador que permite aos associados receberem parte do salário 
-            antes do fechamento do mês, oferecendo uma solução prática para imprevistos e necessidades financeiras urgentes.
-          </p>
-          
-          <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
-            <p className="text-blue-800 font-medium">
-              💡 <strong>Importante:</strong> O SasCred não é um empréstimo! É o seu próprio salário sendo 
-              antecipado.
+          <div className="text-lg text-gray-700 leading-relaxed space-y-4">
+            <p>
+              <strong>Sistema de Administração de Convênios</strong> entre a empresa e estabelecimentos comerciais que priorizam e valorizam seus funcionários, associados e afiliados.
+            </p>
+            
+            <p>
+              Possibilita compra nos estabelecimentos parceiros através da apresentação de cartão (físico ou virtual).
+            </p>
+            
+            <p>
+              Possibilita a antecipação salarial (*contratação adicional).
+            </p>
+            
+            <p>
+              O valor da compra ou (da antecipação) é descontado do salário do funcionário, que tem um limite pré-definido pela empresa/sindicato/associação.
             </p>
           </div>
         </div>
