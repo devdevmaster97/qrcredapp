@@ -234,4 +234,4 @@ export async function obterDetalhesSignatario(signerToken: string) {
  * O signer_token será extraído automaticamente desta URL
  * esta url correponde a um documento com o nome TERMO DE ADESÃO DO CARTÃO CONVÊNIO do zap sign com o token do modelo 762dbe4c-654b-432b-a7a9-38435966e0aa
  */
-export const ZAPSIGN_URL = 'https://app.zapsign.com.br/verificar/doc/762dbe4c-654b-432b-a7a9-38435966e0aa'; 
+export const ZAPSIGN_URL = 'https://app.zapsign.com.br/verificar/doc/4bdad7db-07ae-4505-b8cb-0bee880f6fdd'; 
