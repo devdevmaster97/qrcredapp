@@ -155,7 +155,7 @@ export default function SucessoAdesao() {
             className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors duration-200 flex items-center mx-auto"
           >
             <FaHome className="mr-2" />
-            Voltar ao Dashboard
+            Voltar a página principal
           </button>
         </div>
       </div>

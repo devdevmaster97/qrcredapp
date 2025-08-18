@@ -20,7 +20,7 @@ export default function AderirProgramado() {
             className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4"
           >
             <FaArrowLeft className="mr-2" />
-            Voltar ao Dashboard
+            Voltar a página principal
           </Link>
           
           <div className="text-center">

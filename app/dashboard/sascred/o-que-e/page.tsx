@@ -18,7 +18,7 @@ export default function OQueESasCred() {
             className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4"
           >
             <FaArrowLeft className="mr-2" />
-            Voltar ao Dashboard
+            Voltar a página principal
           </Link>
           
           <div className="text-center">
@@ -249,7 +249,7 @@ export default function OQueESasCred() {
               href="/dashboard"
               className="bg-gray-200 text-gray-800 px-8 py-3 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
             >
-              Voltar ao Dashboard
+              Voltar a página principal
             </Link>
           </div>
         </div>
