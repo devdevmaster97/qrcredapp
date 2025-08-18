@@ -276,7 +276,7 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
               // Só mostrar "Antecipar" se antecipação foi aprovada (tipo "antecipacao" com Valor Aprovado e Data Pgto)
               ...(antecipacaoAprovada ? [
                 {
-                  href: '/dashboard/sascred/antecipacao/antecipar',
+                  href: '/dashboard/antecipacao',
                   label: 'Antecipar',
                   icon: <FaSignature size={14} className="text-green-500" />
                 }
