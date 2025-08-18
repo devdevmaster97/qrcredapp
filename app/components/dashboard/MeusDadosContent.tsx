@@ -180,20 +180,13 @@ export default function MeusDadosContent() {
       
       console.log('Enviando dados para atualização:', dadosAtualizacao);
       
-      // Enviar diretamente para a API PHP
-      const params = new URLSearchParams();
-      Object.entries(dadosAtualizacao).forEach(([key, value]) => {
-        if (value !== undefined) {
-          params.append(key, String(value));
-        }
-      });
-      
+      // Usar a API route do Next.js como proxy para evitar CORS
       const response = await axios.post(
-        'https://sas.makecard.com.br/atualiza_associado_app.php',
-        params,
+        '/api/atualiza-associado',
+        dadosAtualizacao,
         {
           headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Type': 'application/json',
           }
         }
       );

@@ -7,10 +7,20 @@ export async function POST(request: NextRequest) {
     
     console.log('Recebendo solicitação para atualizar associado:', body);
     
+    // Converter para URLSearchParams como a API PHP espera
+    const params = new URLSearchParams();
+    Object.entries(body).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        params.append(key, String(value));
+      }
+    });
+    
+    console.log('Parâmetros enviados para PHP:', params.toString());
+    
     // Enviar a requisição para o backend
     const response = await axios.post(
       'https://sas.makecard.com.br/atualiza_associado_app.php',
-      body,
+      params,
       {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
