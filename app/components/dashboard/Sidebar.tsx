@@ -495,32 +495,6 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
             
             {/* Indicador de adesão SasCred */}
             <div className="mt-2">
-              {/* Debug temporário da antecipação */}
-              {loadingAntecipacao && (
-                <div className="mb-2">
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    <div className="animate-spin rounded-full h-2 w-2 border-b border-blue-600 mr-2"></div>
-                    Verificando Antecipação...
-                  </span>
-                </div>
-              )}
-              {!loadingAntecipacao && (
-                <div className="mb-2 flex items-center gap-2">
-                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                    antecipacaoAprovada ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}>
-                    Antecipação: {antecipacaoAprovada ? 'APROVADA' : 'NÃO APROVADA'}
-                  </span>
-                  <button
-                    onClick={triggerAntecipacaoVerification}
-                    className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded hover:bg-blue-200"
-                    title="Forçar verificação"
-                  >
-                    🔄
-                  </button>
-                </div>
-              )}
-              
               {/* Removido log excessivo do render para evitar spam no console */}
               {(loadingAdesao && !loadingTimeout) ? (
                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">

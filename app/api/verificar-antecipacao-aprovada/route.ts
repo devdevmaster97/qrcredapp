@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     params.append('tipo', 'antecipação'); // Usar com acento como provavelmente está no banco
 
     const response = await axios.post(
-      'https://sas.makecard.com.br/verificar_assinatura_aprovada_debug.php',
+      'https://sas.makecard.com.br/verificar_assinatura_aprovada.php',
       params,
       {
         headers: {
