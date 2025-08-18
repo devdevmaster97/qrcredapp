@@ -1145,6 +1145,16 @@ export default function NovoLancamentoPage() {
       toast.error('Busque os dados do cartão primeiro');
       return;
     }
+
+    // Técnica anti-Chrome: Capturar valores antes de limpar campos
+    const cartaoValue = cartao;
+    const senhaValue = senha;
+    
+    // Limpar campos sensíveis imediatamente para evitar prompt de salvamento
+    setTimeout(() => {
+      setCartao('');
+      setSenha('');
+    }, 50);
     
     if (!valor || parseFloat(valor.replace(/[^\d,]/g, '').replace(',', '.')) <= 0) {
       toast.error('Informe um valor válido');
@@ -1182,7 +1192,7 @@ export default function NovoLancamentoPage() {
       const resultadoSenha = await verificarSenhaXHR(
         associado.matricula, 
         associado.empregador, 
-        senha
+        senhaValue
       );
       
       console.log('🔐 Dados da resposta de senha:', resultadoSenha);
@@ -1272,9 +1282,9 @@ export default function NovoLancamentoPage() {
           const dadosVenda = {
             cod_convenio: codConvenio,
             matricula: associado.matricula,
-            pass: senha,
+            pass: senhaValue,
             nome: associado.nome,
-            cartao: cartao,
+            cartao: cartaoValue,
             empregador: associado.empregador,
             valor_pedido: valorFormatado, // Usar valor com exatamente 2 casas decimais
             valor_parcela: valorParcelaFormatado, // Usar valor parcela com exatamente 2 casas decimais
@@ -1446,7 +1456,21 @@ export default function NovoLancamentoPage() {
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-6">Registrar Novo Pagamento</h2>
           
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Formulário falso escondido para enganar o Chrome */}
+          <form style={{display: "none"}} autoComplete="off" data-no-save="true" noValidate>
+            <input type="text" name="username" autoComplete="username" tabIndex={-1} />
+            <input type="password" name="password" autoComplete="current-password" tabIndex={-1} />
+          </form>
+          
+          <form 
+            onSubmit={handleSubmit} 
+            className="space-y-6"
+            autoComplete="off"
+            noValidate
+            data-no-save="true"
+            data-form-type="other"
+            data-chrome-save="false"
+          >
             {/* Seção Cartão */}
             <div className="border-b border-gray-200 pb-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Dados do Cartão</h3>
