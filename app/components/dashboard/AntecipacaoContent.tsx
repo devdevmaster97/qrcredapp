@@ -6,7 +6,8 @@ import { useSession } from 'next-auth/react';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { FaSpinner, FaClockRotateLeft, FaArrowRotateLeft, FaCheckCircle, FaTimesCircle, FaHourglassHalf } from 'react-icons/fa6';
+import { FaSpinner, FaClockRotateLeft, FaArrowRotateLeft, FaHourglassHalf } from 'react-icons/fa6';
+import { FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 
 interface AntecipacaoProps {
   cartao?: string;
@@ -349,8 +350,8 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       // Formatar o valor para exibição
       setValorFormatado(formatarValor(valorNumerico));
       
-      // Calcular taxa
-      const taxaCalculada = valorNumerico * (saldoData?.porcentagem || 0) / 100;
+      // Taxa fixa de R$ 22,50
+      const taxaCalculada = 22.50;
       setTaxa(taxaCalculada);
       
       // Calcular valor total
@@ -367,6 +368,12 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     
+    // Prevenir duplo clique/envio
+    if (isSubmitting) {
+      console.log('⚠️ Solicitação já está sendo processada, ignorando nova tentativa');
+      return;
+    }
+    
     if (!valorSolicitado || parseFloat(valorSolicitado) / 100 <= 0) {
       setErro("Digite o valor desejado");
       return;
@@ -382,6 +389,8 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       return;
     }
 
+    // Marcar como enviando
+    isSubmitting = true;
     setLoading(true);
     try {
       const valorNumerico = parseFloat(valorSolicitado) / 100;
@@ -469,6 +478,8 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       setErro('Não foi possível processar sua solicitação. Tente novamente.');
     } finally {
       setLoading(false);
+      // Liberar flag de submissão
+      isSubmitting = false;
     }
   };
 
@@ -841,16 +852,17 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
             <button
               type="submit"
               className={`w-full p-3 ${
-                loading 
+                loading || isSubmitting
                   ? 'bg-gray-400 cursor-not-allowed' 
                   : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
               } text-white rounded-lg transition-colors font-medium`}
-              disabled={loading}
+              disabled={loading || isSubmitting}
               onClick={(e) => {
                 // Verificação extra para prevenir múltiplos cliques
-                if (loading) {
+                if (loading || isSubmitting) {
                   e.preventDefault();
                   e.stopPropagation();
+                  console.log('⚠️ Botão bloqueado - já processando solicitação');
                   return false;
                 }
               }}

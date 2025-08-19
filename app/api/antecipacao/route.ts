@@ -7,12 +7,17 @@ const processedRequests = new Map<string, Date>();
 // Limpar registros mais antigos que 1 hora
 const cleanupOldRequests = () => {
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+  const keysToDelete: string[] = [];
   
-  for (const [key, timestamp] of processedRequests.entries()) {
+  processedRequests.forEach((timestamp, key) => {
     if (timestamp < oneHourAgo) {
-      processedRequests.delete(key);
+      keysToDelete.push(key);
     }
-  }
+  });
+  
+  keysToDelete.forEach(key => {
+    processedRequests.delete(key);
+  });
 };
 
 export async function POST(request: NextRequest) {
@@ -39,9 +44,14 @@ export async function POST(request: NextRequest) {
     if (processedRequests.has(requestKey)) {
       const timeElapsed = Date.now() - processedRequests.get(requestKey)!.getTime();
       
-      // Se a mesma solicitação foi feita nos últimos 30 segundos, considerar duplicada
-      if (timeElapsed < 30000) {
-        console.log('Solicitação duplicada detectada e bloqueada:', requestKey);
+      // Se a mesma solicitação foi feita nos últimos 60 segundos, considerar duplicada
+      if (timeElapsed < 60000) {
+        console.log('🚫 Solicitação duplicada detectada e bloqueada:', {
+          requestKey,
+          timeElapsed: `${Math.round(timeElapsed / 1000)}s`,
+          matricula,
+          valor_pedido
+        });
         return NextResponse.json(
           { 
             success: true, 
@@ -65,14 +75,16 @@ export async function POST(request: NextRequest) {
     payload.append('mes_corrente', mes_corrente);
     payload.append('chave_pix', chave_pix);
     
-    console.log('Enviando solicitação de antecipação:', {
+    console.log('📤 Enviando solicitação de antecipação:', {
+      requestKey,
       matricula,
       empregador: empregador.toString(),
       valor_pedido: valor_pedido.toString(),
       taxa: taxa.toString(),
       valor_descontar: valor_descontar.toString(),
       mes_corrente,
-      chave_pix
+      chave_pix,
+      timestamp: new Date().toISOString()
     });
     
     // Enviar a requisição para o backend
@@ -108,6 +120,12 @@ export async function POST(request: NextRequest) {
     // Se for bem-sucedido, registrar esta solicitação para evitar duplicações
     if (response.data && response.data.success) {
       processedRequests.set(requestKey, new Date());
+      console.log('✅ Solicitação processada com sucesso e registrada:', {
+        requestKey,
+        matricula,
+        valor_pedido,
+        timestamp: new Date().toISOString()
+      });
       return NextResponse.json(response.data);
     } else {
       // Se a API retornou algum erro específico
