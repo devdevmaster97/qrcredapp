@@ -20,13 +20,40 @@ const cleanupOldRequests = () => {
   });
 };
 
+// CONTROLE GLOBAL DE PROCESSAMENTO ATIVO
+const activeRequests = new Set<string>();
+
 export async function POST(request: NextRequest) {
+  let reqId = '';
+  let requestKey = '';
+  
   try {
     const body = await request.json();
     
     // Verificar parâmetros necessários
     const { matricula, pass, empregador, valor_pedido, taxa, valor_descontar, mes_corrente, chave_pix, request_id } = body;
-    const reqId = request_id || `api_${Date.now()}`;
+    reqId = request_id || `api_${Date.now()}`;
+    
+    // SOLUÇÃO DE EMERGÊNCIA: Bloquear solicitações idênticas em processamento
+    requestKey = `${matricula}_${empregador}_${valor_pedido}_${mes_corrente}`;
+    
+    if (activeRequests.has(requestKey)) {
+      console.log(`🚫 [${reqId}] EMERGÊNCIA - Solicitação já em processamento:`, {
+        requestKey,
+        matricula,
+        valor_pedido
+      });
+      return NextResponse.json({
+        success: true,
+        message: 'Sua solicitação já está sendo processada. Aguarde a análise.',
+        duplicate_prevented: true,
+        emergency_block: true
+      });
+    }
+    
+    // Marcar como em processamento
+    activeRequests.add(requestKey);
+    console.log(`🔒 [${reqId}] Solicitação marcada como em processamento:`, requestKey);
     
     if (!matricula || !pass || !empregador || !valor_pedido || !taxa || !valor_descontar || !mes_corrente || !chave_pix) {
       return NextResponse.json(
@@ -136,7 +163,6 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    const reqId = 'unknown';
     console.error(`💥 [${reqId}] Erro na API de antecipação:`, error);
     
     let errorMessage = 'Erro ao processar a requisição';
@@ -179,5 +205,11 @@ export async function POST(request: NextRequest) {
       },
       { status: statusCode }
     );
+  } finally {
+    // SEMPRE liberar a flag de processamento
+    if (requestKey) {
+      activeRequests.delete(requestKey);
+      console.log(`🔓 [${reqId}] Solicitação liberada do processamento:`, requestKey);
+    }
   }
 } 

@@ -421,9 +421,29 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         request_id: requestId // Adicionar ID único
       };
       
-      console.log(`🌐 [${requestId}] Enviando para /api/antecipacao:`, payload);
+      console.log(`🌐 [${requestId}] Enviando DIRETAMENTE para PHP:`, payload);
       
-      const response = await axios.post('/api/antecipacao', payload);
+      // Converter para FormData para PHP
+      const formData = new URLSearchParams();
+      formData.append('matricula', payload.matricula || '');
+      formData.append('pass', payload.pass);
+      formData.append('empregador', (payload.empregador || 0).toString());
+      formData.append('valor_pedido', payload.valor_pedido);
+      formData.append('taxa', payload.taxa);
+      formData.append('valor_descontar', payload.valor_descontar);
+      formData.append('mes_corrente', payload.mes_corrente || '');
+      formData.append('chave_pix', payload.chave_pix);
+      
+      const response = await axios.post(
+        'https://sas.makecard.com.br/grava_antecipacao_app.php',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          timeout: 10000
+        }
+      );
       
       console.log(`📥 [${requestId}] Resposta recebida:`, {
         success: response.data.success,
