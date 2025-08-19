@@ -123,6 +123,13 @@ export function useAntecipacaoAprovada(): UseAntecipacaoAprovadaResult {
                 dataOk: dataPgtoPreenchida,
                 assinado: dados.has_signed === true
               });
+              
+              // SOLUÇÃO TEMPORÁRIA: Verificar localStorage para ativação manual
+              const manualActivation = localStorage.getItem(`antecipacao_manual_${localizaData.matricula}`);
+              if (manualActivation === 'true') {
+                isAprovada = true;
+                console.log('🔧 ATIVAÇÃO MANUAL da antecipação para código:', localizaData.matricula);
+              }
             }
           } else {
             console.log('❌ Nenhum registro encontrado na tabela associados_sasmais');
