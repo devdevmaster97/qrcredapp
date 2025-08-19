@@ -63,8 +63,8 @@ export function useAntecipacaoAprovada(): UseAntecipacaoAprovadaResult {
           throw new Error('Matrícula não encontrada');
         }
 
-        // Verificar se a antecipação foi aprovada
-        const aprovacaoResponse = await fetch('/api/verificar-antecipacao-aprovada', {
+        // Usar a mesma API que funciona para SasCred, mas verificar campos específicos da antecipação
+        const response = await fetch('/api/verificar-adesao-sasmais-simples', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -74,56 +74,58 @@ export function useAntecipacaoAprovada(): UseAntecipacaoAprovadaResult {
           })
         });
 
-        if (!aprovacaoResponse.ok) {
-          throw new Error('Erro ao verificar aprovação da antecipação');
+        if (!response.ok) {
+          throw new Error('Erro ao verificar dados do associado');
         }
 
-        const aprovacaoData = await aprovacaoResponse.json();
+        const resultado = await response.json();
         
-        console.log('🔍 Hook useAntecipacaoAprovada - Dados completos:', {
+        console.log('🔍 Hook useAntecipacaoAprovada - Dados da API SasCred:', {
           codigo: localizaData.matricula,
-          aprovacaoData: aprovacaoData,
-          aprovada: aprovacaoData.aprovada,
-          success: aprovacaoData.success
+          resultado: resultado,
+          status: resultado.status
         });
 
         if (isMounted) {
           let isAprovada = false;
           
-          // VERIFICAÇÃO DUPLA OBRIGATÓRIA:
-          // 1. Valor aprovado preenchido no banco (API)
-          // 2. Assinatura digital completa no ZapSign
-          
-          const valorAprovadoOk = aprovacaoData.aprovada || false;
-          
-          // Verificar assinatura digital específica da antecipação
-          const urlAntecipacao = "https://app.zapsign.com.br/verificar/doc/762dbe4c-654b-432b-a7a9-38435966e0aa";
-          
-          try {
-            console.log('🔍 Verificando assinatura digital da antecipação...');
-            const assinaturaCompleta = await verificarAssinaturaPorUrl(urlAntecipacao);
+          // Verificar se existe registro na tabela associados_sasmais
+          if (resultado.status === 'sucesso' && resultado.dados) {
+            const dados = resultado.dados;
             
-            console.log('📊 Status das verificações:', {
-              valorAprovadoOk,
-              assinaturaCompleta,
-              codigo: localizaData.matricula
+            // Verificar se tem valor_aprovado E data_pgto preenchidos
+            const valorAprovado = dados.valor_aprovado;
+            const dataPgto = dados.data_pgto;
+            
+            console.log('📊 Verificando campos da antecipação:', {
+              valor_aprovado: valorAprovado,
+              data_pgto: dataPgto,
+              has_signed: dados.has_signed
             });
             
-            // Só aprovar se AMBOS forem verdadeiros
-            if (valorAprovadoOk && assinaturaCompleta) {
-              isAprovada = true;
-              console.log('✅ ANTECIPAÇÃO TOTALMENTE APROVADA: assinatura digital + valor aprovado');
-            } else if (valorAprovadoOk && !assinaturaCompleta) {
-              console.log('⚠️ Valor aprovado OK, mas assinatura digital pendente');
-            } else if (!valorAprovadoOk && assinaturaCompleta) {
-              console.log('⚠️ Assinatura digital OK, mas valor aprovado pendente');
-            } else {
-              console.log('❌ Ambos pendentes: assinatura digital e valor aprovado');
+            // Extrair valor numérico
+            let valorNumerico = 0;
+            if (valorAprovado) {
+              const valorLimpo = valorAprovado.toString().replace(/[^0-9.,]/g, '').replace(',', '.');
+              valorNumerico = parseFloat(valorLimpo) || 0;
             }
             
-          } catch (error) {
-            console.error('❌ Erro ao verificar assinatura digital:', error);
-            isAprovada = false;
+            // Verificar se data_pgto está preenchida
+            const dataPgtoPreenchida = dataPgto && dataPgto !== null && dataPgto !== '';
+            
+            // CRITÉRIO CORRETO: valor_aprovado > 0 E data_pgto preenchida E has_signed = true
+            if (valorNumerico > 0 && dataPgtoPreenchida && dados.has_signed === true) {
+              isAprovada = true;
+              console.log('✅ ANTECIPAÇÃO APROVADA: valor_aprovado + data_pgto + has_signed');
+            } else {
+              console.log('❌ Antecipação não aprovada:', {
+                valorOk: valorNumerico > 0,
+                dataOk: dataPgtoPreenchida,
+                assinado: dados.has_signed === true
+              });
+            }
+          } else {
+            console.log('❌ Nenhum registro encontrado na tabela associados_sasmais');
           }
           
           console.log('✅ Definindo antecipacaoAprovada como:', isAprovada);
