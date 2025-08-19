@@ -25,7 +25,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // Verificar parâmetros necessários
-    const { matricula, pass, empregador, valor_pedido, taxa, valor_descontar, mes_corrente, chave_pix } = body;
+    const { matricula, pass, empregador, valor_pedido, taxa, valor_descontar, mes_corrente, chave_pix, request_id } = body;
+    const reqId = request_id || `api_${Date.now()}`;
     
     if (!matricula || !pass || !empregador || !valor_pedido || !taxa || !valor_descontar || !mes_corrente || !chave_pix) {
       return NextResponse.json(
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
       
       // Se a mesma solicitação foi feita nos últimos 60 segundos, considerar duplicada
       if (timeElapsed < 60000) {
-        console.log('🚫 Solicitação duplicada detectada e bloqueada:', {
+        console.log(`🚫 [${reqId}] Solicitação duplicada detectada e bloqueada:`, {
           requestKey,
           timeElapsed: `${Math.round(timeElapsed / 1000)}s`,
           matricula,
@@ -75,7 +76,7 @@ export async function POST(request: NextRequest) {
     payload.append('mes_corrente', mes_corrente);
     payload.append('chave_pix', chave_pix);
     
-    console.log('📤 Enviando solicitação de antecipação:', {
+    console.log(`📤 [${reqId}] Enviando solicitação de antecipação:`, {
       requestKey,
       matricula,
       empregador: empregador.toString(),
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
       }
     );
     
-    console.log('Resposta da API de antecipação:', response.data);
+    console.log(`📥 [${reqId}] Resposta da API de antecipação:`, response.data);
     
     // Verificar se a resposta tem uma mensagem específica relacionada à senha
     if (response.data && 
@@ -120,7 +121,7 @@ export async function POST(request: NextRequest) {
     // Se for bem-sucedido, registrar esta solicitação para evitar duplicações
     if (response.data && response.data.success) {
       processedRequests.set(requestKey, new Date());
-      console.log('✅ Solicitação processada com sucesso e registrada:', {
+      console.log(`✅ [${reqId}] Solicitação processada com sucesso e registrada:`, {
         requestKey,
         matricula,
         valor_pedido,
@@ -135,7 +136,8 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error('Erro na API de antecipação:', error);
+    const reqId = 'unknown';
+    console.error(`💥 [${reqId}] Erro na API de antecipação:`, error);
     
     let errorMessage = 'Erro ao processar a requisição';
     let statusCode = 500;

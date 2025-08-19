@@ -368,9 +368,13 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     
+    // Gerar ID único para esta solicitação
+    const requestId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    console.log(`🚀 [${requestId}] Iniciando nova solicitação de antecipação`);
+    
     // Prevenir duplo clique/envio
     if (isSubmitting) {
-      console.log('⚠️ Solicitação já está sendo processada, ignorando nova tentativa');
+      console.log(`⚠️ [${requestId}] Solicitação já está sendo processada, ignorando nova tentativa`);
       return;
     }
     
@@ -392,10 +396,20 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     // Marcar como enviando
     isSubmitting = true;
     setLoading(true);
+    
+    console.log(`📤 [${requestId}] Preparando dados para envio:`, {
+      matricula: associadoData?.matricula,
+      empregador: associadoData?.empregador,
+      valor_pedido: parseFloat(valorSolicitado) / 100,
+      taxa: taxa,
+      valor_total: valorTotal,
+      mes_corrente: saldoData?.mesCorrente
+    });
+    
     try {
       const valorNumerico = parseFloat(valorSolicitado) / 100;
       
-      const response = await axios.post('/api/antecipacao', {
+      const payload = {
         matricula: associadoData?.matricula,
         pass: senha,
         empregador: associadoData?.empregador,
@@ -403,7 +417,19 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         taxa: taxa.toFixed(2),
         valor_descontar: valorTotal.toFixed(2),
         mes_corrente: saldoData?.mesCorrente,
-        chave_pix: chavePix
+        chave_pix: chavePix,
+        request_id: requestId // Adicionar ID único
+      };
+      
+      console.log(`🌐 [${requestId}] Enviando para /api/antecipacao:`, payload);
+      
+      const response = await axios.post('/api/antecipacao', payload);
+      
+      console.log(`📥 [${requestId}] Resposta recebida:`, {
+        success: response.data.success,
+        message: response.data.message,
+        duplicate_prevented: response.data.duplicate_prevented,
+        id: response.data.id
       });
 
       if (response.data.success === false) {
@@ -425,9 +451,15 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
           // Limpar apenas o campo de senha para nova tentativa
           setSenha("");
         } else {
+          console.log(`❌ [${requestId}] Erro na solicitação:`, response.data.message);
           setErro(response.data.message);
         }
       } else {
+        console.log(`✅ [${requestId}] Solicitação processada com sucesso!`, {
+          duplicate_prevented: response.data.duplicate_prevented,
+          id: response.data.id
+        });
+        
         // Salvar os valores confirmados antes de limpar o formulário
         setValorConfirmado(valorFormatado);
         setTaxaConfirmada(taxa);
@@ -448,7 +480,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         await fetchHistoricoSolicitacoes();
       }
     } catch (error) {
-      console.error('Erro ao enviar solicitação:', error);
+      console.error(`💥 [${requestId}] Erro ao enviar solicitação:`, error);
       
       // Verificar se o erro está relacionado à senha
       if (axios.isAxiosError(error) && error.response?.data) {
@@ -477,6 +509,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       
       setErro('Não foi possível processar sua solicitação. Tente novamente.');
     } finally {
+      console.log(`🏁 [${requestId}] Finalizando solicitação - liberando flags`);
       setLoading(false);
       // Liberar flag de submissão
       isSubmitting = false;
