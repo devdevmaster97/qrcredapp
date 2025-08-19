@@ -93,7 +93,6 @@ export default function AdesaoSaspyPlus() {
       const camposFaltantes = [];
       if (!localizaData?.matricula) camposFaltantes.push('matricula');
       if (!localizaData?.nome) camposFaltantes.push('nome');
-      if (!localizaData?.cel) camposFaltantes.push('cel');
 
       if (camposFaltantes.length > 0) {
         console.error('Campos faltantes:', camposFaltantes);
@@ -104,7 +103,7 @@ export default function AdesaoSaspyPlus() {
       const dadosParaEnviar = {
         codigo: localizaData.matricula.toString(),
         nome: localizaData.nome,
-        celular: localizaData.cel
+        celular: localizaData.cel || ''
       };
 
       console.log('Enviando dados para API de associados:', dadosParaEnviar);

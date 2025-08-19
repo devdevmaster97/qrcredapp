@@ -174,7 +174,6 @@ export default function AdesaoSasapp() {
       const camposFaltantes = [];
       if (!localizaData?.matricula) camposFaltantes.push('matricula');
       if (!localizaData?.nome) camposFaltantes.push('nome');
-      if (!localizaData?.cel) camposFaltantes.push('cel');
 
       if (camposFaltantes.length > 0) {
         throw new Error(`Dados incompletos. Faltam os seguintes campos: ${camposFaltantes.join(', ')}`);
