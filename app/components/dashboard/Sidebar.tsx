@@ -493,36 +493,7 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
               Convênio: SasApp
             </p>
             
-            {/* Debug temporário da antecipação */}
-            {!loadingAntecipacao && (
-              <div className="mt-1 mb-2">
-                <div className="flex items-center gap-1">
-                  <span className={`text-xs px-2 py-1 rounded ${
-                    antecipacaoAprovada ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}>
-                    Antecipação: {antecipacaoAprovada ? 'OK' : 'Pendente'}
-                  </span>
-                  {!antecipacaoAprovada && (
-                    <button
-                      onClick={() => {
-                        const storedUser = localStorage.getItem('qrcred_user');
-                        if (storedUser) {
-                          const userData = JSON.parse(storedUser);
-                          if (userData.matricula) {
-                            localStorage.setItem(`antecipacao_manual_${userData.matricula}`, 'true');
-                            window.location.reload(); // Recarregar para aplicar
-                          }
-                        }
-                      }}
-                      className="text-xs bg-yellow-100 text-yellow-800 px-1 py-1 rounded hover:bg-yellow-200"
-                      title="Ativar manualmente (temporário)"
-                    >
-                      ⚡
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
+
 
             {/* Indicador de adesão SasCred */}
             <div className="mt-2">

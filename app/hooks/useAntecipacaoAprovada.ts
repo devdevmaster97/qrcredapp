@@ -63,8 +63,8 @@ export function useAntecipacaoAprovada(): UseAntecipacaoAprovadaResult {
           throw new Error('Matrícula não encontrada');
         }
 
-        // Usar a mesma API que funciona para SasCred, mas verificar campos específicos da antecipação
-        const response = await fetch('/api/verificar-adesao-sasmais-simples', {
+        // Usar API específica para verificar antecipação com todos os campos necessários
+        const response = await fetch('/api/verificar-antecipacao-sasmais', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -75,64 +75,32 @@ export function useAntecipacaoAprovada(): UseAntecipacaoAprovadaResult {
         });
 
         if (!response.ok) {
-          throw new Error('Erro ao verificar dados do associado');
+          throw new Error('Erro ao verificar dados da antecipação');
         }
 
         const resultado = await response.json();
         
-        console.log('🔍 Hook useAntecipacaoAprovada - Dados da API SasCred:', {
+        console.log('🔍 Hook useAntecipacaoAprovada - API específica antecipação:', {
           codigo: localizaData.matricula,
-          resultado: resultado,
-          status: resultado.status
+          status: resultado.status,
+          antecipacao_aprovada: resultado.antecipacao_aprovada,
+          criterios: resultado.criterios
         });
 
         if (isMounted) {
           let isAprovada = false;
           
-          // Verificar se existe registro na tabela associados_sasmais
-          if (resultado.status === 'sucesso' && resultado.dados) {
-            const dados = resultado.dados;
+          // Usar resultado direto da API específica
+          if (resultado.status === 'sucesso') {
+            isAprovada = resultado.antecipacao_aprovada || false;
             
-            // Verificar se tem valor_aprovado E data_pgto preenchidos
-            const valorAprovado = dados.valor_aprovado;
-            const dataPgto = dados.data_pgto;
-            
-            console.log('📊 Verificando campos da antecipação:', {
-              valor_aprovado: valorAprovado,
-              data_pgto: dataPgto,
-              has_signed: dados.has_signed
-            });
-            
-            // Extrair valor numérico
-            let valorNumerico = 0;
-            if (valorAprovado) {
-              const valorLimpo = valorAprovado.toString().replace(/[^0-9.,]/g, '').replace(',', '.');
-              valorNumerico = parseFloat(valorLimpo) || 0;
-            }
-            
-            // Verificar se data_pgto está preenchida
-            const dataPgtoPreenchida = dataPgto && dataPgto !== null && dataPgto !== '';
-            
-            // CRITÉRIO CORRETO: valor_aprovado > 0 E data_pgto preenchida E has_signed = true
-            if (valorNumerico > 0 && dataPgtoPreenchida && dados.has_signed === true) {
-              isAprovada = true;
-              console.log('✅ ANTECIPAÇÃO APROVADA: valor_aprovado + data_pgto + has_signed');
+            if (isAprovada) {
+              console.log('✅ ANTECIPAÇÃO APROVADA pela API específica');
             } else {
-              console.log('❌ Antecipação não aprovada:', {
-                valorOk: valorNumerico > 0,
-                dataOk: dataPgtoPreenchida,
-                assinado: dados.has_signed === true
-              });
-              
-              // SOLUÇÃO TEMPORÁRIA: Verificar localStorage para ativação manual
-              const manualActivation = localStorage.getItem(`antecipacao_manual_${localizaData.matricula}`);
-              if (manualActivation === 'true') {
-                isAprovada = true;
-                console.log('🔧 ATIVAÇÃO MANUAL da antecipação para código:', localizaData.matricula);
-              }
+              console.log('❌ Antecipação não aprovada:', resultado.criterios);
             }
           } else {
-            console.log('❌ Nenhum registro encontrado na tabela associados_sasmais');
+            console.log('❌ Erro na API de antecipação:', resultado.mensagem);
           }
           
           console.log('✅ Definindo antecipacaoAprovada como:', isAprovada);
