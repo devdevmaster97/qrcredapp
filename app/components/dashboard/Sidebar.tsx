@@ -286,36 +286,37 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
         ] : [])
       ]
     },
-    // PROGRAMADO como submenu independente
-    {
-      type: 'submenu',
-      label: 'Programado',
-      icon: <FaHeart size={20} className="text-red-500" />,
-      isOpen: isProgramadoOpen,
-      toggle: toggleProgramado,
-      items: [
-        {
-          href: '/dashboard/programado/o-que-e',
-          label: 'O que é',
-          icon: <FaInfoCircle size={16} />
-        },
-        {
-          href: '/dashboard/programado/aderir',
-          label: 'Aderir',
-          icon: <FaFileContract size={16} className="text-green-500" />
-        },
-        {
-          href: '/dashboard/programado/adicionar-dependente',
-          label: 'Adicionar Dependente',
-          icon: <FaUserPlus size={16} className="text-blue-500" />
-        },
-        {
-          href: '/dashboard/programado/solicitar-beneficio',
-          label: 'Solicitar Benefício',
-          icon: <FaEnvelope size={16} className="text-purple-500" />
-        }
-      ]
-    },
+    // PROGRAMADO como submenu independente - TEMPORARIAMENTE OCULTO
+    // TODO: Reativar o menu Programado quando o desenvolvimento for retomado
+    // {
+    //   type: 'submenu',
+    //   label: 'Programado',
+    //   icon: <FaHeart size={20} className="text-red-500" />,
+    //   isOpen: isProgramadoOpen,
+    //   toggle: toggleProgramado,
+    //   items: [
+    //     {
+    //       href: '/dashboard/programado/o-que-e',
+    //       label: 'O que é',
+    //       icon: <FaInfoCircle size={16} />
+    //     },
+    //     {
+    //       href: '/dashboard/programado/aderir',
+    //       label: 'Aderir',
+    //       icon: <FaFileContract size={16} className="text-green-500" />
+    //     },
+    //     {
+    //       href: '/dashboard/programado/adicionar-dependente',
+    //       label: 'Adicionar Dependente',
+    //       icon: <FaUserPlus size={16} className="text-blue-500" />
+    //     },
+    //     {
+    //       href: '/dashboard/programado/solicitar-beneficio',
+    //       label: 'Solicitar Benefício',
+    //       icon: <FaEnvelope size={16} className="text-purple-500" />
+    //     }
+    //   ]
+    // },
     {
       type: 'link',
       href: '/dashboard/contatos',
