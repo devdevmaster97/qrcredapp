@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * API para verificar adesão à Antecipação baseada apenas na EXISTÊNCIA do registro
- * NÃO depende de valor_aprovado > 0, apenas se o registro existe na tabela
- * Similar à verificar-adesao-sasmais-simples mas específica para antecipação
+ * Usa a API específica verificar_antecipacao_sasmais.php que retorna todos os campos
  */
 export async function POST(request: NextRequest) {
   try {
@@ -23,34 +22,30 @@ export async function POST(request: NextRequest) {
 
     const codigo = body.codigo.toString().trim();
     console.log('🔍 Verificando existência de adesão à antecipação para código:', codigo);
-// teste
-    // Usar a API PHP específica para verificar antecipação
-    const response = await fetch('https://sas.makecard.com.br/api_verificar_adesao_sasmais.php', {
+
+    // Usar a API PHP específica para antecipação que retorna todos os campos
+    const response = await fetch('https://sas.makecard.com.br/verificar_antecipacao_sasmais.php', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      body: JSON.stringify({ 
-        codigo,
-        tipo: 'antecipacao' // Especificar que queremos dados de antecipação
-      }),
+      body: JSON.stringify({ codigo }),
       cache: 'no-store'
     });
 
     if (!response.ok) {
       console.log('⚠️ API PHP não disponível, usando fallback');
-      // Se a API PHP não responder, assumir que não existe
       return NextResponse.json({
         status: 'sucesso',
         jaAderiu: false,
-        mensagem: 'Associado não encontrado na tabela de antecipação',
+        mensagem: 'API de antecipação não disponível',
         dados: null
       });
     }
 
     const responseText = await response.text();
-    console.log('📥 Resposta da API PHP para antecipação:', responseText);
+    console.log('📥 Resposta da API PHP antecipação:', responseText);
 
     let data;
     try {
@@ -65,78 +60,51 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // 🎯 LÓGICA ESPECÍFICA PARA ANTECIPAÇÃO: 
-    // Verificar se existe registro com tipo "antecipacao" na tabela
-    console.log('📊 Analisando resposta da API PHP para antecipação:');
+    console.log('📊 Analisando resposta da API específica de antecipação:');
     console.log('  - Status:', data.status);
-    console.log('  - jaAderiu original:', data.jaAderiu);
-    console.log('  - Tem dados?', data.dados ? 'SIM' : 'NÃO');
+    console.log('  - Encontrado:', data.encontrado);
     console.log('  - Dados:', data.dados);
-    console.log('  - Mensagem:', data.mensagem);
 
-    // Verificações em ordem de prioridade para ANTECIPAÇÃO
+    // Verificar se encontrou registro de antecipação
     let jaAderiu = false;
     let motivo = '';
-// teste
-    if (data.status === 'sucesso') {
-      // Verificar se há dados específicos de antecipação
-      if (data.dados && typeof data.dados === 'object') {
-        // Verificar múltiplos critérios para antecipação
-        const temAntecipacao = 
-          // Tipo explícito
-          data.dados.tipo === 'antecipacao' || 
-          data.dados.tipo === 'antecipação' ||
-          // Nome do documento específico para antecipação
-          (data.dados.doc_name && (
-            data.dados.doc_name === 'Contrato de Antecipação Salarial' ||
-            data.dados.doc_name.toLowerCase().includes('contrato de antecipação salarial') ||
-            data.dados.doc_name.toLowerCase().includes('contrato antecipação') ||
-            data.dados.doc_name.toLowerCase().includes('antecipação salarial')
-          )) ||
-          // Evento relacionado a antecipação
-          (data.dados.event && data.dados.event.toLowerCase().includes('antecip')) ||
-          // Has_signed = true E doc_name contém "antecipação" (mas não é SasCred)
-          (data.dados.has_signed === true && data.dados.doc_name && 
-            data.dados.doc_name.toLowerCase().includes('antecip') &&
-            !data.dados.doc_name.toLowerCase().includes('termo de adesão do cartão convênio')) ||
-          // Documento assinado que é claramente um contrato (não termo de adesão)
-          (data.dados.has_signed === true && data.dados.doc_name && 
-            data.dados.doc_name.toLowerCase().includes('contrato') &&
-            !data.dados.doc_name.toLowerCase().includes('cartão convênio') &&
-            !data.dados.doc_name.toLowerCase().includes('termo de adesão'));
-        
-        if (temAntecipacao) {
-          jaAderiu = true;
-          motivo = 'Encontrado registro de antecipação na tabela';
-          console.log('✅ Antecipação detectada pelos critérios:', {
-            tipo: data.dados.tipo,
-            doc_name: data.dados.doc_name,
-            event: data.dados.event,
-            has_signed: data.dados.has_signed
-          });
-        } else {
-          // Log detalhado para debug
-          console.log('⚠️ Dados encontrados mas não identificados como antecipação:', {
-            tipo: data.dados.tipo,
-            doc_name: data.dados.doc_name,
-            event: data.dados.event,
-            has_signed: data.dados.has_signed,
-            dados_completos: data.dados
-          });
-          jaAderiu = false;
-          motivo = 'Dados encontrados mas não são de antecipação';
-        }
-      } else if (data.jaAderiu === true && data.mensagem && 
-                (data.mensagem.includes('antecip') || data.mensagem.includes('Antecip'))) {
+
+    if (data.status === 'sucesso' && data.encontrado && data.dados) {
+      // Verificar critérios específicos para antecipação
+      const temAntecipacao = 
+        // Nome do documento é "Contrato de Antecipação Salarial"
+        (data.dados.doc_name === 'Contrato de Antecipação Salarial') ||
+        // Tipo numérico 2 = antecipação (baseado nos logs)
+        (data.dados.tipo === 2) ||
+        // Has_signed = true E doc_name contém "antecipação"
+        (data.dados.has_signed === true && data.dados.doc_name && 
+          data.dados.doc_name.toLowerCase().includes('antecip')) ||
+        // Event = doc_signed E doc_name de antecipação
+        (data.dados.event === 'doc_signed' && data.dados.doc_name && 
+          data.dados.doc_name.toLowerCase().includes('contrato de antecip'));
+
+      if (temAntecipacao) {
         jaAderiu = true;
-        motivo = 'API retornou jaAderiu=true para antecipação';
+        motivo = 'Encontrado registro de antecipação assinado';
+        console.log('✅ Antecipação detectada:', {
+          doc_name: data.dados.doc_name,
+          has_signed: data.dados.has_signed,
+          tipo: data.dados.tipo,
+          event: data.dados.event
+        });
       } else {
         jaAderiu = false;
-        motivo = 'Nenhuma evidência de adesão à antecipação na tabela';
+        motivo = 'Registro encontrado mas não é de antecipação';
+        console.log('⚠️ Registro encontrado mas não identificado como antecipação:', {
+          doc_name: data.dados.doc_name,
+          has_signed: data.dados.has_signed,
+          tipo: data.dados.tipo,
+          event: data.dados.event
+        });
       }
     } else {
       jaAderiu = false;
-      motivo = 'Status da API não é sucesso';
+      motivo = 'Nenhum registro de antecipação encontrado';
     }
 
     console.log(`✅ Verificação de antecipação concluída - Código: ${codigo}, Aderiu: ${jaAderiu}, Motivo: ${motivo}`);
@@ -145,14 +113,15 @@ export async function POST(request: NextRequest) {
       status: 'sucesso',
       jaAderiu,
       mensagem: jaAderiu ? 
-        `Associado encontrado na tabela de Antecipação (${motivo})` : 
-        `Associado não encontrado na tabela de Antecipação (${motivo})`,
+        `Associado encontrou contrato de antecipação assinado (${motivo})` : 
+        `Associado não tem contrato de antecipação assinado (${motivo})`,
       dados: data.dados || null,
       timestamp: Date.now(),
       debug: {
-        originalJaAderiu: data.jaAderiu,
-        originalMensagem: data.mensagem,
-        motivoDecisao: motivo
+        originalStatus: data.status,
+        originalEncontrado: data.encontrado,
+        motivoDecisao: motivo,
+        antecipacaoAprovada: data.antecipacao_aprovada
       }
     });
 
