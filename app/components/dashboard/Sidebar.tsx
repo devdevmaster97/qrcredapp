@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { isAssinaturaCompleta, abrirCanalAntecipacao } from '@/app/utils/assinatura';
 import { useAdesaoSasCred } from '@/app/hooks/useAdesaoSasCred';
 import { useAntecipacaoAprovada } from '@/app/hooks/useAntecipacaoAprovada';
+import { useAdesaoAntecipacao } from '@/app/hooks/useAdesaoAntecipacao';
 import { triggerAntecipacaoVerification } from '@/app/utils/antecipacaoNotifications';
 import { 
   FaWallet, 
@@ -66,6 +67,9 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
   // Hook para verificar se antecipação foi aprovada
   const { aprovada: antecipacaoAprovada, loading: loadingAntecipacao } = useAntecipacaoAprovada();
   
+  // Hook para verificar adesão à antecipação (se já assinou o contrato)
+  const { jaAderiu: jaAderiuAntecipacao, loading: loadingAdesaoAntecipacao } = useAdesaoAntecipacao();
+  
   // Debug da aprovação da antecipação
   useEffect(() => {
     console.log('🔍 Sidebar - Status antecipação:', {
@@ -74,6 +78,15 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
       timestamp: new Date().toISOString()
     });
   }, [antecipacaoAprovada, loadingAntecipacao]);
+
+  // Debug da adesão à antecipação
+  useEffect(() => {
+    console.log('🔍 Sidebar - Status adesão antecipação:', {
+      jaAderiuAntecipacao,
+      loadingAdesaoAntecipacao,
+      timestamp: new Date().toISOString()
+    });
+  }, [jaAderiuAntecipacao, loadingAdesaoAntecipacao]);
 
   // Debug do status de adesão e timeout do loading
   useEffect(() => {
@@ -268,11 +281,14 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
             isOpen: isAntecipacaoOpen,
             toggle: toggleAntecipacao,
             items: [
-              {
-                href: '/dashboard/sascred/antecipacao/aderir',
-                label: 'Aderir',
-                icon: <FaFileContract size={14} className="text-blue-500" />
-              },
+              // Só mostrar "Aderir" se ainda NÃO aderiu à antecipação
+              ...(!jaAderiuAntecipacao ? [
+                {
+                  href: '/dashboard/sascred/antecipacao/aderir',
+                  label: 'Aderir',
+                  icon: <FaFileContract size={14} className="text-blue-500" />
+                }
+              ] : []),
               // Só mostrar "Antecipar" se antecipação foi aprovada (tipo "antecipacao" com Valor Aprovado e Data Pgto)
               ...(antecipacaoAprovada ? [
                 {

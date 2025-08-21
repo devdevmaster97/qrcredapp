@@ -1,12 +1,34 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { FaArrowLeft, FaFileContract, FaSignature, FaCheckCircle, FaMoneyBillWave, FaShieldAlt, FaClock } from 'react-icons/fa';
+import { markPossibleAntecipacaoSignature, triggerAntecipacaoAdesaoVerification } from '@/app/utils/antecipacaoAdesaoNotifications';
 
 export default function AderirAntecipacao() {
   const [isChecked, setIsChecked] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Verificar ao carregar a página e adicionar listener para detectar possível assinatura
+  useEffect(() => {
+    // 🎯 LISTENER para detectar quando usuário volta após possível assinatura
+    const handleWindowFocus = () => {
+      console.log('🔍 Usuário voltou para a aba - verificando possível assinatura de antecipação');
+      
+      // Se há uma possível assinatura pendente, forçar verificação
+      const possibleSignature = localStorage.getItem('antecipacao_possible_signature');
+      if (possibleSignature) {
+        console.log('✍️ Possível assinatura de antecipação detectada - forçando verificação');
+        triggerAntecipacaoAdesaoVerification();
+      }
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+
+    return () => {
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, []);
 
   const handleAceitarEAderirAntecipacao = () => {
     if (!isChecked) {
@@ -15,6 +37,9 @@ export default function AderirAntecipacao() {
     }
 
     setIsLoading(true);
+    
+    // Marcar que o usuário pode assinar digitalmente
+    markPossibleAntecipacaoSignature();
     
     // Redirecionar para ZapSign para assinatura digital da antecipação
     const zapSignUrl = "https://app.zapsign.com.br/verificar/doc/762dbe4c-654b-432b-a7a9-38435966e0aa";
