@@ -88,7 +88,7 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
       timestamp: new Date().toISOString()
     });
   }, [jaAderiuAntecipacao, loadingAdesaoAntecipacao]);
-
+// teste
   // Debug do status de adesão e timeout do loading
   useEffect(() => {
     // Remover log excessivo para evitar spam no console

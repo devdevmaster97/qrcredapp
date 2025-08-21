@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
 
     const codigo = body.codigo.toString().trim();
     console.log('🔍 Verificando existência de adesão à antecipação para código:', codigo);
-
+// teste
     // Usar a API PHP específica para verificar antecipação
     const response = await fetch('https://sas.makecard.com.br/api_verificar_adesao_sasmais.php', {
       method: 'POST',
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     // Verificações em ordem de prioridade para ANTECIPAÇÃO
     let jaAderiu = false;
     let motivo = '';
-
+// teste
     if (data.status === 'sucesso') {
       // Verificar se há dados específicos de antecipação
       if (data.dados && typeof data.dados === 'object') {
