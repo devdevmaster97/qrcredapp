@@ -8,7 +8,7 @@ interface Estado {
 // Forçar rota dinâmica para evitar timeout no build
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
-// teste
+// teste 2
 export async function GET() {
   // Lista estática de estados brasileiros para evitar timeout
   const estadosBrasil = [

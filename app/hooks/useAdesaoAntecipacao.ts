@@ -102,7 +102,7 @@ export function useAdesaoAntecipacao(): AdesaoAntecipacaoStatus {
       }
 
       const resultado = await response.json();
-      // teste
+      // teste 2
       console.log('🔍 Hook useAdesaoAntecipacao - Verificação DETALHADA:', {
         codigo: localizaData.matricula,
         status: resultado.status,
