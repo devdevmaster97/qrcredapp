@@ -1,0 +1,13 @@
+# Vercel ignore file
+.next/
+node_modules/
+.git/
+*.log
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Páginas de teste que podem causar timeout
+app/test-antecipacao/
+app/dev/

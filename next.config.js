@@ -25,6 +25,10 @@ const nextConfig = {
   experimental: {
     forceSwcTransforms: true,
   },
+  // Configurar páginas que devem ser renderizadas dinamicamente
+  output: 'standalone',
+  // Configurar timeout de build
+  staticPageGenerationTimeout: 120,
   webpack: (config, { dev }) => {
     // Ativar sourcemaps em desenvolvimento para depuração
     if (dev) {
