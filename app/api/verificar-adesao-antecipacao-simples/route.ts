@@ -24,14 +24,17 @@ export async function POST(request: NextRequest) {
     const codigo = body.codigo.toString().trim();
     console.log('🔍 Verificando existência de adesão à antecipação para código:', codigo);
 
-    // Usar a API PHP existente para verificar antecipação
+    // Usar a API PHP específica para verificar antecipação
     const response = await fetch('https://sas.makecard.com.br/api_verificar_adesao_sasmais.php', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      body: JSON.stringify({ codigo }),
+      body: JSON.stringify({ 
+        codigo,
+        tipo: 'antecipacao' // Especificar que queremos dados de antecipação
+      }),
       cache: 'no-store'
     });
 
@@ -78,18 +81,41 @@ export async function POST(request: NextRequest) {
     if (data.status === 'sucesso') {
       // Verificar se há dados específicos de antecipação
       if (data.dados && typeof data.dados === 'object') {
-        // Procurar por registros com tipo "antecipacao" ou similar
-        const temAntecipacao = data.dados.tipo === 'antecipacao' || 
-                              data.dados.tipo === 'antecipação' ||
-                              (data.dados.doc_name && data.dados.doc_name.toLowerCase().includes('antecip')) ||
-                              (data.dados.event && data.dados.event.toLowerCase().includes('antecip'));
+        // Verificar múltiplos critérios para antecipação
+        const temAntecipacao = 
+          // Tipo explícito
+          data.dados.tipo === 'antecipacao' || 
+          data.dados.tipo === 'antecipação' ||
+          // Nome do documento
+          (data.dados.doc_name && (
+            data.dados.doc_name.toLowerCase().includes('antecip') ||
+            data.dados.doc_name.toLowerCase().includes('contrato de antecipação')
+          )) ||
+          // Evento relacionado
+          (data.dados.event && data.dados.event.toLowerCase().includes('antecip')) ||
+          // Has_signed = true E existe referência a antecipação
+          (data.dados.has_signed === true && (
+            JSON.stringify(data.dados).toLowerCase().includes('antecip')
+          ));
         
         if (temAntecipacao) {
           jaAderiu = true;
           motivo = 'Encontrado registro de antecipação na tabela';
-        } else if (Object.keys(data.dados).length > 0) {
-          // Se tem dados mas não é especificamente de antecipação, verificar melhor
-          console.log('⚠️ Dados encontrados mas não especificamente de antecipação:', data.dados);
+          console.log('✅ Antecipação detectada pelos critérios:', {
+            tipo: data.dados.tipo,
+            doc_name: data.dados.doc_name,
+            event: data.dados.event,
+            has_signed: data.dados.has_signed
+          });
+        } else {
+          // Log detalhado para debug
+          console.log('⚠️ Dados encontrados mas não identificados como antecipação:', {
+            tipo: data.dados.tipo,
+            doc_name: data.dados.doc_name,
+            event: data.dados.event,
+            has_signed: data.dados.has_signed,
+            dados_completos: data.dados
+          });
           jaAderiu = false;
           motivo = 'Dados encontrados mas não são de antecipação';
         }

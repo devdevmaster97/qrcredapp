@@ -103,11 +103,13 @@ export function useAdesaoAntecipacao(): AdesaoAntecipacaoStatus {
 
       const resultado = await response.json();
       
-      console.log('🔍 Hook useAdesaoAntecipacao - Verificação:', {
+      console.log('🔍 Hook useAdesaoAntecipacao - Verificação DETALHADA:', {
         codigo: localizaData.matricula,
         status: resultado.status,
         jaAderiu: resultado.jaAderiu,
-        dados: resultado.dados ? 'Presentes' : 'Ausentes'
+        dados: resultado.dados,
+        mensagem: resultado.mensagem,
+        debug: resultado.debug
       });
 
       const jaAderiu = resultado.status === 'sucesso' && resultado.jaAderiu === true;

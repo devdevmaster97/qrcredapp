@@ -84,6 +84,7 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
     console.log('🔍 Sidebar - Status adesão antecipação:', {
       jaAderiuAntecipacao,
       loadingAdesaoAntecipacao,
+      menuItemAderirVisible: !jaAderiuAntecipacao,
       timestamp: new Date().toISOString()
     });
   }, [jaAderiuAntecipacao, loadingAdesaoAntecipacao]);
