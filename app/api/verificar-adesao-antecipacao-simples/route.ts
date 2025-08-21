@@ -86,17 +86,24 @@ export async function POST(request: NextRequest) {
           // Tipo explícito
           data.dados.tipo === 'antecipacao' || 
           data.dados.tipo === 'antecipação' ||
-          // Nome do documento
+          // Nome do documento específico para antecipação
           (data.dados.doc_name && (
-            data.dados.doc_name.toLowerCase().includes('antecip') ||
-            data.dados.doc_name.toLowerCase().includes('contrato de antecipação')
+            data.dados.doc_name === 'Contrato de Antecipação Salarial' ||
+            data.dados.doc_name.toLowerCase().includes('contrato de antecipação salarial') ||
+            data.dados.doc_name.toLowerCase().includes('contrato antecipação') ||
+            data.dados.doc_name.toLowerCase().includes('antecipação salarial')
           )) ||
-          // Evento relacionado
+          // Evento relacionado a antecipação
           (data.dados.event && data.dados.event.toLowerCase().includes('antecip')) ||
-          // Has_signed = true E existe referência a antecipação
-          (data.dados.has_signed === true && (
-            JSON.stringify(data.dados).toLowerCase().includes('antecip')
-          ));
+          // Has_signed = true E doc_name contém "antecipação" (mas não é SasCred)
+          (data.dados.has_signed === true && data.dados.doc_name && 
+            data.dados.doc_name.toLowerCase().includes('antecip') &&
+            !data.dados.doc_name.toLowerCase().includes('termo de adesão do cartão convênio')) ||
+          // Documento assinado que é claramente um contrato (não termo de adesão)
+          (data.dados.has_signed === true && data.dados.doc_name && 
+            data.dados.doc_name.toLowerCase().includes('contrato') &&
+            !data.dados.doc_name.toLowerCase().includes('cartão convênio') &&
+            !data.dados.doc_name.toLowerCase().includes('termo de adesão'));
         
         if (temAntecipacao) {
           jaAderiu = true;

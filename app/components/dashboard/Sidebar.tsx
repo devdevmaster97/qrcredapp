@@ -85,8 +85,17 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
       jaAderiuAntecipacao,
       loadingAdesaoAntecipacao,
       menuItemAderirVisible: !jaAderiuAntecipacao,
+      menuItemAderirShouldShow: !jaAderiuAntecipacao,
+      negacao: !jaAderiuAntecipacao,
       timestamp: new Date().toISOString()
     });
+    
+    // Log específico para debug do menu
+    if (jaAderiuAntecipacao) {
+      console.log('🚫 ANTECIPAÇÃO: Item Aderir será OCULTO (usuário já aderiu)');
+    } else {
+      console.log('✅ ANTECIPAÇÃO: Item Aderir será MOSTRADO (usuário ainda não aderiu)');
+    }
   }, [jaAderiuAntecipacao, loadingAdesaoAntecipacao]);
 // teste
   // Debug do status de adesão e timeout do loading
