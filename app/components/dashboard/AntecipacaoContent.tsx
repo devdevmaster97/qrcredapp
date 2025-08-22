@@ -868,7 +868,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
               <input
                 type="text"
                 inputMode="numeric"
-                pattern="[0-9]*"
+                pattern="[0-9]+([,.][0-9]{1,2})?"
                 id="valor"
                 placeholder="R$ 0,00"
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
