@@ -17,27 +17,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Criar parâmetros no formato form-urlencoded para enviar para a API PHP
-    const params = new URLSearchParams();
-    params.append('userconv', usuario);
-    params.append('passconv', senha);
+    // Criar parâmetros no formato FormData para garantir que chegue como $_POST
+    const formData = new FormData();
+    formData.append('userconv', usuario);
+    formData.append('passconv', senha);
 
-    console.log('📤 Enviando para API PHP:', {
+    console.log('📤 Enviando para API PHP (FormData):', {
       userconv: usuario,
       passconv: senha,
-      url: 'https://sas.makecard.com.br/convenio_autenticar_app.php',
-      params_string: params.toString()
+      url: 'https://sas.makecard.com.br/convenio_autenticar_app.php'
     });
 
     // Testar primeiro se a API está acessível
     console.log('🔗 Testando conectividade com API PHP...');
     
-    // Enviar requisição para o backend
+    // Enviar requisição para o backend usando FormData
     const response = await axios.post('https://sas.makecard.com.br/convenio_autenticar_app.php', 
-      params, 
+      formData, 
       {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'multipart/form-data',
           'User-Agent': 'SasApp-ConvenioLogin/1.0'
         },
         timeout: 15000, // 15 segundos
