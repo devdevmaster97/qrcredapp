@@ -829,29 +829,29 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
             {/* Mostrar detalhes da solicitação existente */}
             {ultimasSolicitacoes.filter(s => s.mes_corrente === saldoData?.mesCorrente).map(solicitacao => (
               <div key={solicitacao.id} className="mt-4 p-4 bg-white border border-amber-200 rounded-lg">
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between items-center">
                     <span className="text-gray-600">Data:</span>
-                    <span className="ml-2 font-medium">
+                    <span className="font-medium">
                       {format(new Date(solicitacao.data_solicitacao), "dd/MM/yyyy", { locale: ptBR })}
                     </span>
                   </div>
-                  <div>
+                  <div className="flex justify-between items-center">
                     <span className="text-gray-600">Valor:</span>
-                    <span className="ml-2 font-medium">
+                    <span className="font-medium">
                       {Number(solicitacao.valor_solicitado).toLocaleString('pt-BR', {
                         style: 'currency',
                         currency: 'BRL'
                       })}
                     </span>
                   </div>
-                  <div>
+                  <div className="flex justify-between items-center">
                     <span className="text-gray-600">Status:</span>
-                    <span className="ml-2">{formatarStatus(solicitacao.status)}</span>
+                    <span>{formatarStatus(solicitacao.status)}</span>
                   </div>
-                  <div>
+                  <div className="flex justify-between items-center">
                     <span className="text-gray-600">Mês:</span>
-                    <span className="ml-2 font-medium">{solicitacao.mes_corrente}</span>
+                    <span className="font-medium">{solicitacao.mes_corrente}</span>
                   </div>
                 </div>
               </div>
