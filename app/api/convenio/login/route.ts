@@ -25,17 +25,22 @@ export async function POST(request: NextRequest) {
     console.log('📤 Enviando para API PHP:', {
       userconv: usuario,
       passconv: senha,
-      url: 'https://sas.makecard.com.br/convenio_autenticar_app.php'
+      url: 'https://sas.makecard.com.br/convenio_autenticar_app.php',
+      params_string: params.toString()
     });
 
+    // Testar primeiro se a API está acessível
+    console.log('🔗 Testando conectividade com API PHP...');
+    
     // Enviar requisição para o backend
     const response = await axios.post('https://sas.makecard.com.br/convenio_autenticar_app.php', 
       params, 
       {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': 'SasApp-ConvenioLogin/1.0'
         },
-        timeout: 10000, // 10 segundos
+        timeout: 15000, // 15 segundos
         // Não rejeitar em caso de status HTTP de erro para poder analisar a resposta
         validateStatus: () => true
       }
@@ -100,6 +105,24 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('🔍 Dados do login extraídos:', jsonData);
+    
+    // Verificar se a resposta contém os campos necessários
+    if (!jsonData.tipo_login) {
+      console.error('❌ API PHP não está processando login corretamente');
+      console.error('📄 Resposta recebida:', jsonData);
+      console.error('📤 Parâmetros enviados:', { userconv: usuario, passconv: senha });
+      
+      return NextResponse.json({
+        success: false,
+        message: 'Erro na API do servidor. A consulta de login não foi executada.',
+        debug: {
+          problema: 'API PHP não retornou tipo_login - possível problema nos parâmetros POST',
+          resposta_api: jsonData,
+          parametros_enviados: { userconv: usuario, passconv: senha },
+          url_api: 'https://sas.makecard.com.br/convenio_autenticar_app.php'
+        }
+      }, { status: 500 });
+    }
     
     // Tratar diferentes tipos de resposta da API PHP
     if (jsonData.tipo_login === 'login sucesso') {
