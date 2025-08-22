@@ -441,23 +441,46 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
           },
-          timeout: 10000
+          timeout: 10000,
+          // Não rejeitar em caso de status HTTP de erro para poder analisar a resposta
+          validateStatus: () => true
         }
       );
       
       console.log(`📥 [${requestId}] Resposta recebida:`, {
+        httpStatus: response.status,
         success: response.data.success,
         message: response.data.message,
         duplicate_prevented: response.data.duplicate_prevented,
-        id: response.data.id
+        id: response.data.id,
+        responseCompleta: response.data
       });
 
-      if (response.data.success === false) {
+      // Verificar se houve erro (status HTTP erro OU success === false OU mensagem de erro)
+      const temErro = response.status >= 400 ||
+                     response.data.success === false || 
+                     (response.data.message && (
+                       response.data.message.toLowerCase().includes("erro") ||
+                       response.data.message.toLowerCase().includes("senha") ||
+                       response.data.message.toLowerCase().includes("incorreta") ||
+                       response.data.message.toLowerCase().includes("inválida") ||
+                       response.data.message.toLowerCase().includes("falhou") ||
+                       response.data.message.toLowerCase().includes("negado")
+                     ));
+
+      if (temErro) {
         // Verificar especificamente se é um erro de senha
-        if (response.data.message && 
-            (response.data.message.toLowerCase().includes("senha") || 
-             response.data.message.toLowerCase().includes("password"))) {
-          setErro("Senha incorreta! Use a mesma senha que você utiliza para acessar o aplicativo.");
+        const mensagem = response.data.message || '';
+        const isErroSenha = mensagem.toLowerCase().includes("senha") || 
+                           mensagem.toLowerCase().includes("password") ||
+                           mensagem.toLowerCase().includes("incorreta") ||
+                           mensagem.toLowerCase().includes("inválida") ||
+                           mensagem.toLowerCase().includes("authentication") ||
+                           mensagem.toLowerCase().includes("login");
+        
+        if (isErroSenha) {
+          console.log(`🔒 [${requestId}] Erro de senha detectado:`, mensagem);
+          setErro("❌ Senha incorreta! Use a mesma senha que você utiliza para acessar o aplicativo.");
           
           // Destacar visualmente o campo de senha
           const senhaInput = document.getElementById('senha');
@@ -471,33 +494,54 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
           // Limpar apenas o campo de senha para nova tentativa
           setSenha("");
         } else {
-          console.log(`❌ [${requestId}] Erro na solicitação:`, response.data.message);
-          setErro(response.data.message);
+          console.log(`❌ [${requestId}] Erro na solicitação:`, mensagem);
+          setErro(mensagem || 'Erro ao processar solicitação');
         }
       } else {
-        console.log(`✅ [${requestId}] Solicitação processada com sucesso!`, {
-          duplicate_prevented: response.data.duplicate_prevented,
-          id: response.data.id
-        });
+        // Verificar se realmente foi um sucesso
+        const isRealSuccess = response.data.success === true || 
+                             response.data.id || 
+                             (response.data.message && !response.data.message.toLowerCase().includes("erro"));
         
-        // Salvar os valores confirmados antes de limpar o formulário
-        setValorConfirmado(valorFormatado);
-        setTaxaConfirmada(taxa);
-        setTotalConfirmado(valorTotal);
-        
-        // Sucesso na solicitação
-        setSolicitado(true);
-        setSolicitacaoData(format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }));
-        toast.success("Solicitação enviada para análise!");
-        
-        // Limpar apenas o formulário para novas entradas
-        setValorSolicitado("");
-        setChavePix("");
-        setSenha("");
-        setErro("");
-        
-        // Atualizar o histórico de solicitações
-        await fetchHistoricoSolicitacoes();
+        if (isRealSuccess) {
+          console.log(`✅ [${requestId}] Solicitação processada com sucesso!`, {
+            duplicate_prevented: response.data.duplicate_prevented,
+            id: response.data.id
+          });
+          
+          // Salvar os valores confirmados antes de limpar o formulário
+          setValorConfirmado(valorFormatado);
+          setTaxaConfirmada(taxa);
+          setTotalConfirmado(valorTotal);
+          
+          // Sucesso na solicitação
+          setSolicitado(true);
+          setSolicitacaoData(format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }));
+          toast.success("Solicitação enviada para análise!");
+          
+          // Limpar apenas o formulário para novas entradas
+          setValorSolicitado("");
+          setChavePix("");
+          setSenha("");
+          setErro("");
+          
+          // Atualizar o histórico de solicitações
+          await fetchHistoricoSolicitacoes();
+        } else {
+          // Não é um sucesso real - tratar como erro
+          console.log(`❌ [${requestId}] Resposta ambígua tratada como erro:`, response.data);
+          const mensagem = response.data.message || 'Erro ao processar solicitação';
+          
+          // Verificar se é erro de senha
+          if (mensagem.toLowerCase().includes("senha") || 
+              mensagem.toLowerCase().includes("incorreta") ||
+              mensagem.toLowerCase().includes("inválida")) {
+            setErro("❌ Senha incorreta! Use a mesma senha que você utiliza para acessar o aplicativo.");
+            setSenha("");
+          } else {
+            setErro(mensagem);
+          }
+        }
       }
     } catch (error) {
       console.error(`💥 [${requestId}] Erro ao enviar solicitação:`, error);
