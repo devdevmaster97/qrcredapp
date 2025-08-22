@@ -17,31 +17,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Criar parâmetros no formato FormData para garantir que chegue como $_POST
-    const formData = new FormData();
-    formData.append('userconv', usuario);
-    formData.append('passconv', senha);
+    // Usar o MESMO padrão do login do associado que funciona
+    const payload = new URLSearchParams();
+    payload.append('userconv', usuario);
+    payload.append('passconv', senha);
 
-    console.log('📤 Enviando para API PHP (FormData):', {
+    console.log('📤 Enviando para API PHP (URLSearchParams):', {
       userconv: usuario,
       passconv: senha,
+      payload_string: payload.toString(),
       url: 'https://sas.makecard.com.br/convenio_autenticar_app.php'
     });
-
-    // Testar primeiro se a API está acessível
-    console.log('🔗 Testando conectividade com API PHP...');
     
-    // Enviar requisição para o backend usando FormData
-    const response = await axios.post('https://sas.makecard.com.br/convenio_autenticar_app.php', 
-      formData, 
+    // Enviar requisição usando o MESMO padrão do login do associado
+    const response = await axios.post(
+      'https://sas.makecard.com.br/convenio_autenticar_app.php',
+      payload,
       {
         headers: {
-          'Content-Type': 'multipart/form-data',
-          'User-Agent': 'SasApp-ConvenioLogin/1.0'
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        timeout: 15000, // 15 segundos
-        // Não rejeitar em caso de status HTTP de erro para poder analisar a resposta
-        validateStatus: () => true
+        timeout: 10000, // 10 segundos (mesmo do associado)
       }
     );
 
@@ -51,57 +47,20 @@ export async function POST(request: NextRequest) {
       data: response.data
     });
 
-    // Verificar status HTTP primeiro
-    if (response.status >= 400) {
-      console.error('❌ Erro HTTP da API PHP:', response.status);
-      return NextResponse.json({
-        success: false,
-        message: `Erro do servidor PHP (${response.status}). Verifique se a API está funcionando.`,
-        debug: {
-          httpStatus: response.status,
-          responseData: response.data
-        }
-      }, { status: response.status });
-    }
+    // Log completo da resposta (mesmo padrão do login do associado)
+    console.log('Resposta completa do backend:', JSON.stringify(response.data));
 
-    // Extrair JSON válido da resposta, ignorando warnings HTML
-    let jsonData;
-    try {
-      const responseText = response.data;
-      
-      // Se a resposta já é um objeto, usar diretamente
-      if (typeof responseText === 'object' && responseText !== null) {
-        jsonData = responseText;
-        console.log('✅ Resposta já é um objeto JSON válido');
-      } else if (typeof responseText === 'string') {
-        console.log('📄 Resposta como string:', responseText);
-        // Procurar pelo início do JSON na resposta
-        const jsonStart = responseText.indexOf('{');
-        if (jsonStart !== -1) {
-          const jsonString = responseText.substring(jsonStart);
-          console.log('📝 JSON extraído:', jsonString);
-          jsonData = JSON.parse(jsonString);
-        } else {
-          console.error('❌ JSON não encontrado na resposta string');
-          throw new Error('JSON não encontrado na resposta');
-        }
-      } else {
-        console.error('❌ Tipo de resposta não suportado:', typeof responseText);
-        throw new Error('Tipo de resposta não suportado');
-      }
-    } catch (parseError) {
-      console.error('❌ Erro ao fazer parse do JSON:', parseError);
-      console.error('📄 Dados originais da resposta:', response.data);
+    // Verificação básica da resposta (mesmo padrão do login do associado)
+    if (!response.data || typeof response.data !== 'object') {
+      console.log('Resposta inválida do backend');
       return NextResponse.json({
         success: false,
-        message: 'Erro no formato da resposta do servidor. Verifique os logs.',
-        debug: {
-          responseType: typeof response.data,
-          responseData: response.data,
-          error: parseError instanceof Error ? parseError.message : String(parseError)
-        }
+        message: 'Resposta inválida do servidor'
       }, { status: 500 });
     }
+
+    // Usar a resposta diretamente (mesmo padrão do associado)
+    const jsonData = response.data;
 
     console.log('🔍 Dados do login extraídos:', jsonData);
     
