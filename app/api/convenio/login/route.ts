@@ -24,9 +24,20 @@ export async function POST(request: NextRequest) {
     const payload = new URLSearchParams();
     payload.append('userconv', String(usuario).trim());
     payload.append('passconv', String(senha).trim());
+    
+    // DEBUG: Testar também com valores exatos do banco (com aspas)
+    console.log('🧪 Testando também valores do banco:', {
+      banco_usuario_texto: '"sascred"',
+      banco_password: '"123456"',
+      enviando_usuario: usuario,
+      enviando_senha: senha
+    });
 
     console.log('Enviando para o backend:', payload.toString());
 
+    // 🧪 TESTE: Verificar se a API PHP está funcionando
+    console.log('🔗 Testando API PHP diretamente...');
+    
     // Enviar a requisição para o backend (EXATAMENTE como no login do associado)
     const response = await axios.post(
       'https://sas.makecard.com.br/convenio_autenticar_app.php',
@@ -38,6 +49,10 @@ export async function POST(request: NextRequest) {
         timeout: 10000, // 10 segundos de timeout
       }
     );
+    
+    console.log('🔍 Status da resposta HTTP:', response.status);
+    console.log('🔍 Headers da resposta:', response.headers);
+    console.log('🔍 Tamanho da resposta:', JSON.stringify(response.data).length);
 
     // Log completo da resposta (mesmo padrão do login do associado)
     console.log('Resposta completa do backend:', JSON.stringify(response.data));
