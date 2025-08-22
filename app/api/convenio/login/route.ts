@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
 
     console.log('📥 Resposta do PHP:', {
       status: response.status,
+      dataType: typeof response.data,
       data: response.data
     });
 
@@ -48,19 +49,38 @@ export async function POST(request: NextRequest) {
     let jsonData;
     try {
       const responseText = response.data;
-      // Procurar pelo início do JSON na resposta
-      const jsonStart = responseText.indexOf('{');
-      if (jsonStart !== -1) {
-        const jsonString = responseText.substring(jsonStart);
-        jsonData = JSON.parse(jsonString);
+      
+      // Se a resposta já é um objeto, usar diretamente
+      if (typeof responseText === 'object' && responseText !== null) {
+        jsonData = responseText;
+        console.log('✅ Resposta já é um objeto JSON válido');
+      } else if (typeof responseText === 'string') {
+        console.log('📄 Resposta como string:', responseText);
+        // Procurar pelo início do JSON na resposta
+        const jsonStart = responseText.indexOf('{');
+        if (jsonStart !== -1) {
+          const jsonString = responseText.substring(jsonStart);
+          console.log('📝 JSON extraído:', jsonString);
+          jsonData = JSON.parse(jsonString);
+        } else {
+          console.error('❌ JSON não encontrado na resposta string');
+          throw new Error('JSON não encontrado na resposta');
+        }
       } else {
-        throw new Error('JSON não encontrado na resposta');
+        console.error('❌ Tipo de resposta não suportado:', typeof responseText);
+        throw new Error('Tipo de resposta não suportado');
       }
     } catch (parseError) {
-      console.error('Erro ao fazer parse do JSON:', parseError);
+      console.error('❌ Erro ao fazer parse do JSON:', parseError);
+      console.error('📄 Dados originais da resposta:', response.data);
       return NextResponse.json({
         success: false,
-        message: 'Erro no formato da resposta do servidor'
+        message: 'Erro no formato da resposta do servidor. Verifique os logs.',
+        debug: {
+          responseType: typeof response.data,
+          responseData: response.data,
+          error: parseError instanceof Error ? parseError.message : String(parseError)
+        }
       }, { status: 500 });
     }
 
