@@ -35,7 +35,9 @@ export async function POST(request: NextRequest) {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         },
-        timeout: 10000 // 10 segundos
+        timeout: 10000, // 10 segundos
+        // Não rejeitar em caso de status HTTP de erro para poder analisar a resposta
+        validateStatus: () => true
       }
     );
 
@@ -44,6 +46,19 @@ export async function POST(request: NextRequest) {
       dataType: typeof response.data,
       data: response.data
     });
+
+    // Verificar status HTTP primeiro
+    if (response.status >= 400) {
+      console.error('❌ Erro HTTP da API PHP:', response.status);
+      return NextResponse.json({
+        success: false,
+        message: `Erro do servidor PHP (${response.status}). Verifique se a API está funcionando.`,
+        debug: {
+          httpStatus: response.status,
+          responseData: response.data
+        }
+      }, { status: response.status });
+    }
 
     // Extrair JSON válido da resposta, ignorando warnings HTML
     let jsonData;
@@ -84,6 +99,9 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
+    console.log('🔍 Dados do login extraídos:', jsonData);
+    
+    // Tratar diferentes tipos de resposta da API PHP
     if (jsonData.tipo_login === 'login sucesso') {
       // Criar um token JWT ou qualquer outro identificador único
       const token = btoa(JSON.stringify({
@@ -118,13 +136,36 @@ export async function POST(request: NextRequest) {
         }
       });
     } else {
-      console.log('❌ Login falhou:', jsonData.tipo_login);
+      console.log('❌ Login falhou:', {
+        tipo_login: jsonData.tipo_login,
+        cod_convenio: jsonData.cod_convenio,
+        dados_completos: jsonData
+      });
+      
+      // Tratar diferentes tipos de erro baseado na API PHP
+      let mensagemErro = 'Erro ao realizar login';
+      let statusCode = 401;
+      
+      switch (jsonData.tipo_login) {
+        case 'login incorreto':
+          mensagemErro = 'Usuário ou senha incorretos';
+          break;
+        case 'login vazio':
+          mensagemErro = 'Usuário e senha são obrigatórios';
+          statusCode = 400;
+          break;
+        default:
+          mensagemErro = `Erro de login: ${jsonData.tipo_login}`;
+      }
+      
       return NextResponse.json({
         success: false,
-        message: jsonData.tipo_login === 'login incorreto' 
-          ? 'Usuário ou senha inválidos' 
-          : 'Erro ao realizar login'
-      }, { status: 401 });
+        message: mensagemErro,
+        debug: {
+          tipo_login: jsonData.tipo_login,
+          cod_convenio: jsonData.cod_convenio
+        }
+      }, { status: statusCode });
     }
   } catch (error) {
     console.error('💥 Erro detalhado no login:', {
