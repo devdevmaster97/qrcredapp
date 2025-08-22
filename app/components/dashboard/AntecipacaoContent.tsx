@@ -866,7 +866,9 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
                 Valor Desejado
               </label>
               <input
-                type="text"
+                type="number"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 id="valor"
                 placeholder="R$ 0,00"
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
