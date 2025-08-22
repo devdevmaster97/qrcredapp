@@ -82,6 +82,27 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     return arr.includes(str.toLowerCase());
   };
 
+  // Verificar se já existe solicitação no mês corrente
+  const jaTemSolicitacaoNoMes = (): boolean => {
+    if (!saldoData?.mesCorrente || ultimasSolicitacoes.length === 0) {
+      return false;
+    }
+
+    // Verificar se há alguma solicitação para o mês corrente
+    const temSolicitacao = ultimasSolicitacoes.some(solicitacao => 
+      solicitacao.mes_corrente === saldoData.mesCorrente
+    );
+
+    console.log('🔍 Verificando solicitação no mês:', {
+      mesCorrente: saldoData.mesCorrente,
+      totalSolicitacoes: ultimasSolicitacoes.length,
+      temSolicitacaoNoMes: temSolicitacao,
+      solicitacoesDoMes: ultimasSolicitacoes.filter(s => s.mes_corrente === saldoData.mesCorrente)
+    });
+
+    return temSolicitacao;
+  };
+
   // Função para buscar o mês corrente
   const fetchMesCorrente = useCallback(async (cartaoParam: string) => {
     try {
@@ -787,6 +808,54 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
                 Nova Solicitação
               </button>
             </div>
+          </div>
+        ) : jaTemSolicitacaoNoMes() ? (
+          /* Mensagem quando já existe solicitação no mês */
+          <div className="p-6 bg-amber-50 border border-amber-200 rounded-lg text-center">
+            <div className="flex items-center justify-center mb-4">
+              <FaHourglassHalf className="text-amber-500 text-2xl mr-2" />
+              <h3 className="text-lg font-semibold text-amber-800">
+                Solicitação já Realizada
+              </h3>
+            </div>
+            <p className="text-amber-700 mb-4">
+              Você já possui uma solicitação de antecipação para o mês <strong>{saldoData?.mesCorrente}</strong>.
+            </p>
+            <p className="text-sm text-amber-600">
+              📅 <strong>Regra:</strong> É permitida apenas 1 solicitação por mês.<br/>
+              🔄 Aguarde o próximo mês para fazer uma nova solicitação.
+            </p>
+            
+            {/* Mostrar detalhes da solicitação existente */}
+            {ultimasSolicitacoes.filter(s => s.mes_corrente === saldoData?.mesCorrente).map(solicitacao => (
+              <div key={solicitacao.id} className="mt-4 p-4 bg-white border border-amber-200 rounded-lg">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-gray-600">Data:</span>
+                    <span className="ml-2 font-medium">
+                      {format(new Date(solicitacao.data_solicitacao), "dd/MM/yyyy", { locale: ptBR })}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Valor:</span>
+                    <span className="ml-2 font-medium">
+                      {Number(solicitacao.valor_solicitado).toLocaleString('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL'
+                      })}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Status:</span>
+                    <span className="ml-2">{formatarStatus(solicitacao.status)}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">Mês:</span>
+                    <span className="ml-2 font-medium">{solicitacao.mes_corrente}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           /* Formulário de Solicitação */
