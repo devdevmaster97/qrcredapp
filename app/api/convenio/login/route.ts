@@ -20,15 +20,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Preparar os dados para enviar ao backend (EXATAMENTE como no login do associado)
+    // Preparar os dados para enviar ao backend (valores SEM aspas como no banco)
     const payload = new URLSearchParams();
     payload.append('userconv', String(usuario).trim());
     payload.append('passconv', String(senha).trim());
     
-    // DEBUG: Testar também com valores exatos do banco (com aspas)
-    console.log('🧪 Testando também valores do banco:', {
-      banco_usuario_texto: '"sascred"',
-      banco_password: '"123456"',
+    // DEBUG: Valores corretos do banco (SEM aspas)
+    console.log('🔍 Valores corretos do banco:', {
+      banco_usuario_texto: 'sascred',
+      banco_password: '123456',
       enviando_usuario: usuario,
       enviando_senha: senha
     });
@@ -68,14 +68,21 @@ export async function POST(request: NextRequest) {
 
     // Verificar se tem os campos de login (específico para convênio)
     if (!response.data.tipo_login) {
-      console.log('Resposta sem campo tipo_login - API não processou login');
+      console.log('❌ Resposta sem campo tipo_login - analisando problema');
+      console.log('📊 Análise detalhada:', {
+        tem_mes_corrente: !!response.data.mes_corrente,
+        campos_presentes: Object.keys(response.data),
+        possivel_problema: 'Primeira consulta (c_senhaconvenio) funcionou, segunda (convenio) falhou'
+      });
+      
       return NextResponse.json(
         { 
           success: false, 
-          message: 'API PHP não processou o login corretamente',
+          message: 'Usuário encontrado mas convênio pode estar inativo. Verifique se cod_convenio existe na tabela convenio com divulga = S',
           debug: {
             responseData: response.data,
-            parametrosEnviados: payload.toString()
+            parametrosEnviados: payload.toString(),
+            analise: 'API PHP executou primeira consulta (mes_corrente presente) mas não a segunda (convenio)'
           }
         },
         { status: 500 }
