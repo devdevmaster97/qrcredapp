@@ -84,7 +84,6 @@ export default function NovoLancamentoPage() {
               setCartao(decodedText);
               
               console.log('🔍 QR Code processado, executando busca automática...');
-              toast.success('QR Code lido! Buscando associado...');
               
               // Executar busca automaticamente passando o número do cartão diretamente
               setTimeout(() => {
@@ -300,7 +299,7 @@ export default function NovoLancamentoPage() {
 
     try {
       console.log('🔍 Buscando associado pelo cartão:', cartaoParaBuscar);
-      toast.success('Buscando cartão...');
+      toast.loading('Buscando cartão...', { id: 'busca-cartao' }); // Usar loading toast com ID único
       
       // Usando XHR diretamente para melhor controle e diagnóstico
       const xhr = new XMLHttpRequest();
@@ -330,7 +329,7 @@ export default function NovoLancamentoPage() {
           
           if (!responseText || responseText.trim() === '') {
             console.error('❌ Resposta vazia da API');
-            toast.error('Resposta vazia da API');
+            toast.error('Erro na consulta do cartão', { id: 'busca-cartao' });
             setLoadingCartao(false);
             return;
           }
@@ -350,7 +349,7 @@ export default function NovoLancamentoPage() {
             } else {
               // Se a API responder mas não encontrar o cartão
               console.warn('⚠️ Cartão não encontrado ou login inválido:', data);
-              toast.error('Cartão não encontrado');
+              toast.error('Cartão não encontrado', { id: 'busca-cartao' });
               setCartao('');
               setLoadingCartao(false);
             }
@@ -370,14 +369,14 @@ export default function NovoLancamentoPage() {
       // Configurar handler de erro
       xhr.onerror = function() {
         console.error('❌ Erro de rede na requisição XHR');
-        toast.error('Erro de rede, verifique sua conexão');
+        toast.error('Erro de rede, verifique sua conexão', { id: 'busca-cartao' });
         setLoadingCartao(false);
       };
       
       // Configurar handler de timeout
       xhr.ontimeout = function() {
         console.error('⏱️ Timeout na busca do associado');
-        toast.error('Tempo limite excedido, tente novamente');
+        toast.error('Tempo limite excedido, tente novamente', { id: 'busca-cartao' });
         setLoadingCartao(false);
       };
       
@@ -391,7 +390,7 @@ export default function NovoLancamentoPage() {
       xhr.send(formData.toString());
     } catch (error) {
       console.error('❌ Erro geral na busca do associado:', error);
-      toast.error('Erro ao buscar dados do cartão');
+      toast.error('Erro ao buscar dados do cartão', { id: 'busca-cartao' });
       setLoadingCartao(false);
     }
   };
@@ -909,8 +908,10 @@ export default function NovoLancamentoPage() {
                   console.log('💰 Associado atualizado com saldo calculado:', novoAssociado);
                   setAssociado(novoAssociado);
                   
-                  // Toast para confirmar que o saldo foi calculado
-                  toast.success(`Saldo calculado: ${saldoDisponivel.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`);
+                  // Toast para confirmar que o saldo foi calculado (substitui o toast de loading)
+                  toast.success(`Cartão encontrado! Saldo: ${saldoDisponivel.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, { 
+                    id: 'busca-cartao' // Usa o mesmo ID para substituir o toast de loading
+                  });
                 } else {
                   console.warn('⚠️ Nenhum associado disponível para atualizar');
                 }
