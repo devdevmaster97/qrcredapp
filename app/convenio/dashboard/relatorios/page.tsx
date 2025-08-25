@@ -10,10 +10,12 @@ interface Lancamento {
   data: string;
   hora: string;
   valor: string;
-  associado: string;
+  associado: string; // código do associado
+  nome_associado?: string; // nome do associado (quando disponível)
   empregador: string;
   mes: string;
   parcela: number;
+  lancamento?: string; // campo lancamento da tabela conta
   descricao: string;
   data_fatura: string;
   matricula?: string;
@@ -47,6 +49,12 @@ export default function RelatoriosPage() {
         const data = await response.json();
 
         if (data.success) {
+          // Debug: verificar estrutura dos dados recebidos
+          console.log('🔍 Dados dos lançamentos recebidos:', data.data);
+          if (data.data.length > 0) {
+            console.log('🔍 Exemplo de lançamento:', data.data[0]);
+          }
+          
           setLancamentos(data.data);
           // Extrair meses únicos dos lançamentos
           const meses = Array.from(new Set(data.data.map((l: Lancamento) => l.mes))) as string[];
@@ -282,13 +290,13 @@ export default function RelatoriosPage() {
                   {lancamentosFiltrados.map((lancamento) => (
                     <tr key={lancamento.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {lancamento.associado}
+                        {lancamento.nome_associado || lancamento.associado}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
                         R$ {lancamento.valor}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {lancamento.descricao || 'Lançamento Convênio'}
+                        {lancamento.lancamento || lancamento.descricao || 'Lançamento Convênio'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {lancamento.data}
@@ -331,13 +339,13 @@ export default function RelatoriosPage() {
                 <div key={lancamento.id} className="bg-white rounded-lg shadow border border-gray-200 p-4">
                   <div className="mb-3">
                     <h3 className="font-bold text-lg text-gray-900 mb-1">
-                      {lancamento.associado}
+                      {lancamento.nome_associado || lancamento.associado}
                     </h3>
                     <div className="font-semibold text-lg text-gray-900 mb-2">
                       R$ {lancamento.valor}
                     </div>
                     <div className="text-sm text-gray-700 mb-2">
-                      <span className="font-medium">Lançamento:</span> {lancamento.descricao || 'Lançamento Convênio'}
+                      <span className="font-medium">Lançamento:</span> {lancamento.lancamento || lancamento.descricao || 'Lançamento Convênio'}
                     </div>
                     <div className="text-sm text-gray-700 mb-1">
                       <span className="font-medium">Data:</span> {lancamento.data}
@@ -409,7 +417,7 @@ export default function RelatoriosPage() {
                     </p>
                     
                     <div className="mt-3 bg-gray-50 p-3 rounded-md text-sm">
-                      <p><span className="font-semibold">Associado:</span> {lancamentoSelecionado.associado}</p>
+                      <p><span className="font-semibold">Associado:</span> {lancamentoSelecionado.nome_associado || lancamentoSelecionado.associado}</p>
                       <p><span className="font-semibold">Data:</span> {lancamentoSelecionado.data}</p>
                       <p><span className="font-semibold">Valor:</span> R$ {lancamentoSelecionado.valor}</p>
                       <p><span className="font-semibold">Mês:</span> {lancamentoSelecionado.mes}</p>
@@ -477,7 +485,7 @@ export default function RelatoriosPage() {
 
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Associado:</span>
-                      <span className="text-sm font-semibold">{lancamentoSelecionado.associado}</span>
+                      <span className="text-sm font-semibold">{lancamentoSelecionado.nome_associado || lancamentoSelecionado.associado}</span>
                     </div>
                     
                     {lancamentoSelecionado.matricula && (
@@ -495,7 +503,7 @@ export default function RelatoriosPage() {
                     <div className="border-t border-gray-200 my-2 pt-2">
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Descrição:</span>
-                        <span className="text-sm font-semibold">{lancamentoSelecionado.descricao || 'Lançamento Convênio'}</span>
+                        <span className="text-sm font-semibold">{lancamentoSelecionado.lancamento || lancamentoSelecionado.descricao || 'Lançamento Convênio'}</span>
                       </div>
                       
                       <div className="flex justify-between">
