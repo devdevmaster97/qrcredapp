@@ -62,6 +62,9 @@ export default function DashboardLayout({
           setConvenioData(data.data);
           retryCountRef.current = 0; // Resetar contador de tentativas se obtiver sucesso
           
+          // Salvar dados no localStorage para cache
+          localStorage.setItem('dadosConvenio', JSON.stringify(data.data));
+          
           // Mostra o toast de boas-vindas apenas uma vez quando os dados são carregados com sucesso
           if (!toastShownRef.current && pathname === '/convenio/dashboard/lancamentos') {
             toast.success('Login realizado com sucesso!', {
@@ -85,10 +88,41 @@ export default function DashboardLayout({
         retryCountRef.current += 1;
         console.error('Erro ao carregar dados do convênio:', error);
         
+        // Log adicional para debugging em dispositivos Xiaomi
+        console.log('🔍 Error details (layout):', {
+          message: error instanceof Error ? error.message : String(error),
+          userAgent: navigator.userAgent,
+          online: navigator.onLine,
+          timestamp: new Date().toISOString(),
+          tentativa: retryCountRef.current,
+          maxTentativas: maxRetries
+        });
+        
         if (retryCountRef.current >= maxRetries) {
-          toast.error('Erro ao carregar dados do convênio. Redirecionando para o login...');
+          // Tentar recuperar dados do localStorage antes de redirecionar
+          const storedData = localStorage.getItem('dadosConvenio');
+          if (storedData) {
+            try {
+              const parsedData = JSON.parse(storedData);
+              setConvenioData(parsedData);
+              toast.warning('Dados carregados do cache local. Algumas informações podem estar desatualizadas.');
+            } catch (parseError) {
+              console.error('Erro ao recuperar dados do cache:', parseError);
+              toast.error('Erro ao carregar dados do convênio. Redirecionando para o login...');
+              setTimeout(() => {
+                router.push('/convenio/login');
+              }, 2000);
+            }
+          } else {
+            toast.error('Erro ao carregar dados do convênio. Redirecionando para o login...');
+            setTimeout(() => {
+              router.push('/convenio/login');
+            }, 2000);
+          }
+        } else {
+          // Tentar novamente após um delay
           setTimeout(() => {
-            router.push('/convenio/login');
+            getConvenioData();
           }, 2000);
         }
       } finally {

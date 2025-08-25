@@ -38,24 +38,69 @@ export async function POST(request: NextRequest) {
     // 🧪 TESTE: Verificar se a API PHP está funcionando
     console.log('🔗 Testando API PHP diretamente...');
     
-    // Enviar a requisição para o backend (EXATAMENTE como no login do associado)
+    // Enviar a requisição para o backend com configurações otimizadas para dispositivos Xiaomi
     const response = await axios.post(
       'https://sas.makecard.com.br/convenio_autenticar_app.php',
       payload,
       {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json, text/plain, */*',
+          'User-Agent': 'SasApp/1.0',
         },
-        timeout: 10000, // 10 segundos de timeout
+        timeout: 15000, // 15 segundos de timeout para dispositivos mais lentos
+        validateStatus: () => true, // Aceitar todas as respostas para melhor diagnóstico
+        transformResponse: [(data) => {
+          // Tratamento robusto da resposta para compatibilidade com Xiaomi
+          try {
+            // Se já é um objeto, retornar como está
+            if (typeof data === 'object') {
+              return data;
+            }
+            
+            // Se é string, tentar fazer parse
+            if (typeof data === 'string') {
+              // Remover possíveis warnings PHP do início da resposta
+              const cleanData = data.replace(/^.*?({.*}).*$/, '$1').trim();
+              
+              // Tentar parse do JSON limpo
+              return JSON.parse(cleanData);
+            }
+            
+            return data;
+          } catch (parseError) {
+            console.error('❌ Erro no parse da resposta:', parseError);
+            console.log('📄 Dados brutos recebidos:', data);
+            return { erro_parse: true, dados_brutos: data };
+          }
+        }]
       }
     );
     
     console.log('🔍 Status da resposta HTTP:', response.status);
     console.log('🔍 Headers da resposta:', response.headers);
+    console.log('🔍 Tipo da resposta:', typeof response.data);
     console.log('🔍 Tamanho da resposta:', JSON.stringify(response.data).length);
 
     // Log completo da resposta (mesmo padrão do login do associado)
     console.log('Resposta completa do backend:', JSON.stringify(response.data));
+
+    // Verificar se houve erro no parse da resposta (específico para dispositivos Xiaomi)
+    if (response.data && response.data.erro_parse) {
+      console.log('❌ Erro no parse da resposta - dados brutos:', response.data.dados_brutos);
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: 'Erro no formato da resposta do servidor',
+          debug: {
+            erro: 'Parse JSON falhou',
+            dados_brutos: response.data.dados_brutos,
+            device_info: 'Possível problema de compatibilidade com dispositivo'
+          }
+        },
+        { status: 500 }
+      );
+    }
 
     // Verificação básica da resposta (mesmo padrão do login do associado)
     if (!response.data || typeof response.data !== 'object') {

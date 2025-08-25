@@ -111,11 +111,49 @@ export default function LoginConvenio() {
         }
         router.push('/convenio/dashboard');
       } else {
-        toast.error(data.message || 'Erro ao fazer login');
+        // Tratamento detalhado de erros específicos para debugging em dispositivos Xiaomi
+        console.error('❌ Erro no login - resposta completa:', data);
+        
+        let mensagemErro = data.message || 'Erro ao fazer login';
+        
+        // Adicionar informações de debugging se disponíveis
+        if (data.debug) {
+          console.log('🔍 Debug info:', data.debug);
+          if (data.debug.device_info) {
+            console.log('📱 Device info:', data.debug.device_info);
+          }
+          if (data.debug.dados_brutos) {
+            console.log('📄 Dados brutos da API:', data.debug.dados_brutos);
+          }
+        }
+        
+        toast.error(mensagemErro);
       }
     } catch (error) {
       console.error('Erro no login:', error);
-      toast.error('Erro ao conectar com o servidor. Tente novamente mais tarde.');
+      
+      // Informações adicionais para dispositivos Xiaomi
+      console.log('🔍 User Agent:', navigator.userAgent);
+      console.log('🔍 Dispositivo:', {
+        platform: navigator.platform,
+        vendor: navigator.vendor,
+        language: navigator.language,
+        cookieEnabled: navigator.cookieEnabled,
+        onLine: navigator.onLine
+      });
+      
+      let mensagemErro = 'Erro ao conectar com o servidor. Tente novamente mais tarde.';
+      
+      // Verificar se é um erro específico de rede ou parsing
+      if (error instanceof Error) {
+        if (error.message.includes('JSON') || error.message.includes('parse')) {
+          mensagemErro = 'Erro na comunicação com o servidor. Verifique sua conexão e tente novamente.';
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+          mensagemErro = 'Falha na conexão. Verifique sua internet e tente novamente.';
+        }
+      }
+      
+      toast.error(mensagemErro);
     } finally {
       setLoading(false);
     }

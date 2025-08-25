@@ -25,36 +25,71 @@ export async function GET(request: NextRequest) {
     params.append('userconv', tokenData.user);
     params.append('passconv', tokenData.senha || '');
     
-    // Usar a mesma API de login, já que ela retorna todos os dados necessários
+    // Usar a mesma API de login com tratamento robusto para dispositivos Xiaomi
     const response = await axios.post('https://sas.makecard.com.br/convenio_autenticar_app.php', 
       params,
       {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        }
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json, text/plain, */*',
+          'User-Agent': 'SasApp/1.0',
+        },
+        timeout: 15000,
+        validateStatus: () => true,
+        transformResponse: [(data) => {
+          // Tratamento robusto da resposta para compatibilidade com Xiaomi
+          try {
+            if (typeof data === 'object') {
+              return data;
+            }
+            
+            if (typeof data === 'string') {
+              // Múltiplas estratégias de limpeza para garantir compatibilidade
+              let cleanData = data;
+              
+              // 1. Remover warnings PHP do início
+              cleanData = cleanData.replace(/^.*?({.*}).*$/, '$1').trim();
+              
+              // 2. Se não encontrou JSON, tentar extrair manualmente
+              if (!cleanData.startsWith('{')) {
+                const jsonStart = data.indexOf('{');
+                const jsonEnd = data.lastIndexOf('}');
+                if (jsonStart !== -1 && jsonEnd !== -1) {
+                  cleanData = data.substring(jsonStart, jsonEnd + 1);
+                }
+              }
+              
+              return JSON.parse(cleanData);
+            }
+            
+            return data;
+          } catch (parseError) {
+            console.error('❌ Erro no parse da resposta (dados):', parseError);
+            console.log('📄 Dados brutos recebidos (dados):', data);
+            return { erro_parse: true, dados_brutos: data };
+          }
+        }]
       }
     );
 
     console.log('Resposta API Dados:', response.data);
+    console.log('🔍 Status resposta dados:', response.status);
+    console.log('🔍 Tipo resposta dados:', typeof response.data);
 
-    // Extrair JSON válido da resposta, ignorando warnings HTML
-    let jsonData;
-    try {
-      const responseText = response.data;
-      const jsonStart = responseText.indexOf('{');
-      if (jsonStart !== -1) {
-        const jsonString = responseText.substring(jsonStart);
-        jsonData = JSON.parse(jsonString);
-      } else {
-        throw new Error('JSON não encontrado na resposta');
-      }
-    } catch (parseError) {
-      console.error('Erro ao fazer parse do JSON:', parseError);
+    // Verificar se houve erro no parse da resposta
+    if (response.data && response.data.erro_parse) {
+      console.log('❌ Erro no parse da resposta de dados - dados brutos:', response.data.dados_brutos);
       return NextResponse.json({
         success: false,
-        message: 'Erro no formato da resposta do servidor'
+        message: 'Erro no formato da resposta do servidor',
+        debug: {
+          erro: 'Parse JSON falhou ao buscar dados',
+          dados_brutos: response.data.dados_brutos
+        }
       }, { status: 500 });
     }
+
+    const jsonData = response.data;
 
     // Verificar se os dados foram retornados corretamente
     if (jsonData && jsonData.tipo_login === 'login sucesso') {
