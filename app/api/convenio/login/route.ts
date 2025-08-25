@@ -154,6 +154,15 @@ export async function POST(request: NextRequest) {
       });
 
       console.log('✅ Login bem-sucedido');
+      console.log('🔍 DADOS CRÍTICOS DE DEBUG:', {
+        usuario_enviado: usuario,
+        senha_enviada: senha,
+        cod_convenio_retornado: response.data.cod_convenio,
+        razaosocial_retornada: response.data.razaosocial,
+        userconv_na_resposta: response.data.userconv,
+        passconv_na_resposta: response.data.passconv
+      });
+      
       return NextResponse.json({
         success: true,
         data: {

@@ -30,39 +30,63 @@ export async function GET() {
     }
 
     // Criar parâmetros no formato form-urlencoded para enviar para a API PHP
+    // IMPORTANTE: NÃO enviar cod_convenio - a API PHP não espera esse parâmetro
     const params = new URLSearchParams();
     params.append('userconv', tokenData.user);
     params.append('passconv', tokenData.senha);
-    params.append('cod_convenio', tokenData.id);
 
-    // Usar a API de autenticação que já retorna dados do convênio
+    console.log('🔍 Dashboard - Enviando parâmetros:', params.toString());
+    console.log('🔍 Dashboard - Token data:', {
+      user: tokenData.user,
+      id: tokenData.id,
+      timestamp: tokenData.timestamp
+    });
+
+    // Usar a API de autenticação com tratamento robusto
     const response = await axios.post('https://sas.makecard.com.br/convenio_autenticar_app.php', 
       params, 
       {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        }
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json, text/plain, */*',
+          'User-Agent': 'SasApp/1.0',
+        },
+        timeout: 15000,
+        validateStatus: () => true,
+        transformResponse: [(data) => {
+          try {
+            if (typeof data === 'object') {
+              return data;
+            }
+            
+            if (typeof data === 'string') {
+              const cleanData = data.replace(/^.*?({.*}).*$/, '$1').trim();
+              return JSON.parse(cleanData);
+            }
+            
+            return data;
+          } catch (parseError) {
+            console.error('❌ Erro no parse da resposta (dashboard):', parseError);
+            console.log('📄 Dados brutos recebidos (dashboard):', data);
+            return { erro_parse: true, dados_brutos: data };
+          }
+        }]
       }
     );
 
-    // Extrair JSON válido da resposta, ignorando warnings HTML
-    let jsonData;
-    try {
-      const responseText = response.data;
-      const jsonStart = responseText.indexOf('{');
-      if (jsonStart !== -1) {
-        const jsonString = responseText.substring(jsonStart);
-        jsonData = JSON.parse(jsonString);
-      } else {
-        throw new Error('JSON não encontrado na resposta');
-      }
-    } catch (parseError) {
-      console.error('Erro ao fazer parse do JSON:', parseError);
+    console.log('🔍 Dashboard - Resposta completa:', JSON.stringify(response.data));
+    console.log('🔍 Dashboard - Status:', response.status);
+
+    // Verificar se houve erro no parse da resposta
+    if (response.data && response.data.erro_parse) {
+      console.log('❌ Erro no parse da resposta de dashboard');
       return NextResponse.json({
         success: false,
         message: 'Erro no formato da resposta do servidor'
       }, { status: 500 });
     }
+
+    const jsonData = response.data;
 
     // Verificar se a resposta foi bem-sucedida
     if (jsonData && jsonData.tipo_login === 'login sucesso') {

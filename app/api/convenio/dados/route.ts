@@ -93,6 +93,14 @@ export async function GET(request: NextRequest) {
 
     // Verificar se os dados foram retornados corretamente
     if (jsonData && jsonData.tipo_login === 'login sucesso') {
+      console.log('🔍 DADOS CRÍTICOS DE DEBUG (API DADOS):', {
+        usuario_do_token: tokenData.user,
+        cod_convenio_retornado: jsonData.cod_convenio,
+        razaosocial_retornada: jsonData.razaosocial,
+        userconv_na_resposta: jsonData.userconv,
+        passconv_na_resposta: jsonData.passconv
+      });
+      
       // Se a chamada for bem-sucedida, retornar os dados do convênio
       return NextResponse.json({
         success: true,

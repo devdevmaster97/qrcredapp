@@ -141,6 +141,11 @@ export default function DashboardLayout({
   }, [router, pathname]);
 
   const handleLogout = async () => {
+    // LIMPAR COMPLETAMENTE todos os dados do convênio
+    localStorage.removeItem('dadosConvenio');
+    localStorage.removeItem('convenioUsuariosSalvos');
+    setConvenioData(null);
+    
     // Limpar os dados de autenticação
     try {
       await fetch('/api/convenio/logout', {
@@ -149,6 +154,9 @@ export default function DashboardLayout({
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
     }
+    
+    console.log('🧹 Cache do convênio completamente limpo no logout');
+    toast.success('Logout realizado com sucesso!');
     // Redirecionar para a página de login
     router.push('/convenio/login');
   };
