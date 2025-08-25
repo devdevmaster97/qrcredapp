@@ -76,12 +76,20 @@ export default function NovoLancamentoPage() {
           aspectRatio: 1.0,
         },
         (decodedText) => {
-          // Sucesso
+          // Sucesso ao ler QR Code
+          console.log('📱 QR Code lido com sucesso:', decodedText);
           if (html5QrCodeRef.current) {
             html5QrCodeRef.current.stop().then(() => {
               setShowQrReader(false);
               setCartao(decodedText);
-              buscarAssociado();
+              
+              console.log('🔍 QR Code processado, executando busca automática...');
+              toast.success('QR Code lido! Buscando associado...');
+              
+              // Executar busca automaticamente passando o número do cartão diretamente
+              setTimeout(() => {
+                buscarAssociado(decodedText);
+              }, 100); // Pequeno delay para garantir que o state foi atualizado
             }).catch(err => {
               console.error("Erro ao parar o scanner:", err);
             });
@@ -276,17 +284,22 @@ export default function NovoLancamentoPage() {
     });
   };
 
-  const buscarAssociado = async () => {
-    if (!cartao || cartao.length < 5) {
-      toast.error('Número de cartão inválido');
+  const buscarAssociado = async (numeroCartao?: string) => {
+    // Usar o número passado como parâmetro ou o state atual
+    const cartaoParaBuscar = numeroCartao || cartao;
+    
+    // Verificar se há cartão informado
+    if (!cartaoParaBuscar || cartaoParaBuscar.trim() === '') {
+      toast.error('Informe o número do cartão');
       return;
     }
 
+    console.log('🔍 Iniciando busca para cartão:', cartaoParaBuscar);
     setLoadingCartao(true);
     setAssociado(null);
 
     try {
-      console.log('🔍 Buscando associado pelo cartão:', cartao);
+      console.log('🔍 Buscando associado pelo cartão:', cartaoParaBuscar);
       toast.success('Buscando cartão...');
       
       // Usando XHR diretamente para melhor controle e diagnóstico
@@ -370,7 +383,7 @@ export default function NovoLancamentoPage() {
       
       // Preparar dados para envio
       const formData = new URLSearchParams();
-      formData.append('cartaodigitado', cartao);
+      formData.append('cartaodigitado', cartaoParaBuscar);
       
       console.log('📤 Enviando dados:', formData.toString());
       
@@ -1533,7 +1546,7 @@ export default function NovoLancamentoPage() {
                   <button
                     type="button"
                     className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md"
-                    onClick={buscarAssociado}
+                    onClick={() => buscarAssociado()}
                     disabled={!cartao || loadingCartao}
                   >
                     {loadingCartao ? <FaSpinner className="animate-spin mx-auto" /> : 'Buscar'}
