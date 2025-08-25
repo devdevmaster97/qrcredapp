@@ -76,6 +76,16 @@ export default function RelatoriosPage() {
     ? lancamentos.filter(l => l.mes === mesSelecionado)
     : lancamentos;
 
+  // Calcular total dos lançamentos do mês selecionado
+  const calcularTotalMes = () => {
+    return lancamentosFiltrados.reduce((total, lancamento) => {
+      const valor = parseFloat(lancamento.valor.replace(',', '.')) || 0;
+      return total + valor;
+    }, 0);
+  };
+
+  const totalDoMes = calcularTotalMes();
+
 
 
   // Abrir modal de confirmação antes de estornar
@@ -212,6 +222,31 @@ export default function RelatoriosPage() {
           </div>
         </div>
 
+        {/* Total do Mês */}
+        {lancamentosFiltrados.length > 0 && (
+          <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <FaReceipt className="h-5 w-5 text-blue-600 mr-2" />
+                <span className="text-sm font-medium text-blue-900">
+                  {mesSelecionado 
+                    ? `Total de lançamentos do mês ${mesSelecionado}:` 
+                    : 'Total geral de lançamentos:'}
+                </span>
+              </div>
+              <span className="text-lg font-bold text-blue-900">
+                {totalDoMes.toLocaleString('pt-BR', {
+                  style: 'currency',
+                  currency: 'BRL'
+                })}
+              </span>
+            </div>
+            <div className="mt-1 text-xs text-blue-700">
+              {lancamentosFiltrados.length} lançamento{lancamentosFiltrados.length !== 1 ? 's' : ''} encontrado{lancamentosFiltrados.length !== 1 ? 's' : ''}
+            </div>
+          </div>
+        )}
+
         {loadingLancamentos ? (
           <div className="text-center py-8">
             <FaSpinner className="animate-spin h-8 w-8 mx-auto text-blue-600" />
@@ -224,25 +259,19 @@ export default function RelatoriosPage() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Data/Hora
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Associado
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Empregador
+                      Nome
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Valor
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Mês
+                      Lançamento
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Parcela
+                      Data
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Data Fatura
+                      Hora - Parcela
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Ações
@@ -253,25 +282,19 @@ export default function RelatoriosPage() {
                   {lancamentosFiltrados.map((lancamento) => (
                     <tr key={lancamento.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {lancamento.data} {lancamento.hora}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {lancamento.associado}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {lancamento.empregador}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
                         R$ {lancamento.valor}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {lancamento.mes}
+                        {lancamento.descricao || 'Lançamento Convênio'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {lancamento.parcela}
+                        {lancamento.data}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {lancamento.data_fatura || '-'}
+                        {lancamento.hora} - Parcela {lancamento.parcela}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <div className="flex space-x-3">
@@ -306,42 +329,25 @@ export default function RelatoriosPage() {
             <div className="md:hidden space-y-4">
               {lancamentosFiltrados.map((lancamento) => (
                 <div key={lancamento.id} className="bg-white rounded-lg shadow border border-gray-200 p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h3 className="font-bold text-gray-900">
-                        {lancamento.associado}
-                      </h3>
-                      <p className="text-sm text-gray-500">{lancamento.empregador}</p>
+                  <div className="mb-3">
+                    <h3 className="font-bold text-lg text-gray-900 mb-1">
+                      {lancamento.associado}
+                    </h3>
+                    <div className="font-semibold text-lg text-gray-900 mb-2">
+                      R$ {lancamento.valor}
                     </div>
-                    <span className="font-bold text-gray-900">R$ {lancamento.valor}</span>
+                    <div className="text-sm text-gray-700 mb-2">
+                      <span className="font-medium">Lançamento:</span> {lancamento.descricao || 'Lançamento Convênio'}
+                    </div>
+                    <div className="text-sm text-gray-700 mb-1">
+                      <span className="font-medium">Data:</span> {lancamento.data}
+                    </div>
+                    <div className="text-sm text-gray-700">
+                      <span className="font-medium">Hora:</span> {lancamento.hora} - <span className="font-medium">Parcela:</span> {lancamento.parcela}
+                    </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-2 text-sm mb-3">
-                    <div>
-                      <span className="text-gray-500">Data:</span>{' '}
-                      <span className="text-gray-900">{lancamento.data}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Hora:</span>{' '}
-                      <span className="text-gray-900">{lancamento.hora}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Mês:</span>{' '}
-                      <span className="text-gray-900">{lancamento.mes}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Parcela:</span>{' '}
-                      <span className="text-gray-900">{lancamento.parcela}</span>
-                    </div>
-                    {lancamento.data_fatura && (
-                      <div className="col-span-2">
-                        <span className="text-gray-500">Data Fatura:</span>{' '}
-                        <span className="text-gray-900">{lancamento.data_fatura}</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="mt-2 border-t pt-2 flex justify-end space-x-2">
+                  <div className="mt-3 border-t pt-3 flex justify-end space-x-2">
                     <button
                       onClick={() => abrirComprovante(lancamento)}
                       className="flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
