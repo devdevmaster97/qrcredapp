@@ -71,14 +71,17 @@ export default function LoginConvenio() {
       const data = await response.json();
 
       if (data.success) {
-        // LIMPAR qualquer dado anterior antes de salvar novos dados
-        localStorage.removeItem('dadosConvenio');
+        // LIMPEZA COMPLETA usando utilitário
+        console.log('🧹 Login - Limpando TODOS os dados anteriores usando utilitário...');
+        const { clearConvenioCache, saveConvenioCache } = await import('@/app/utils/convenioCache');
+        clearConvenioCache();
         
-        // Salvar os dados do convênio no localStorage
+        // Salvar os dados do convênio usando utilitário seguro
         if (data.data) {
-          localStorage.setItem('dadosConvenio', JSON.stringify(data.data));
-          console.log('✅ Dados do convênio salvos no localStorage (limpos antes):', data.data);
-          console.log('🔍 Código do convênio salvo:', data.data.cod_convenio);
+          saveConvenioCache(data.data);
+          console.log('✅ Login - Dados do convênio salvos via utilitário (após limpeza completa):', data.data);
+          console.log('🔍 Login - Código do convênio salvo:', data.data.cod_convenio);
+          console.log('🔍 Login - Razão social salva:', data.data.razaosocial);
           
           // Salvar usuário na lista de usuários recentes
           if (formData.usuario) {

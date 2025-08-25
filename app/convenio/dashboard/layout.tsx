@@ -13,6 +13,7 @@ import {
   FaBars,
   FaTimes
 } from 'react-icons/fa';
+import { clearConvenioCache, validateConvenioCache, saveConvenioCache, type ConvenioData as ConvenioCacheData } from '@/app/utils/convenioCache';
 
 interface ConvenioData {
   cod_convenio: string;
@@ -41,11 +42,16 @@ export default function DashboardLayout({
   const toastShownRef = useRef(false);
 
   useEffect(() => {
+    // CRÍTICO: Limpar dados antigos no início de cada carregamento
+    console.log('🧹 Layout - Iniciando carregamento de dados, limpando estado anterior');
+    setConvenioData(null);
+    
     // Recuperar dados do convênio da sessão ou fazer nova chamada API
     const getConvenioData = async () => {
       try {
         setLoading(true);
         
+        console.log('🔍 Layout - Buscando dados frescos da API...');
         const response = await fetch('/api/convenio/dados', {
           method: 'GET',
           headers: {
@@ -59,11 +65,18 @@ export default function DashboardLayout({
 
         const data = await response.json();
         if (data.success) {
+          console.log('✅ Layout - Dados recebidos da API:', {
+            cod_convenio: data.data.cod_convenio,
+            razaosocial: data.data.razaosocial,
+            timestamp: new Date().toISOString()
+          });
+          
           setConvenioData(data.data);
           retryCountRef.current = 0; // Resetar contador de tentativas se obtiver sucesso
           
-          // Salvar dados no localStorage para cache
-          localStorage.setItem('dadosConvenio', JSON.stringify(data.data));
+          // Salvar dados usando utilitário de cache seguro
+          saveConvenioCache(data.data as ConvenioCacheData);
+          console.log('💾 Layout - Dados salvos no cache usando utilitário seguro');
           
           // Mostra o toast de boas-vindas apenas uma vez quando os dados são carregados com sucesso
           if (!toastShownRef.current && pathname === '/convenio/dashboard/lancamentos') {
@@ -99,22 +112,25 @@ export default function DashboardLayout({
         });
         
         if (retryCountRef.current >= maxRetries) {
-          // Tentar recuperar dados do localStorage antes de redirecionar
-          const storedData = localStorage.getItem('dadosConvenio');
-          if (storedData) {
-            try {
-              const parsedData = JSON.parse(storedData);
-              setConvenioData(parsedData);
-              toast.warning('Dados carregados do cache local. Algumas informações podem estar desatualizadas.');
-            } catch (parseError) {
-              console.error('Erro ao recuperar dados do cache:', parseError);
-              toast.error('Erro ao carregar dados do convênio. Redirecionando para o login...');
-              setTimeout(() => {
-                router.push('/convenio/login');
-              }, 2000);
-            }
+          console.log('⚠️ Layout - Máximo de tentativas atingido, validando cache...');
+          
+          // Usar utilitário para validar cache
+          const cacheValidation = validateConvenioCache();
+          
+          if (cacheValidation.isValid && cacheValidation.cacheData) {
+            console.log('✅ Cache validado pelo utilitário, usando dados salvos');
+            setConvenioData(cacheValidation.cacheData as ConvenioData);
+            toast('Dados carregados do cache local. Algumas informações podem estar desatualizadas.', {
+              icon: '⚠️',
+              duration: 4000
+            });
           } else {
-            toast.error('Erro ao carregar dados do convênio. Redirecionando para o login...');
+            console.log('❌ Cache inválido ou inexistente, redirecionando para login');
+            if (cacheValidation.cacheData && cacheValidation.tokenData) {
+              toast.error(`Cache inválido: convênio ${cacheValidation.cacheData.cod_convenio} vs token ${cacheValidation.tokenData.id}`);
+            } else {
+              toast.error('Erro ao carregar dados do convênio. Redirecionando para o login...');
+            }
             setTimeout(() => {
               router.push('/convenio/login');
             }, 2000);
@@ -140,10 +156,17 @@ export default function DashboardLayout({
     };
   }, [router, pathname]);
 
+  // CRÍTICO: Forçar atualização sempre que a rota mudar
+  useEffect(() => {
+    console.log('🔄 Layout - Rota mudou, forçando limpeza de estado:', pathname);
+    setConvenioData(null);
+    retryCountRef.current = 0;
+    toastShownRef.current = false;
+  }, [pathname]);
+
   const handleLogout = async () => {
-    // LIMPAR COMPLETAMENTE todos os dados do convênio
-    localStorage.removeItem('dadosConvenio');
-    localStorage.removeItem('convenioUsuariosSalvos');
+    // Usar utilitário para limpeza completa
+    clearConvenioCache();
     setConvenioData(null);
     
     // Limpar os dados de autenticação
@@ -155,7 +178,7 @@ export default function DashboardLayout({
       console.error('Erro ao fazer logout:', error);
     }
     
-    console.log('🧹 Cache do convênio completamente limpo no logout');
+    console.log('🧹 Logout concluído com limpeza completa via utilitário');
     toast.success('Logout realizado com sucesso!');
     // Redirecionar para a página de login
     router.push('/convenio/login');

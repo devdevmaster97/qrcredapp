@@ -20,10 +20,19 @@ export async function GET(request: NextRequest) {
     // Decodificar o token para obter os dados do convênio
     const tokenData = JSON.parse(atob(tokenEncoded));
     
+    console.log('🔍 API DADOS - Token decodificado:', {
+      user: tokenData.user,
+      id: tokenData.id,
+      timestamp: tokenData.timestamp,
+      timestampFormatted: new Date(tokenData.timestamp).toISOString()
+    });
+    
     // Criar parâmetros no formato form-urlencoded para enviar para a API PHP
     const params = new URLSearchParams();
     params.append('userconv', tokenData.user);
     params.append('passconv', tokenData.senha || '');
+    
+    console.log('📤 API DADOS - Enviando para PHP:', params.toString());
     
     // Usar a mesma API de login com tratamento robusto para dispositivos Xiaomi
     const response = await axios.post('https://sas.makecard.com.br/convenio_autenticar_app.php', 
