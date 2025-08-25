@@ -60,7 +60,23 @@ export async function GET() {
             }
             
             if (typeof data === 'string') {
-              const cleanData = data.replace(/^.*?({.*}).*$/, '$1').trim();
+              // Remover warnings PHP antes de fazer parse
+              let cleanData = data;
+              cleanData = data.replace(/<br\s*\/?>\s*<b>(?:Deprecated|Notice|Warning|Fatal error)[^}]*?<\/b>[^}]*?<br\s*\/?>/gi, '');
+              cleanData = cleanData.replace(/<br\s*\/?>/gi, '');
+              cleanData = cleanData.trim();
+              
+              const regexMatch = cleanData.match(/({.*})/);
+              if (regexMatch) {
+                cleanData = regexMatch[1];
+              } else {
+                const jsonStart = cleanData.indexOf('{');
+                const jsonEnd = cleanData.lastIndexOf('}');
+                if (jsonStart !== -1 && jsonEnd !== -1) {
+                  cleanData = cleanData.substring(jsonStart, jsonEnd + 1);
+                }
+              }
+              
               return JSON.parse(cleanData);
             }
             

@@ -53,25 +53,59 @@ export async function POST(request: NextRequest) {
         transformResponse: [(data) => {
           // Tratamento robusto da resposta para compatibilidade com Xiaomi
           try {
+            console.log('🔄 Transform Response - Dados recebidos (tipo):', typeof data);
+            console.log('🔄 Transform Response - Tamanho:', data ? data.length || 'N/A' : 'null');
+            
             // Se já é um objeto, retornar como está
             if (typeof data === 'object') {
+              console.log('✅ Dados já são objeto, retornando direto');
               return data;
             }
             
             // Se é string, tentar fazer parse
             if (typeof data === 'string') {
-              // Remover possíveis warnings PHP do início da resposta
-              const cleanData = data.replace(/^.*?({.*}).*$/, '$1').trim();
+              console.log('🔄 Dados são string, tentando limpar e fazer parse...');
+              console.log('📄 String original (primeiros 200 chars):', data.substring(0, 200));
+              
+              // Múltiplas estratégias de limpeza para remover warnings PHP
+              let cleanData = data;
+              
+              // 1. Remover warnings PHP (Deprecated, Notice, etc.) do início
+              cleanData = data.replace(/<br\s*\/?>\s*<b>(?:Deprecated|Notice|Warning|Fatal error)[^}]*?<\/b>[^}]*?<br\s*\/?>/gi, '');
+              cleanData = cleanData.replace(/<br\s*\/?>/gi, '');
+              cleanData = cleanData.trim();
+              
+              // 2. Extrair JSON válido
+              const regexMatch = cleanData.match(/({.*})/);
+              if (regexMatch) {
+                cleanData = regexMatch[1];
+                console.log('✅ JSON extraído via regex após limpeza de warnings');
+              } else {
+                // 3. Buscar manualmente por { e }
+                const startIndex = cleanData.indexOf('{');
+                const endIndex = cleanData.lastIndexOf('}');
+                if (startIndex !== -1 && endIndex !== -1) {
+                  cleanData = cleanData.substring(startIndex, endIndex + 1);
+                  console.log('✅ JSON extraído manualmente após limpeza');
+                } else {
+                  console.log('❌ Não foi possível encontrar JSON válido na resposta');
+                }
+              }
+              
+              console.log('🧹 Dados limpos (primeiros 200 chars):', cleanData.substring(0, 200));
               
               // Tentar parse do JSON limpo
-              return JSON.parse(cleanData);
+              const parsedData = JSON.parse(cleanData);
+              console.log('✅ Parse bem-sucedido');
+              return parsedData;
             }
             
+            console.log('⚠️ Tipo de dados não reconhecido, retornando como está');
             return data;
           } catch (parseError) {
             console.error('❌ Erro no parse da resposta:', parseError);
-            console.log('📄 Dados brutos recebidos:', data);
-            return { erro_parse: true, dados_brutos: data };
+            console.log('📄 Dados brutos completos para debug:', data);
+            return { erro_parse: true, dados_brutos: data, erro_detalhes: parseError instanceof Error ? parseError.message : String(parseError) };
           }
         }]
       }
@@ -84,10 +118,15 @@ export async function POST(request: NextRequest) {
 
     // Log completo da resposta (mesmo padrão do login do associado)
     console.log('Resposta completa do backend:', JSON.stringify(response.data));
+    console.log('🔍 Resposta RAW da API PHP:', response.data);
+    console.log('🔍 Tipo da resposta:', typeof response.data);
 
     // Verificar se houve erro no parse da resposta (específico para dispositivos Xiaomi)
     if (response.data && response.data.erro_parse) {
       console.log('❌ Erro no parse da resposta - dados brutos:', response.data.dados_brutos);
+      console.log('📄 Conteúdo bruto completo para análise:');
+      console.log(response.data.dados_brutos);
+      
       return NextResponse.json(
         { 
           success: false, 
@@ -95,7 +134,9 @@ export async function POST(request: NextRequest) {
           debug: {
             erro: 'Parse JSON falhou',
             dados_brutos: response.data.dados_brutos,
-            device_info: 'Possível problema de compatibilidade com dispositivo'
+            device_info: 'Possível problema de compatibilidade com dispositivo',
+            usuario_tentativa: usuario,
+            timestamp: new Date().toISOString()
           }
         },
         { status: 500 }

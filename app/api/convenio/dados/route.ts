@@ -44,18 +44,24 @@ export async function GET(request: NextRequest) {
             }
             
             if (typeof data === 'string') {
-              // Múltiplas estratégias de limpeza para garantir compatibilidade
+              // Múltiplas estratégias de limpeza para remover warnings PHP
               let cleanData = data;
               
-              // 1. Remover warnings PHP do início
-              cleanData = cleanData.replace(/^.*?({.*}).*$/, '$1').trim();
+              // 1. Remover warnings PHP (Deprecated, Notice, etc.) do início
+              cleanData = data.replace(/<br\s*\/?>\s*<b>(?:Deprecated|Notice|Warning|Fatal error)[^}]*?<\/b>[^}]*?<br\s*\/?>/gi, '');
+              cleanData = cleanData.replace(/<br\s*\/?>/gi, '');
+              cleanData = cleanData.trim();
               
-              // 2. Se não encontrou JSON, tentar extrair manualmente
-              if (!cleanData.startsWith('{')) {
-                const jsonStart = data.indexOf('{');
-                const jsonEnd = data.lastIndexOf('}');
+              // 2. Extrair JSON válido
+              const regexMatch = cleanData.match(/({.*})/);
+              if (regexMatch) {
+                cleanData = regexMatch[1];
+              } else {
+                // 3. Buscar manualmente por { e }
+                const jsonStart = cleanData.indexOf('{');
+                const jsonEnd = cleanData.lastIndexOf('}');
                 if (jsonStart !== -1 && jsonEnd !== -1) {
-                  cleanData = data.substring(jsonStart, jsonEnd + 1);
+                  cleanData = cleanData.substring(jsonStart, jsonEnd + 1);
                 }
               }
               
