@@ -14,6 +14,7 @@ import {
   FaTimes
 } from 'react-icons/fa';
 import { clearConvenioCache, validateConvenioCache, saveConvenioCache, type ConvenioData as ConvenioCacheData } from '@/app/utils/convenioCache';
+import { useMobileCacheManager } from '@/app/hooks/useMobileCacheManager';
 
 interface ConvenioData {
   cod_convenio: string;
@@ -40,11 +41,25 @@ export default function DashboardLayout({
   const retryCountRef = useRef(0);
   const maxRetries = 3;
   const toastShownRef = useRef(false);
+  
+  // Hook para gerenciar cache em dispositivos móveis
+  const { isMobile, forceClearCache } = useMobileCacheManager();
 
   useEffect(() => {
     // CRÍTICO: Limpar dados antigos no início de cada carregamento
     console.log('🧹 Layout - Iniciando carregamento de dados, limpando estado anterior');
     setConvenioData(null);
+    
+    // DISPOSITIVOS MÓVEIS: Limpeza mais agressiva
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobile) {
+      console.log('📱 Layout - Dispositivo móvel detectado, limpeza agressiva');
+      // Forçar limpeza do cache do navegador móvel
+      clearConvenioCache();
+      // Limpar sessionStorage também
+      sessionStorage.removeItem('dadosConvenio');
+      sessionStorage.removeItem('convenioToken');
+    }
     
     // Recuperar dados do convênio da sessão ou fazer nova chamada API
     const getConvenioData = async () => {
@@ -52,11 +67,23 @@ export default function DashboardLayout({
         setLoading(true);
         
         console.log('🔍 Layout - Buscando dados frescos da API...');
-        const response = await fetch('/api/convenio/dados', {
+        
+        // Headers especiais para dispositivos móveis
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+        
+        if (isMobile) {
+          console.log('📱 Layout - Adicionando headers anti-cache para mobile');
+          headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0';
+          headers['Pragma'] = 'no-cache';
+          headers['Expires'] = '0';
+          headers['X-Requested-With'] = 'XMLHttpRequest';
+        }
+        
+        const response = await fetch('/api/convenio/dados?' + new Date().getTime(), {
           method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: headers,
         });
 
         if (!response.ok) {

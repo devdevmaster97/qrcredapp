@@ -204,7 +204,7 @@ export async function POST(request: NextRequest) {
         passconv_na_resposta: response.data.passconv
       });
       
-      return NextResponse.json({
+      const apiResponse = NextResponse.json({
         success: true,
         data: {
           cod_convenio: response.data.cod_convenio,
@@ -218,6 +218,13 @@ export async function POST(request: NextRequest) {
           cpf: response.data.cpf
         }
       });
+      
+      // Headers anti-cache para dispositivos móveis
+      apiResponse.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+      apiResponse.headers.set('Pragma', 'no-cache');
+      apiResponse.headers.set('Expires', '0');
+      
+      return apiResponse;
     } else {
       // Tratar diferentes tipos de erro da API PHP
       console.log('❌ Login falhou:', response.data.tipo_login);

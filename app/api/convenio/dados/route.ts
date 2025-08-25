@@ -117,7 +117,8 @@ export async function GET(request: NextRequest) {
       });
       
       // Se a chamada for bem-sucedida, retornar os dados do convênio
-      return NextResponse.json({
+      // Headers anti-cache para dispositivos móveis
+      const response = NextResponse.json({
         success: true,
         data: {
           cod_convenio: jsonData.cod_convenio,
@@ -145,6 +146,13 @@ export async function GET(request: NextRequest) {
           aceito_termo: jsonData.aceita_termo
         }
       });
+      
+      // Adicionar headers anti-cache para dispositivos móveis
+      response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+      response.headers.set('Pragma', 'no-cache');
+      response.headers.set('Expires', '0');
+      
+      return response;
     } else {
       return NextResponse.json({
         success: false,

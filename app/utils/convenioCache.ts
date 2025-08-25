@@ -27,12 +27,46 @@ export interface ConvenioToken {
 export function clearConvenioCache(): void {
   console.log('🧹 CACHE - Limpando TODOS os dados de convênio...');
   
+  // Detectar dispositivo móvel
+  const isMobile = typeof navigator !== 'undefined' && 
+    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  
   // Remover dados do localStorage
   localStorage.removeItem('dadosConvenio');
   localStorage.removeItem('convenioUsuariosSalvos');
   
+  if (isMobile) {
+    console.log('📱 CACHE - Limpeza agressiva para dispositivo móvel');
+    
+    // Limpeza adicional para dispositivos móveis
+    sessionStorage.removeItem('dadosConvenio');
+    sessionStorage.removeItem('convenioUsuariosSalvos');
+    sessionStorage.removeItem('convenioToken');
+    
+    // Limpar possíveis chaves relacionadas
+    try {
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+        if (key.includes('convenio') || key.includes('Convenio')) {
+          localStorage.removeItem(key);
+          console.log(`🧹 CACHE - Removido localStorage: ${key}`);
+        }
+      });
+      
+      const sessionKeys = Object.keys(sessionStorage);
+      sessionKeys.forEach(key => {
+        if (key.includes('convenio') || key.includes('Convenio')) {
+          sessionStorage.removeItem(key);
+          console.log(`🧹 CACHE - Removido sessionStorage: ${key}`);
+        }
+      });
+    } catch (error) {
+      console.warn('⚠️ CACHE - Erro ao limpar chaves relacionadas:', error);
+    }
+  }
+  
   // Log para confirmar limpeza
-  console.log('✅ CACHE - Cache de convênio completamente limpo');
+  console.log('✅ CACHE - Cache de convênio completamente limpo' + (isMobile ? ' (modo móvel)' : ''));
 }
 
 /**

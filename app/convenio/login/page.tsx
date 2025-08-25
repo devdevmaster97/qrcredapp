@@ -116,7 +116,21 @@ export default function LoginConvenio() {
           
           toast.success('Login efetuado com sucesso!');
         }
-        router.push('/convenio/dashboard');
+        
+        // DISPOSITIVOS MÓVEIS: Forçar limpeza adicional e redirecionamento especial
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile) {
+          console.log('📱 Login - Dispositivo móvel detectado, forçando limpeza adicional');
+          
+          // Aguardar um pouco para garantir que tudo foi salvo
+          setTimeout(() => {
+            // Forçar recarregamento da página no mobile para limpar qualquer cache residual
+            console.log('📱 Login - Forçando recarregamento no mobile');
+            window.location.href = '/convenio/dashboard';
+          }, 500);
+        } else {
+          router.push('/convenio/dashboard');
+        }
       } else {
         // Tratamento detalhado de erros específicos para debugging em dispositivos Xiaomi
         console.error('❌ Erro no login - resposta completa:', data);
