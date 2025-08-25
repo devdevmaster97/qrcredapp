@@ -355,13 +355,13 @@ export default function NovoLancamentoPage() {
             }
           } catch (parseError) {
             console.error('❌ Erro ao fazer parse do JSON:', parseError);
-            toast.error('Formato de resposta inválido');
+            toast.error('Formato de resposta inválido', { id: 'busca-cartao' });
             setLoadingCartao(false);
             return;
           }
         } else {
           console.error('❌ Erro na resposta:', xhr.status, xhr.statusText);
-          toast.error(`Erro na resposta da API: ${xhr.status}`);
+          toast.error(`Erro na resposta da API: ${xhr.status}`, { id: 'busca-cartao' });
           setLoadingCartao(false);
         }
       };
@@ -908,9 +908,9 @@ export default function NovoLancamentoPage() {
                   console.log('💰 Associado atualizado com saldo calculado:', novoAssociado);
                   setAssociado(novoAssociado);
                   
-                  // Toast para confirmar que o saldo foi calculado (substitui o toast de loading)
+                  // Toast de sucesso com o saldo calculado
                   toast.success(`Cartão encontrado! Saldo: ${saldoDisponivel.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, { 
-                    id: 'busca-cartao' // Usa o mesmo ID para substituir o toast de loading
+                    id: 'busca-cartao' // Substitui o toast de loading
                   });
                 } else {
                   console.warn('⚠️ Nenhum associado disponível para atualizar');

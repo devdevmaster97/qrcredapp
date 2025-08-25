@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import { Toaster } from 'react-hot-toast';
 import ServiceWorkerRegistration from './components/ServiceWorkerRegistration';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import IOSInstallPrompt from './components/IOSInstallPrompt';
@@ -107,15 +106,6 @@ export default function RootLayout({
       <body className={inter.className}>
         <Providers>
           {children}
-          <Toaster 
-            position="top-right" 
-            toastOptions={{
-              // Configurações para limitar toasts
-              success: {
-                duration: 5000,
-              }
-            }}
-          />
           <ServiceWorkerRegistration />
           <PWAInstallPrompt />
           <IOSInstallPrompt />
