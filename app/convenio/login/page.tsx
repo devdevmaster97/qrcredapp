@@ -737,8 +737,8 @@ export default function LoginConvenio() {
               </button>
             </div>
           </div>
-          <div className="text-center text-sm text-gray-500 pt-6">
-            <p> 2023 QRCred. Todos os direitos reservados.</p>
+          <div className="text-center text-sm text-gray-500 pt-2">
+            <p> 2025 QRCred. Todos os direitos reservados.</p>
           </div>
         </div>
       </div>
