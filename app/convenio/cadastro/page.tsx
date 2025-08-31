@@ -52,21 +52,21 @@ export default function CadastroConvenio() {
   // Funções de máscara e validação
   const formatCPF = (value: string) => {
     const numbers = value.replace(/\D/g, '');
-    const limited = numbers.slice(0, 11);
-    
-    if (limited.length <= 3) return limited;
-    if (limited.length <= 6) return `${limited.slice(0, 3)}.${limited.slice(3)}`;
-    if (limited.length <= 9) return `${limited.slice(0, 3)}.${limited.slice(3, 6)}.${limited.slice(6)}`;
-    return `${limited.slice(0, 3)}.${limited.slice(3, 6)}.${limited.slice(6, 9)}-${limited.slice(9)}`;
+    return numbers.slice(0, 11);
+  };
+
+  const formatCNPJ = (value: string) => {
+    const numbers = value.replace(/\D/g, '');
+    if (numbers.length <= 2) return numbers;
+    if (numbers.length <= 5) return `${numbers.slice(0, 2)}.${numbers.slice(2)}`;
+    if (numbers.length <= 8) return `${numbers.slice(0, 2)}.${numbers.slice(2, 5)}.${numbers.slice(5)}`;
+    if (numbers.length <= 12) return `${numbers.slice(0, 2)}.${numbers.slice(2, 5)}.${numbers.slice(5, 8)}/${numbers.slice(8)}`;
+    return `${numbers.slice(0, 2)}.${numbers.slice(2, 5)}.${numbers.slice(5, 8)}/${numbers.slice(8, 12)}-${numbers.slice(12, 14)}`;
   };
 
   const formatCEP = (value: string) => {
     const numbers = value.replace(/\D/g, '');
-    const limited = numbers.slice(0, 8);
-    
-    if (limited.length <= 2) return limited;
-    if (limited.length <= 5) return `${limited.slice(0, 2)}.${limited.slice(2)}`;
-    return `${limited.slice(0, 2)}.${limited.slice(2, 5)}-${limited.slice(5)}`;
+    return numbers.slice(0, 8);
   };
 
   // Funções para remover máscaras (apenas números)
@@ -392,11 +392,11 @@ export default function CadastroConvenio() {
                       value={tipoEmpresa === '1' ? formData.cpf : formData.cnpj}
                       onChange={(e) => {
                         const field = tipoEmpresa === '1' ? 'cpf' : 'cnpj';
-                        const value = field === 'cpf' ? formatCPF(e.target.value) : e.target.value;
+                        const value = field === 'cpf' ? formatCPF(e.target.value) : formatCNPJ(e.target.value);
                         setFormData({ ...formData, [field]: value });
                       }}
-                      inputMode={tipoEmpresa === '1' ? 'numeric' : 'text'}
-                      placeholder={tipoEmpresa === '1' ? '000.000.000-00' : ''}
+                      placeholder={tipoEmpresa === '1' ? '' : '00.000.000/0000-00'}
+                      inputMode="numeric"
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
                   </div>
