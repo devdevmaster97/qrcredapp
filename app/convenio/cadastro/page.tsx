@@ -25,6 +25,7 @@ export default function CadastroConvenio() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [estados, setEstados] = useState<Estado[]>([]);
   const [cidades, setCidades] = useState<Cidade[]>([]);
@@ -174,8 +175,9 @@ export default function CadastroConvenio() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Prevent double submission
-    if (loading) {
+    // Prevent double submission with multiple checks
+    if (loading || isSubmitting) {
+      console.log('Submission blocked - already processing');
       return;
     }
     
@@ -183,7 +185,9 @@ export default function CadastroConvenio() {
       return;
     }
 
+    console.log('Starting form submission...');
     setLoading(true);
+    setIsSubmitting(true);
 
     try {
       const formDataToSend = new FormData();
@@ -195,14 +199,18 @@ export default function CadastroConvenio() {
       formDataToSend.append('prolabore', '4');
       formDataToSend.append('prolabore2', '0');
 
+      console.log('Sending request to API...');
       const response = await fetch('/api/convenio/cadastro', {
         method: 'POST',
         body: formDataToSend
       });
 
+      console.log('API response received:', response.status);
       const data = await response.json();
+      console.log('API response data:', data);
 
       if (data.success) {
+        console.log('Cadastro successful, showing success messages');
         // Show success message with more details
         toast.success('🎉 Cadastro realizado com sucesso!', {
           duration: 5000,
@@ -219,15 +227,20 @@ export default function CadastroConvenio() {
         
         // Redirect after showing messages
         setTimeout(() => {
+          console.log('Redirecting to login...');
           router.push('/convenio/login');
         }, 3000);
       } else {
+        console.log('Cadastro failed:', data.message);
         toast.error(data.message || 'Erro ao realizar cadastro');
       }
-    } catch {
+    } catch (error) {
+      console.error('Error during cadastro:', error);
       toast.error('Erro ao realizar cadastro. Tente novamente.');
     } finally {
+      console.log('Resetting submission states');
       setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -520,10 +533,10 @@ export default function CadastroConvenio() {
                 <div className="pt-5">
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || isSubmitting}
                     className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? (
+                    {(loading || isSubmitting) ? (
                       <FaSpinner className="animate-spin h-5 w-5" />
                     ) : (
                       'Cadastrar Convênio'
