@@ -255,6 +255,11 @@ export default function CadastroConvenio() {
       formDataToSend.append('prolabore2', '0');
 
       console.log('Sending request to API...');
+      console.log('FormData contents:');
+      formDataToSend.forEach((value, key) => {
+        console.log(`${key}: ${value}`);
+      });
+      
       const response = await fetch('/api/convenio/cadastro', {
         method: 'POST',
         body: formDataToSend
