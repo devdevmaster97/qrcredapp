@@ -247,12 +247,7 @@ export default function CadastroConvenio() {
     try {
       const formDataToSend = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
-        // Remove máscaras do CPF e CEP antes de enviar
-        if (key === 'cpf' || key === 'cep') {
-          formDataToSend.append(key, removeMask(value));
-        } else {
-          formDataToSend.append(key, value);
-        }
+        formDataToSend.append(key, value);
       });
       formDataToSend.append('tipoEmpresa', tipoEmpresa);
       // Add required prolabore fields
