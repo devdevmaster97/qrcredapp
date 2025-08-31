@@ -731,14 +731,14 @@ export default function LoginConvenio() {
               <button
                 type="button"
                 onClick={() => router.push('/convenio/cadastro')}
-                className="text-sm text-gray-600 hover:text-blue-500 focus:outline-none"
+                className="text-sm text-blue-600 hover:text-blue-800 focus:outline-none"
               >
                 Não tem cadastro? Clique aqui para se cadastrar
               </button>
             </div>
           </div>
           <div className="text-center text-sm text-gray-500 pt-6">
-            <p>© {new Date().getFullYear()} QRCred. Todos os direitos reservados.</p>
+            <p> 2023 QRCred. Todos os direitos reservados.</p>
           </div>
         </div>
       </div>

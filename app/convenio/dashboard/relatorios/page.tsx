@@ -296,7 +296,7 @@ export default function RelatoriosPage() {
                         R$ {lancamento.valor}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {lancamento.lancamento || lancamento.descricao || 'Lançamento Convênio'}
+                        {lancamento.lancamento || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {lancamento.data}
@@ -345,7 +345,7 @@ export default function RelatoriosPage() {
                       R$ {lancamento.valor}
                     </div>
                     <div className="text-sm text-gray-700 mb-2">
-                      <span className="font-medium">Lançamento:</span> {lancamento.lancamento || lancamento.descricao || 'Lançamento Convênio'}
+                      <span className="font-medium">Lançamento:</span> {lancamento.lancamento || '-'}
                     </div>
                     <div className="text-sm text-gray-700 mb-1">
                       <span className="font-medium">Data:</span> {lancamento.data}
@@ -502,8 +502,8 @@ export default function RelatoriosPage() {
                     
                     <div className="border-t border-gray-200 my-2 pt-2">
                       <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Descrição:</span>
-                        <span className="text-sm font-semibold">{lancamentoSelecionado.lancamento || lancamentoSelecionado.descricao || 'Lançamento Convênio'}</span>
+                        <span className="text-sm text-gray-600">Lançamento:</span>
+                        <span className="text-sm font-semibold">{lancamentoSelecionado.lancamento || '-'}</span>
                       </div>
                       
                       <div className="flex justify-between">
