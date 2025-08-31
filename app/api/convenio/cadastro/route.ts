@@ -183,14 +183,13 @@ export async function POST(request: NextRequest) {
     });
 
     // Se o erro for 500 mas o cadastro foi bem sucedido, retornar sucesso
-    // REMOVIDO: Esta lógica estava causando inconsistência entre erro mostrado e cadastro salvo
-    // if (responseData?.situacao === '1' || responseData?.situacao === 1) {
-    //   return NextResponse.json({
-    //     success: true,
-    //     message: 'Cadastro realizado com sucesso! Verifique seu e-mail para obter as credenciais.',
-    //     data: responseData
-    //   });
-    // }
+    if (responseData?.situacao === '1' || responseData?.situacao === 1) {
+      return NextResponse.json({
+        success: true,
+        message: 'Cadastro realizado com sucesso! Verifique seu e-mail para obter as credenciais.',
+        data: responseData
+      });
+    }
 
     // Verificar CPF/CNPJ já cadastrado no erro
     if (responseData?.situacao === '2' || responseData?.situacao === 2) {
