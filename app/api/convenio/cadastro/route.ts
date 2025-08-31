@@ -95,6 +95,7 @@ export async function POST(request: NextRequest) {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
+      timeout: 30000 // 30 segundos
     });
 
     console.log('Resposta completa do backend:', {
@@ -175,7 +176,10 @@ export async function POST(request: NextRequest) {
       message: axiosError.message,
       response: responseData,
       status: axiosError.response?.status,
-      config: axiosError.config
+      responseText: typeof responseData === 'string' ? responseData : JSON.stringify(responseData),
+      url: axiosError.config?.url,
+      method: axiosError.config?.method,
+      data: axiosError.config?.data
     });
 
     // Se o erro for 500 mas o cadastro foi bem sucedido, retornar sucesso
