@@ -375,6 +375,7 @@ export default function CadastroConvenio() {
                         const value = field === 'cpf' ? formatCPF(e.target.value) : e.target.value;
                         setFormData({ ...formData, [field]: value });
                       }}
+                      inputMode={tipoEmpresa === '1' ? 'numeric' : 'text'}
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
                   </div>
@@ -412,6 +413,7 @@ export default function CadastroConvenio() {
                         value={formData.cep}
                         onChange={(e) => setFormData({ ...formData, cep: formatCEP(e.target.value) })}
                         onBlur={handleBuscarCep}
+                        inputMode="numeric"
                         className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
                       <button
@@ -527,7 +529,8 @@ export default function CadastroConvenio() {
                       id="telefone"
                       value={formData.telefone}
                       onChange={(e) => setFormData({ ...formData, telefone: formatTelefone(e.target.value) })}
-                      placeholder="(35) 3200-0032"
+                      placeholder="(  )     -    "
+                      inputMode="numeric"
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
                   </div>
@@ -541,7 +544,8 @@ export default function CadastroConvenio() {
                       id="celular"
                       value={formData.celular}
                       onChange={(e) => setFormData({ ...formData, celular: formatCelular(e.target.value) })}
-                      placeholder="(35) 9 9812-0032"
+                      placeholder="( )       -    "
+                      inputMode="numeric"
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
                   </div>
