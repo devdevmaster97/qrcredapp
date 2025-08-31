@@ -49,6 +49,37 @@ export default function CadastroConvenio() {
     cnpj: ''
   });
 
+  // Funções de máscara e validação
+  const formatCPF = (value: string) => {
+    const numbers = value.replace(/\D/g, '');
+    return numbers.slice(0, 11);
+  };
+
+  const formatCEP = (value: string) => {
+    const numbers = value.replace(/\D/g, '');
+    return numbers.slice(0, 8);
+  };
+
+  const formatCelular = (value: string) => {
+    const numbers = value.replace(/\D/g, '');
+    if (numbers.length <= 2) return `(${numbers}`;
+    if (numbers.length <= 3) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+    if (numbers.length <= 7) return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 3)} ${numbers.slice(3)}`;
+    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 3)} ${numbers.slice(3, 7)}-${numbers.slice(7, 11)}`;
+  };
+
+  const formatTelefone = (value: string) => {
+    const numbers = value.replace(/\D/g, '');
+    if (numbers.length <= 2) return `(${numbers}`;
+    if (numbers.length <= 6) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 6)}-${numbers.slice(6, 10)}`;
+  };
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const handleVoltar = () => {
     router.push('/convenio/login');
   };
@@ -166,6 +197,12 @@ export default function CadastroConvenio() {
 
     if (tipoEmpresa === '1' && !formData.cpf) {
       toast.error('CPF é obrigatório para Pessoa Física');
+      return false;
+    }
+
+    // Validar formato do email
+    if (formData.email && !validateEmail(formData.email)) {
+      toast.error('Por favor, digite um email válido');
       return false;
     }
 
@@ -333,7 +370,11 @@ export default function CadastroConvenio() {
                       type="text"
                       id={tipoEmpresa === '1' ? 'cpf' : 'cnpj'}
                       value={tipoEmpresa === '1' ? formData.cpf : formData.cnpj}
-                      onChange={(e) => setFormData({ ...formData, [tipoEmpresa === '1' ? 'cpf' : 'cnpj']: e.target.value })}
+                      onChange={(e) => {
+                        const field = tipoEmpresa === '1' ? 'cpf' : 'cnpj';
+                        const value = field === 'cpf' ? formatCPF(e.target.value) : e.target.value;
+                        setFormData({ ...formData, [field]: value });
+                      }}
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
                   </div>
@@ -369,7 +410,7 @@ export default function CadastroConvenio() {
                         type="text"
                         id="cep"
                         value={formData.cep}
-                        onChange={(e) => setFormData({ ...formData, cep: e.target.value })}
+                        onChange={(e) => setFormData({ ...formData, cep: formatCEP(e.target.value) })}
                         onBlur={handleBuscarCep}
                         className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
@@ -485,7 +526,8 @@ export default function CadastroConvenio() {
                       type="tel"
                       id="telefone"
                       value={formData.telefone}
-                      onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, telefone: formatTelefone(e.target.value) })}
+                      placeholder="(35) 3200-0032"
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
                   </div>
@@ -498,7 +540,8 @@ export default function CadastroConvenio() {
                       type="tel"
                       id="celular"
                       value={formData.celular}
-                      onChange={(e) => setFormData({ ...formData, celular: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, celular: formatCelular(e.target.value) })}
+                      placeholder="(35) 9 9812-0032"
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
                   </div>
@@ -512,6 +555,7 @@ export default function CadastroConvenio() {
                       id="email"
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="exemplo@email.com"
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
                   </div>
