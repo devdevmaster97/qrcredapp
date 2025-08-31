@@ -52,12 +52,26 @@ export default function CadastroConvenio() {
   // Funções de máscara e validação
   const formatCPF = (value: string) => {
     const numbers = value.replace(/\D/g, '');
-    return numbers.slice(0, 11);
+    const limited = numbers.slice(0, 11);
+    
+    if (limited.length <= 3) return limited;
+    if (limited.length <= 6) return `${limited.slice(0, 3)}.${limited.slice(3)}`;
+    if (limited.length <= 9) return `${limited.slice(0, 3)}.${limited.slice(3, 6)}.${limited.slice(6)}`;
+    return `${limited.slice(0, 3)}.${limited.slice(3, 6)}.${limited.slice(6, 9)}-${limited.slice(9)}`;
   };
 
   const formatCEP = (value: string) => {
     const numbers = value.replace(/\D/g, '');
-    return numbers.slice(0, 8);
+    const limited = numbers.slice(0, 8);
+    
+    if (limited.length <= 2) return limited;
+    if (limited.length <= 5) return `${limited.slice(0, 2)}.${limited.slice(2)}`;
+    return `${limited.slice(0, 2)}.${limited.slice(2, 5)}-${limited.slice(5)}`;
+  };
+
+  // Funções para remover máscaras (apenas números)
+  const removeMask = (value: string) => {
+    return value.replace(/\D/g, '');
   };
 
   const formatCelular = (value: string) => {
@@ -148,9 +162,10 @@ export default function CadastroConvenio() {
   }, [formData.uf]);
 
   const handleBuscarCep = async () => {
-    if (formData.cep.length === 8) {
+    const cepNumbers = removeMask(formData.cep);
+    if (cepNumbers.length === 8) {
       try {
-        const response = await fetch(`https://viacep.com.br/ws/${formData.cep}/json/`);
+        const response = await fetch(`https://viacep.com.br/ws/${cepNumbers}/json/`);
         const data = await response.json();
         if (!data.erro) {
           setFormData(prev => ({
@@ -229,7 +244,12 @@ export default function CadastroConvenio() {
     try {
       const formDataToSend = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
-        formDataToSend.append(key, value);
+        // Remove máscaras do CPF e CEP antes de enviar
+        if (key === 'cpf' || key === 'cep') {
+          formDataToSend.append(key, removeMask(value));
+        } else {
+          formDataToSend.append(key, value);
+        }
       });
       formDataToSend.append('tipoEmpresa', tipoEmpresa);
       // Add required prolabore fields
@@ -376,6 +396,7 @@ export default function CadastroConvenio() {
                         setFormData({ ...formData, [field]: value });
                       }}
                       inputMode={tipoEmpresa === '1' ? 'numeric' : 'text'}
+                      placeholder={tipoEmpresa === '1' ? '000.000.000-00' : ''}
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
                   </div>
@@ -414,6 +435,7 @@ export default function CadastroConvenio() {
                         onChange={(e) => setFormData({ ...formData, cep: formatCEP(e.target.value) })}
                         onBlur={handleBuscarCep}
                         inputMode="numeric"
+                        placeholder="00.000-000"
                         className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                       />
                       <button
