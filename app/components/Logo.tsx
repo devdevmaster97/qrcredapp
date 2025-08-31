@@ -1,11 +1,12 @@
 import Image from 'next/image';
 
 interface LogoProps {
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
 }
 
 export default function Logo({ size = 'md' }: LogoProps) {
   const sizeConfig = {
+    xs: { width: 60, height: 24 },
     sm: { width: 80, height: 32 },
     md: { width: 120, height: 48 },
     lg: { width: 160, height: 64 }
