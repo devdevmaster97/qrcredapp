@@ -174,6 +174,11 @@ export default function CadastroConvenio() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Prevent double submission
+    if (loading) {
+      return;
+    }
+    
     if (!validateForm()) {
       return;
     }
@@ -186,6 +191,9 @@ export default function CadastroConvenio() {
         formDataToSend.append(key, value);
       });
       formDataToSend.append('tipoEmpresa', tipoEmpresa);
+      // Add required prolabore fields
+      formDataToSend.append('prolabore', '4');
+      formDataToSend.append('prolabore2', '0');
 
       const response = await fetch('/api/convenio/cadastro', {
         method: 'POST',
@@ -195,8 +203,24 @@ export default function CadastroConvenio() {
       const data = await response.json();
 
       if (data.success) {
-        toast.success('Cadastro realizado com sucesso! Verifique seu e-mail para obter as credenciais.');
-        router.push('/convenio/login');
+        // Show success message with more details
+        toast.success('🎉 Cadastro realizado com sucesso!', {
+          duration: 5000,
+          position: 'top-center'
+        });
+        
+        // Show additional info message
+        setTimeout(() => {
+          toast.success('📧 Verifique seu e-mail para obter as credenciais de acesso.', {
+            duration: 6000,
+            position: 'top-center'
+          });
+        }, 1000);
+        
+        // Redirect after showing messages
+        setTimeout(() => {
+          router.push('/convenio/login');
+        }, 3000);
       } else {
         toast.error(data.message || 'Erro ao realizar cadastro');
       }
