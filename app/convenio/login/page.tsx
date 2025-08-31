@@ -611,7 +611,7 @@ export default function LoginConvenio() {
       
       <div className="flex-1 flex flex-col justify-center py-6 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <Logo size="md" />
+          <Logo size="sm" />
         </div>
 
         <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
