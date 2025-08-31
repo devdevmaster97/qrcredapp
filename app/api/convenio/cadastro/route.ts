@@ -97,9 +97,44 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log('Resposta do backend:', response.data);
+    console.log('Resposta completa do backend:', {
+      status: response.status,
+      data: response.data,
+      headers: response.headers
+    });
 
-    // Verificar a resposta do backend
+    // Verificar se há mensagem de CPF/CNPJ duplicado na resposta, independente da situação
+    const responseText = typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
+    const hasCpfDuplicado = responseText.includes('CPF já cadastrado') || 
+                           responseText.includes('cpf já cadastrado') ||
+                           responseText.includes('CPF duplicado') ||
+                           (response.data.cpf && responseText.includes('já cadastrado'));
+    
+    const hasCnpjDuplicado = responseText.includes('CNPJ já cadastrado') || 
+                            responseText.includes('cnpj já cadastrado') ||
+                            responseText.includes('CNPJ duplicado') ||
+                            (response.data.cnpj && responseText.includes('já cadastrado'));
+
+    // Se há indicação de duplicado, retornar erro mesmo se situacao=1
+    if (hasCpfDuplicado) {
+      console.log('CPF duplicado detectado na resposta:', response.data);
+      return NextResponse.json({
+        success: false,
+        message: `CPF já cadastrado. Use outro CPF ou entre em contato para revalidar sua senha.`,
+        data: response.data
+      }, { status: 400 });
+    }
+
+    if (hasCnpjDuplicado) {
+      console.log('CNPJ duplicado detectado na resposta:', response.data);
+      return NextResponse.json({
+        success: false,
+        message: `CNPJ já cadastrado. Use outro CNPJ ou entre em contato para revalidar sua senha.`,
+        data: response.data
+      }, { status: 400 });
+    }
+
+    // Verificar a resposta do backend por código de situação
     if (response.data.situacao === '2' || response.data.situacao === 2) {
       return NextResponse.json({
         success: false,
