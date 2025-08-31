@@ -52,7 +52,10 @@ export default function CadastroConvenio() {
   // Funções de máscara e validação
   const formatCPF = (value: string) => {
     const numbers = value.replace(/\D/g, '');
-    return numbers.slice(0, 11);
+    if (numbers.length <= 3) return numbers;
+    if (numbers.length <= 6) return `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
+    if (numbers.length <= 9) return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`;
+    return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9, 11)}`;
   };
 
   const formatCNPJ = (value: string) => {
@@ -395,7 +398,7 @@ export default function CadastroConvenio() {
                         const value = field === 'cpf' ? formatCPF(e.target.value) : formatCNPJ(e.target.value);
                         setFormData({ ...formData, [field]: value });
                       }}
-                      placeholder={tipoEmpresa === '1' ? '' : '00.000.000/0000-00'}
+                      placeholder={tipoEmpresa === '1' ? '000.000.000-00' : '00.000.000/0000-00'}
                       inputMode="numeric"
                       className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     />
