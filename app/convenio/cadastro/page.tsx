@@ -24,6 +24,7 @@ interface Cidade {
 export default function CadastroConvenio() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [estados, setEstados] = useState<Estado[]>([]);
   const [cidades, setCidades] = useState<Cidade[]>([]);
@@ -52,32 +53,44 @@ export default function CadastroConvenio() {
   };
 
   useEffect(() => {
-    const fetchCategorias = async () => {
+    const fetchInitialData = async () => {
       try {
-        const response = await fetch('/api/convenio/categorias');
-        const data = await response.json();
-        if (data.success) {
-          setCategorias(data.data);
+        setLoadingData(true);
+        
+        // Buscar categorias e estados em paralelo
+        const [categoriasResponse, estadosResponse] = await Promise.all([
+          fetch('/api/convenio/categorias'),
+          fetch('/api/convenio/estados')
+        ]);
+
+        const [categoriasData, estadosData] = await Promise.all([
+          categoriasResponse.json(),
+          estadosResponse.json()
+        ]);
+
+        if (categoriasData.success) {
+          setCategorias(categoriasData.data);
+        } else {
+          console.error('Erro ao buscar categorias:', categoriasData.message);
+          toast.error('Erro ao carregar categorias. Algumas funcionalidades podem não funcionar corretamente.');
         }
+
+        if (estadosData.success) {
+          setEstados(estadosData.data);
+        } else {
+          console.error('Erro ao buscar estados:', estadosData.message);
+          toast.error('Erro ao carregar estados. Algumas funcionalidades podem não funcionar corretamente.');
+        }
+
       } catch (error) {
-        console.error('Erro ao buscar categorias:', error);
+        console.error('Erro ao carregar dados iniciais:', error);
+        toast.error('Erro ao carregar dados do formulário. Verifique sua conexão e recarregue a página.');
+      } finally {
+        setLoadingData(false);
       }
     };
 
-    const fetchEstados = async () => {
-      try {
-        const response = await fetch('/api/convenio/estados');
-        const data = await response.json();
-        if (data.success) {
-          setEstados(data.data);
-        }
-      } catch (error) {
-        console.error('Erro ao buscar estados:', error);
-      }
-    };
-
-    fetchCategorias();
-    fetchEstados();
+    fetchInitialData();
   }, []);
 
   useEffect(() => {
@@ -88,9 +101,13 @@ export default function CadastroConvenio() {
           const data = await response.json();
           if (data.success) {
             setCidades(data.data);
+          } else {
+            console.error('Erro ao buscar cidades:', data.message);
+            toast.error('Erro ao carregar cidades. Tente selecionar o estado novamente.');
           }
         } catch (error) {
           console.error('Erro ao buscar cidades:', error);
+          toast.error('Erro ao carregar cidades. Verifique sua conexão.');
         }
       }
     };
@@ -189,6 +206,22 @@ export default function CadastroConvenio() {
       setLoading(false);
     }
   };
+
+  // Mostrar loading enquanto carrega dados iniciais
+  if (loadingData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <Header title="Cadastro de Novo Convênio" showBackButton onBackClick={handleVoltar} />
+        
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <FaSpinner className="animate-spin h-8 w-8 text-blue-600 mx-auto mb-4" />
+            <p className="text-gray-600">Carregando formulário de cadastro...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
