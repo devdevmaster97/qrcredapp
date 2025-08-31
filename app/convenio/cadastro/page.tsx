@@ -96,6 +96,66 @@ export default function CadastroConvenio() {
     return emailRegex.test(email);
   };
 
+  const validateCPF = (cpf: string) => {
+    const numbers = cpf.replace(/\D/g, '');
+    
+    // Verifica se tem 11 dígitos
+    if (numbers.length !== 11) return false;
+    
+    // Verifica se todos os dígitos são iguais
+    if (/^(\d)\1{10}$/.test(numbers)) return false;
+    
+    // Calcula o primeiro dígito verificador
+    let sum = 0;
+    for (let i = 0; i < 9; i++) {
+      sum += parseInt(numbers[i]) * (10 - i);
+    }
+    let firstDigit = 11 - (sum % 11);
+    if (firstDigit >= 10) firstDigit = 0;
+    
+    // Calcula o segundo dígito verificador
+    sum = 0;
+    for (let i = 0; i < 10; i++) {
+      sum += parseInt(numbers[i]) * (11 - i);
+    }
+    let secondDigit = 11 - (sum % 11);
+    if (secondDigit >= 10) secondDigit = 0;
+    
+    // Verifica se os dígitos calculados conferem
+    return parseInt(numbers[9]) === firstDigit && parseInt(numbers[10]) === secondDigit;
+  };
+
+  const validateCNPJ = (cnpj: string) => {
+    const numbers = cnpj.replace(/\D/g, '');
+    
+    // Verifica se tem 14 dígitos
+    if (numbers.length !== 14) return false;
+    
+    // Verifica se todos os dígitos são iguais
+    if (/^(\d)\1{13}$/.test(numbers)) return false;
+    
+    // Calcula o primeiro dígito verificador
+    const weights1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    let sum = 0;
+    for (let i = 0; i < 12; i++) {
+      sum += parseInt(numbers[i]) * weights1[i];
+    }
+    let firstDigit = sum % 11;
+    firstDigit = firstDigit < 2 ? 0 : 11 - firstDigit;
+    
+    // Calcula o segundo dígito verificador
+    const weights2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    sum = 0;
+    for (let i = 0; i < 13; i++) {
+      sum += parseInt(numbers[i]) * weights2[i];
+    }
+    let secondDigit = sum % 11;
+    secondDigit = secondDigit < 2 ? 0 : 11 - secondDigit;
+    
+    // Verifica se os dígitos calculados conferem
+    return parseInt(numbers[12]) === firstDigit && parseInt(numbers[13]) === secondDigit;
+  };
+
   const handleVoltar = () => {
     router.push('/convenio/login');
   };
@@ -220,6 +280,18 @@ export default function CadastroConvenio() {
     // Validar formato do email
     if (formData.email && !validateEmail(formData.email)) {
       toast.error('Por favor, digite um email válido');
+      return false;
+    }
+
+    // Validar CPF para Pessoa Física
+    if (tipoEmpresa === '1' && formData.cpf && !validateCPF(formData.cpf)) {
+      toast.error('CPF inválido. Verifique os dígitos informados.');
+      return false;
+    }
+
+    // Validar CNPJ para Pessoa Jurídica
+    if (tipoEmpresa === '2' && formData.cnpj && !validateCNPJ(formData.cnpj)) {
+      toast.error('CNPJ inválido. Verifique os dígitos informados.');
       return false;
     }
 
