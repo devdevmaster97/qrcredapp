@@ -29,7 +29,7 @@ export default function CadastroConvenio() {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [estados, setEstados] = useState<Estado[]>([]);
   const [cidades, setCidades] = useState<Cidade[]>([]);
-  const [tipoEmpresa, setTipoEmpresa] = useState<'1' | '2'>('1');
+  const [tipoEmpresa, setTipoEmpresa] = useState<'1' | '2'>('2');
   const [formData, setFormData] = useState({
     razaoSocial: '',
     nomeFantasia: '',
@@ -360,7 +360,7 @@ export default function CadastroConvenio() {
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                   <div>
                     <label htmlFor="razaoSocial" className="block text-sm font-medium text-gray-700">
-                      Razão Social
+                      {tipoEmpresa === '1' ? 'Nome Completo' : 'Razão Social'}
                     </label>
                     <input
                       type="text"
@@ -373,7 +373,7 @@ export default function CadastroConvenio() {
 
                   <div>
                     <label htmlFor="nomeFantasia" className="block text-sm font-medium text-gray-700">
-                      Nome Fantasia
+                      {tipoEmpresa === '1' ? 'Nome comercial' : 'Nome Fantasia'}
                     </label>
                     <input
                       type="text"
