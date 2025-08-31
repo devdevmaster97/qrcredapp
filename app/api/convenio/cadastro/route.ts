@@ -70,8 +70,8 @@ export async function POST(request: NextRequest) {
     params.append('C_cel', formData.get('celular') as string);
     params.append('C_tipo', '2'); // COMPRAS
     params.append('C_contato', formData.get('responsavel') as string);
-    params.append('C_prolabore', '0');
-    params.append('C_prolabore2', '4');
+    params.append('C_prolabore', formData.get('prolabore') as string || '4');
+    params.append('C_prolabore2', formData.get('prolabore2') as string || '0');
     params.append('C_cnpj', formData.get('cnpj') as string || '');
     params.append('C_cpf', formData.get('cpf') as string || '');
     params.append('C_Inscestadual', '');
@@ -144,13 +144,14 @@ export async function POST(request: NextRequest) {
     });
 
     // Se o erro for 500 mas o cadastro foi bem sucedido, retornar sucesso
-    if (responseData?.situacao === '1' || responseData?.situacao === 1) {
-      return NextResponse.json({
-        success: true,
-        message: 'Cadastro realizado com sucesso! Verifique seu e-mail para obter as credenciais.',
-        data: responseData
-      });
-    }
+    // REMOVIDO: Esta lógica estava causando inconsistência entre erro mostrado e cadastro salvo
+    // if (responseData?.situacao === '1' || responseData?.situacao === 1) {
+    //   return NextResponse.json({
+    //     success: true,
+    //     message: 'Cadastro realizado com sucesso! Verifique seu e-mail para obter as credenciais.',
+    //     data: responseData
+    //   });
+    // }
 
     // Verificar CPF/CNPJ já cadastrado no erro
     if (responseData?.situacao === '2' || responseData?.situacao === 2) {
