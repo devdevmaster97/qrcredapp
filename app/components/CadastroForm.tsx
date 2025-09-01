@@ -426,12 +426,6 @@ export default function CadastroForm() {
           C_empregador_assoc: '',
         });
         
-        // Redirecionar para a página de assinatura digital após alguns segundos
-        setTimeout(() => {
-          // Marcar que o usuário vai assinar digitalmente
-          localStorage.setItem('sascred_possible_signature', Date.now().toString());
-          window.location.href = 'https://app.zapsign.com.br/verificar/doc/31ef234f-66c4-4ca4-8298-b504b15e90a3';
-        }, 5000);
       } else {
         setStatusMessage(result.message || 'Ocorreu um erro ao processar o cadastro. Tente novamente.');
         setStatusType('error');

@@ -102,6 +102,67 @@ export default function AssociadoCadastroForm({ cartao, matricula, userInfo }: A
     }
   }, [userInfo]);
   
+  // Função para validar CPF
+  const validarCPF = (cpf: string): boolean => {
+    if (!cpf || cpf.length !== 11) return false;
+    
+    // Verificar se todos os dígitos são iguais
+    if (/^(\d)\1{10}$/.test(cpf)) return false;
+    
+    // Validar primeiro dígito verificador
+    let soma = 0;
+    for (let i = 0; i < 9; i++) {
+      soma += parseInt(cpf.charAt(i)) * (10 - i);
+    }
+    let resto = 11 - (soma % 11);
+    let digito1 = resto < 2 ? 0 : resto;
+    
+    if (parseInt(cpf.charAt(9)) !== digito1) return false;
+    
+    // Validar segundo dígito verificador
+    soma = 0;
+    for (let i = 0; i < 10; i++) {
+      soma += parseInt(cpf.charAt(i)) * (11 - i);
+    }
+    resto = 11 - (soma % 11);
+    let digito2 = resto < 2 ? 0 : resto;
+    
+    return parseInt(cpf.charAt(10)) === digito2;
+  };
+
+  // Formatar CPF para exibição
+  const formatCPF = (cpf: string) => {
+    if (!cpf) return '';
+    return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  };
+
+  // Formatar telefone para exibição
+  const formatTelefone = (telefone: string) => {
+    if (!telefone) return '';
+    if (telefone.length === 11) {
+      return telefone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+    }
+    return telefone.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+  };
+
+  // Formatar CEP para exibição
+  const formatCEP = (cep: string) => {
+    if (!cep) return '';
+    return cep.replace(/(\d{5})(\d{3})/, '$1-$2');
+  };
+
+  // Formatar data para exibição
+  const formatData = (data: string) => {
+    if (!data) return '';
+    return data.replace(/(\d{2})(\d{2})(\d{4})/, '$1/$2/$3');
+  };
+
+  // Validar email
+  const validarEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   // Manipular mudanças nos campos
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -110,17 +171,21 @@ export default function AssociadoCadastroForm({ cartao, matricula, userInfo }: A
     
     // Formatação para campos específicos
     if (name === 'cpf') {
-      finalValue = value.replace(/\D/g, '');
+      finalValue = value.replace(/\D/g, '').slice(0, 11);
     } else if (name === 'cep') {
-      const cepFormatado = value.replace(/\D/g, '');
+      const cepFormatado = value.replace(/\D/g, '').slice(0, 8);
       finalValue = cepFormatado;
       
       // Buscar CEP automaticamente quando tiver 8 dígitos
       if (cepFormatado.length === 8 && cepFormatado !== formData.cep) {
         buscarCep(cepFormatado);
       }
-    } else if (name === 'celular' || name === 'telefone_residencial' || name === 'telefone_comercial') {
-      finalValue = value.replace(/\D/g, '');
+    } else if (name === 'celular') {
+      finalValue = value.replace(/\D/g, '').slice(0, 11);
+    } else if (name === 'telefone_residencial' || name === 'telefone_comercial') {
+      finalValue = value.replace(/\D/g, '').slice(0, 10);
+    } else if (name === 'nascimento') {
+      finalValue = value.replace(/\D/g, '').slice(0, 8);
     }
     
     // Atualizar estado
@@ -343,9 +408,21 @@ export default function AssociadoCadastroForm({ cartao, matricula, userInfo }: A
                   required
                   maxLength={11}
                   placeholder="Apenas números"
-                  className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm border-gray-300"
+                  className={`flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm border-gray-300 ${
+                    formData.cpf && !validarCPF(formData.cpf) ? 'border-red-500' : ''
+                  }`}
                 />
               </div>
+              {formData.cpf && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Formato: {formatCPF(formData.cpf)}
+                </p>
+              )}
+              {formData.cpf && !validarCPF(formData.cpf) && (
+                <p className="text-xs text-red-600 mt-1">
+                  CPF inválido
+                </p>
+              )}
             </div>
             
             <div>
@@ -367,14 +444,20 @@ export default function AssociadoCadastroForm({ cartao, matricula, userInfo }: A
                   <FaCalendarAlt className="h-4 w-4" />
                 </span>
                 <input
-                  type="date"
+                  type="text"
                   id="nascimento"
                   name="nascimento"
                   value={formData.nascimento}
                   onChange={handleChange}
+                  placeholder="DD/MM/AAAA"
                   className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm border-gray-300"
                 />
               </div>
+              {formData.nascimento && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Formato: {formatData(formData.nascimento)}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -396,9 +479,17 @@ export default function AssociadoCadastroForm({ cartao, matricula, userInfo }: A
                   value={formData.email}
                   onChange={handleChange}
                   required
-                  className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm border-gray-300"
+                  placeholder="seu@email.com"
+                  className={`flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm border-gray-300 ${
+                    formData.email && !validarEmail(formData.email) ? 'border-red-500' : ''
+                  }`}
                 />
               </div>
+              {formData.email && !validarEmail(formData.email) && (
+                <p className="text-xs text-red-600 mt-1">
+                  E-mail inválido
+                </p>
+              )}
             </div>
             
             <div>
@@ -415,10 +506,15 @@ export default function AssociadoCadastroForm({ cartao, matricula, userInfo }: A
                   onChange={handleChange}
                   required
                   maxLength={11}
-                  placeholder="DDD + número"
+                  placeholder="Apenas números"
                   className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm border-gray-300"
                 />
               </div>
+              {formData.celular && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Formato: {formatTelefone(formData.celular)}
+                </p>
+              )}
               <div className="mt-2">
                 <label className="inline-flex items-center">
                   <input
@@ -442,9 +538,14 @@ export default function AssociadoCadastroForm({ cartao, matricula, userInfo }: A
                 value={formData.telefone_residencial}
                 onChange={handleChange}
                 maxLength={10}
-                placeholder="DDD + número"
+                placeholder="Apenas números"
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               />
+              {formData.telefone_residencial && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Formato: {formatTelefone(formData.telefone_residencial)}
+                </p>
+              )}
             </div>
             
             <div>
@@ -456,9 +557,14 @@ export default function AssociadoCadastroForm({ cartao, matricula, userInfo }: A
                 value={formData.telefone_comercial}
                 onChange={handleChange}
                 maxLength={10}
-                placeholder="DDD + número"
+                placeholder="Apenas números"
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
               />
+              {formData.telefone_comercial && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Formato: {formatTelefone(formData.telefone_comercial)}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -484,6 +590,11 @@ export default function AssociadoCadastroForm({ cartao, matricula, userInfo }: A
                   className="flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm border-gray-300"
                 />
               </div>
+              {formData.cep && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Formato: {formatCEP(formData.cep)}
+                </p>
+              )}
               {cepLoading && <span className="text-xs text-blue-600 flex items-center mt-1"><FaSpinner className="animate-spin mr-1" /> Buscando CEP...</span>}
             </div>
             
