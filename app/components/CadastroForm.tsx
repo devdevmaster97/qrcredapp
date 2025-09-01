@@ -370,7 +370,9 @@ export default function CadastroForm() {
         throw new Error('Preencha todos os campos obrigatórios');
       }
 
-      if (formData.cpf.length !== 11) {
+      // Validar CPF - aceita tanto formato com máscara (14 chars) quanto só números (11 chars)
+      const cpfNumerico = formData.cpf.replace(/\D/g, '');
+      if (cpfNumerico.length !== 11) {
         throw new Error('CPF deve conter 11 dígitos');
       }
 
