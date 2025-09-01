@@ -566,6 +566,7 @@ export default function CadastroForm() {
                   name="cpf"
                   value={formData.cpf}
                   onChange={handleChange}
+                  inputMode="numeric"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Apenas números"
                   disabled={loading}
@@ -631,6 +632,7 @@ export default function CadastroForm() {
                   name="dataNascimento"
                   value={formData.dataNascimento}
                   onChange={handleChange}
+                  inputMode="numeric"
                   placeholder="DD/MM/AAAA"
                   maxLength={10}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
@@ -671,6 +673,7 @@ export default function CadastroForm() {
                   name="celular"
                   value={formData.celular}
                   onChange={handleChange}
+                  inputMode="numeric"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   placeholder="DDD + número"
                   disabled={loading}
@@ -693,6 +696,7 @@ export default function CadastroForm() {
                   name="telefoneResidencial"
                   value={formData.telefoneResidencial}
                   onChange={handleChange}
+                  inputMode="numeric"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   placeholder="DDD + número"
                   disabled={loading}
@@ -720,6 +724,7 @@ export default function CadastroForm() {
                   name="cep"
                   value={formData.cep}
                   onChange={handleChange}
+                  inputMode="numeric"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Apenas números"
                   disabled={loading}
