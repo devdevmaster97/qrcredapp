@@ -27,9 +27,9 @@ export default function LoginConvenio() {
   
   // Estados para recuperação de senha
   const [mostrarRecuperacao, setMostrarRecuperacao] = useState(false);
-  const [usuarioRecuperacao, setUsuarioRecuperacao] = useState('');
+  const [emailRecuperacao, setEmailRecuperacao] = useState('');
   const [codigoRecuperacao, setCodigoRecuperacao] = useState('');
-  const [etapaRecuperacao, setEtapaRecuperacao] = useState<'usuario' | 'codigo' | 'nova_senha'>('usuario');
+  const [etapaRecuperacao, setEtapaRecuperacao] = useState<'email' | 'codigo' | 'nova_senha'>('email');
   const [novaSenha, setNovaSenha] = useState('');
   const [confirmacaoSenha, setConfirmacaoSenha] = useState('');
   const [enviandoRecuperacao, setEnviandoRecuperacao] = useState(false);
@@ -202,11 +202,11 @@ export default function LoginConvenio() {
 
   // Função para resetar o formulário de recuperação
   const resetarFormularioRecuperacao = () => {
-    setUsuarioRecuperacao('');
+    setEmailRecuperacao('');
     setCodigoRecuperacao('');
     setNovaSenha('');
     setConfirmacaoSenha('');
-    setEtapaRecuperacao('usuario');
+    setEtapaRecuperacao('email');
     setTokenRecuperacao('');
     setDestinoMascarado('');
     setMensagemRecuperacao('');
@@ -215,7 +215,7 @@ export default function LoginConvenio() {
   // Função para voltar etapa da recuperação
   const voltarEtapaRecuperacao = () => {
     if (etapaRecuperacao === 'codigo') {
-      setEtapaRecuperacao('usuario');
+      setEtapaRecuperacao('email');
     } else if (etapaRecuperacao === 'nova_senha') {
       setEtapaRecuperacao('codigo');
     }
@@ -224,8 +224,15 @@ export default function LoginConvenio() {
 
   // Função para solicitar código de recuperação
   const handleRecuperarSenha = async () => {
-    if (!usuarioRecuperacao) {
-      setMensagemRecuperacao('Por favor, informe o usuário');
+    if (!emailRecuperacao) {
+      setMensagemRecuperacao('Por favor, informe o email');
+      return;
+    }
+    
+    // Validar formato do email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailRecuperacao)) {
+      setMensagemRecuperacao('Por favor, informe um email válido');
       return;
     }
     
@@ -233,7 +240,7 @@ export default function LoginConvenio() {
     setMensagemRecuperacao('');
     
     try {
-      console.log(`Solicitando código de recuperação para usuário: ${usuarioRecuperacao}`);
+      console.log(`Solicitando código de recuperação para email: ${emailRecuperacao}`);
       
       // Chamar a API de recuperação de senha
       const response = await fetch('/api/convenio/recuperacao-senha', {
@@ -241,7 +248,7 @@ export default function LoginConvenio() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ usuario: usuarioRecuperacao })
+        body: JSON.stringify({ email: emailRecuperacao })
       });
       
       const result = await response.json();
@@ -287,7 +294,7 @@ export default function LoginConvenio() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          usuario: usuarioRecuperacao,
+          email: emailRecuperacao,
           codigo: codigoRecuperacao
         })
       });
@@ -343,7 +350,7 @@ export default function LoginConvenio() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          usuario: usuarioRecuperacao,
+          email: emailRecuperacao,
           senha: novaSenha,
           token: tokenRecuperacao
         })
@@ -358,8 +365,8 @@ export default function LoginConvenio() {
         setTimeout(() => {
           setMostrarRecuperacao(false);
           resetarFormularioRecuperacao();
-          // Preencher o campo de usuário no formulário de login
-          setFormData({...formData, usuario: usuarioRecuperacao, senha: ''});
+          // Limpar os campos do formulário de login
+          setFormData({...formData, usuario: '', senha: ''});
         }, 3000);
       } else {
         setMensagemRecuperacao(result.message || 'Erro ao redefinir senha.');
@@ -395,7 +402,7 @@ export default function LoginConvenio() {
           <div className="p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold text-blue-600">
-                {etapaRecuperacao === 'usuario' && 'Recuperação de Senha'}
+                {etapaRecuperacao === 'email' && 'Recuperação de Senha'}
                 {etapaRecuperacao === 'codigo' && 'Verificação de Código'}
                 {etapaRecuperacao === 'nova_senha' && 'Definir Nova Senha'}
               </h3>
@@ -422,27 +429,27 @@ export default function LoginConvenio() {
               </div>
             )}
 
-            {etapaRecuperacao === 'usuario' && (
+            {etapaRecuperacao === 'email' && (
               <div>
                 <div className="mb-4">
-                  <label htmlFor="usuarioRecuperacao" className="block text-sm font-medium text-gray-700 mb-1">
-                    Nome de Usuário
+                  <label htmlFor="emailRecuperacao" className="block text-sm font-medium text-gray-700 mb-1">
+                    Email Cadastrado
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <FaUser className="h-5 w-5 text-gray-400" />
+                      <FaEnvelope className="h-5 w-5 text-gray-400" />
                     </div>
                     <input
-                      type="text"
-                      id="usuarioRecuperacao"
-                      value={usuarioRecuperacao}
-                      onChange={(e) => setUsuarioRecuperacao(e.target.value)}
-                      placeholder="Digite seu nome de usuário"
+                      type="email"
+                      id="emailRecuperacao"
+                      value={emailRecuperacao}
+                      onChange={(e) => setEmailRecuperacao(e.target.value)}
+                      placeholder="Digite seu email cadastrado"
                       className="block w-full pl-10 py-2 sm:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    Informe o nome de usuário cadastrado. Enviaremos um código de recuperação para o email do conveniado.
+                    Informe o email cadastrado no convênio. Enviaremos um código de recuperação para este email.
                   </p>
                 </div>
 
@@ -450,9 +457,9 @@ export default function LoginConvenio() {
                   <button
                     type="button"
                     onClick={handleRecuperarSenha}
-                    disabled={enviandoRecuperacao || !usuarioRecuperacao}
+                    disabled={enviandoRecuperacao || !emailRecuperacao}
                     className={`px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors ${
-                      (enviandoRecuperacao || !usuarioRecuperacao) ? 'opacity-50 cursor-not-allowed' : ''
+                      (enviandoRecuperacao || !emailRecuperacao) ? 'opacity-50 cursor-not-allowed' : ''
                     }`}
                   >
                     {enviandoRecuperacao ? (

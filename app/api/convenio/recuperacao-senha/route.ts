@@ -4,12 +4,12 @@ import axios from 'axios';
 
 /**
  * API para iniciar o processo de recuperação de senha de convênio
- * Envia um código de 6 dígitos para o email associado ao usuário
+ * Envia um código de 6 dígitos para o email informado
  */
 export async function POST(request: NextRequest) {
   try {
     // Obter dados, suportando tanto JSON quanto FormData
-    let usuario = '';
+    let email = '';
     
     // Verificar o content-type da requisição
     const contentType = request.headers.get('content-type') || '';
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       try {
         const body = JSON.parse(requestText);
         console.log('Body parseado:', body);
-        usuario = body.usuario;
+        email = body.email;
       } catch (parseError) {
         console.error('Erro ao parsear JSON:', parseError);
         return NextResponse.json(
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       // Assumir FormData
       try {
         const formData = await request.formData();
-        usuario = formData.get('usuario') as string;
+        email = formData.get('email') as string;
       } catch (formError) {
         console.error('Erro ao processar FormData:', formError);
         return NextResponse.json(
@@ -45,16 +45,25 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    console.log('Usuário extraído:', usuario);
+    console.log('Email extraído:', email);
 
-    if (!usuario) {
+    if (!email) {
       return NextResponse.json(
-        { success: false, message: 'O nome de usuário é obrigatório' },
+        { success: false, message: 'O email é obrigatório' },
         { status: 400 }
       );
     }
 
-    console.log(`Iniciando recuperação de senha para usuário: ${usuario}`);
+    // Validar formato do email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json(
+        { success: false, message: 'Por favor, informe um email válido' },
+        { status: 400 }
+      );
+    }
+
+    console.log(`Iniciando recuperação de senha para email: ${email}`);
 
     // Gerar código de 6 dígitos
     const codigo = Math.floor(100000 + Math.random() * 900000).toString();
@@ -62,9 +71,9 @@ export async function POST(request: NextRequest) {
     dataExpiracao.setMinutes(dataExpiracao.getMinutes() + 15); // Código válido por 15 minutos
 
     try {
-      // Chamar API para verificar se o usuário existe e buscar email
+      // Chamar API para verificar se o email existe e enviar código
       console.log('Enviando dados para API:', {
-        usuario,
+        email,
         codigo,
         dataExpiracao: dataExpiracao.toISOString()
       });
@@ -73,7 +82,7 @@ export async function POST(request: NextRequest) {
       const jsonResponse = await axios.post(
         `${API_URL}/convenio_recuperacao_senha.php`, 
         {
-          usuario,
+          email,
           codigo,
           dataExpiracao: dataExpiracao.toISOString()
         },
@@ -107,7 +116,7 @@ export async function POST(request: NextRequest) {
       // Depuração completa para identificar o problema
       console.error('URL da API:', `${API_URL}/convenio_recuperacao_senha.php`);
       console.error('Dados enviados:', { 
-        usuario, 
+        email, 
         codigo, 
         dataExpiracao: dataExpiracao.toISOString() 
       });
