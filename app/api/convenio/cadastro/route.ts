@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios, { AxiosError } from 'axios';
+import { API_URL } from '@/app/utils/constants';
 
 interface BackendResponse {
   situacao?: string | number;
@@ -7,11 +8,15 @@ interface BackendResponse {
   data?: Record<string, string | number | boolean | null>;
   cpf?: string;
   cnpj?: string;
+  usuario?: string;
+  senha?: string;
 }
 
 export async function POST(request: NextRequest) {
+  let formData: FormData | null = null;
+  
   try {
-    const formData = await request.formData();
+    formData = await request.formData();
 
     // Validar campos obrigatórios
     const camposObrigatorios = [
@@ -154,6 +159,47 @@ export async function POST(request: NextRequest) {
 
     // Verificar se o cadastro foi bem sucedido
     if (response.data.situacao === '1' || response.data.situacao === 1) {
+      // Cadastro bem-sucedido, agora enviar email com credenciais
+      try {
+        console.log('Cadastro bem-sucedido, enviando email com credenciais...');
+        
+        // Extrair dados do convênio cadastrado
+        const emailData = {
+          email: formData.get('email') as string,
+          razaosocial: formData.get('razaoSocial') as string,
+          usuario: response.data.usuario || response.data.data?.usuario || 'Será informado em breve',
+          senha: response.data.senha || response.data.data?.senha || 'Será informada em breve',
+          cnpj: formData.get('cnpj') as string || '',
+          telefone: formData.get('celular') as string || ''
+        };
+
+        console.log('Enviando dados para API de email:', emailData);
+
+        // Chamar a API PHP para enviar email
+        const emailResponse = await axios.post(
+          `${API_URL}/convenio_cadastro_email.php`,
+          emailData,
+          {
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            timeout: 15000
+          }
+        );
+
+        console.log('Resposta da API de email:', emailResponse.data);
+
+        if (emailResponse.data.success) {
+          console.log('✅ Email de boas-vindas enviado com sucesso');
+        } else {
+          console.error('❌ Falha ao enviar email de boas-vindas:', emailResponse.data.message);
+        }
+
+      } catch (emailError) {
+        console.error('Erro ao enviar email de boas-vindas:', emailError);
+        // Não falhar o cadastro por causa do email, apenas logar o erro
+      }
+
       return NextResponse.json({
         success: true,
         message: 'Cadastro realizado com sucesso! Verifique seu e-mail para obter as credenciais.',
@@ -184,6 +230,57 @@ export async function POST(request: NextRequest) {
 
     // Se o erro for 500 mas o cadastro foi bem sucedido, retornar sucesso
     if (responseData?.situacao === '1' || responseData?.situacao === 1) {
+      // Cadastro bem-sucedido, agora enviar email com credenciais
+      try {
+        console.log('Cadastro bem-sucedido (via catch), enviando email com credenciais...');
+        
+        // Verificar se formData está disponível
+        if (!formData) {
+          console.error('FormData não disponível no bloco catch');
+          return NextResponse.json({
+            success: true,
+            message: 'Cadastro realizado com sucesso! Verifique seu e-mail para obter as credenciais.',
+            data: responseData
+          });
+        }
+        
+        // Extrair dados do convênio cadastrado
+        const emailData = {
+          email: formData.get('email') as string,
+          razaosocial: formData.get('razaoSocial') as string,
+          usuario: responseData.usuario || responseData.data?.usuario || 'Será informado em breve',
+          senha: responseData.senha || responseData.data?.senha || 'Será informada em breve',
+          cnpj: formData.get('cnpj') as string || '',
+          telefone: formData.get('celular') as string || ''
+        };
+
+        console.log('Enviando dados para API de email (via catch):', emailData);
+
+        // Chamar a API PHP para enviar email
+        const emailResponse = await axios.post(
+          `${API_URL}/convenio_cadastro_email.php`,
+          emailData,
+          {
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            timeout: 15000
+          }
+        );
+
+        console.log('Resposta da API de email (via catch):', emailResponse.data);
+
+        if (emailResponse.data.success) {
+          console.log('✅ Email de boas-vindas enviado com sucesso (via catch)');
+        } else {
+          console.error('❌ Falha ao enviar email de boas-vindas (via catch):', emailResponse.data.message);
+        }
+
+      } catch (emailError) {
+        console.error('Erro ao enviar email de boas-vindas (via catch):', emailError);
+        // Não falhar o cadastro por causa do email, apenas logar o erro
+      }
+
       return NextResponse.json({
         success: true,
         message: 'Cadastro realizado com sucesso! Verifique seu e-mail para obter as credenciais.',
@@ -217,4 +314,4 @@ export async function POST(request: NextRequest) {
       { status: axiosError.response?.status || 500 }
     );
   }
-} 
+}
