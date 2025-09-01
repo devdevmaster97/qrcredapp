@@ -29,15 +29,7 @@ const nextConfig = {
   output: 'standalone',
   // Configurar timeout de build
   staticPageGenerationTimeout: 120,
-  webpack: (config, { dev }) => {
-    // Ativar sourcemaps em desenvolvimento para depuração
-    if (dev) {
-      config.devtool = 'source-map';
-    }
-    // Important: return the modified config
-    return config;
-  },
-  headers: async () => {
+  async headers() {
     return [
       {
         source: '/:path*',
@@ -59,9 +51,48 @@ const nextConfig = {
             value: '1; mode=block'
           }
         ]
-      }
+      },
+      {
+        // Aplicar a todas as rotas da API
+        source: '/api/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+          },
+          {
+            key: 'Pragma',
+            value: 'no-cache',
+          },
+          {
+            key: 'Expires',
+            value: '0',
+          },
+        ],
+      },
+      {
+        // Aplicar ao dashboard do convênio
+        source: '/convenio/dashboard/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, no-cache, must-revalidate, max-age=0',
+          },
+        ],
+      },
     ];
-  }
+  },
+  generateBuildId: async () => {
+    return `build-${Date.now()}`;
+  },
+  webpack: (config, { dev }) => {
+    // Ativar sourcemaps em desenvolvimento para depuração
+    if (dev) {
+      config.devtool = 'source-map';
+    }
+    // Important: return the modified config
+    return config;
+  },
 };
 
 module.exports = nextConfig; 

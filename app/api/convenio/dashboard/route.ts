@@ -117,32 +117,54 @@ export async function GET(request: Request) {
         console.log('🔍 PLATFORM DEBUG - Enviando convenio:', codConvenio.toString());
 
         // Buscar dados das APIs em paralelo
+        const timestamp = Date.now();
         const [lancamentosResponse, vendasResponse, estornosResponse] = await Promise.allSettled([
           // Total de Lançamentos
           axios.post('https://sas.makecard.com.br/total_lancamentos_convenio_app.php', 
             new URLSearchParams({
               convenio: codConvenio.toString(),
-              mes: mesCorrente
+              mes: mesCorrente,
+              _t: timestamp.toString()
             }), 
-            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+            { 
+              headers: { 
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache'
+              } 
+            }
           ),
           
           // Total de Vendas
           axios.post('https://sas.makecard.com.br/total_vendas_convenio_app.php', 
             new URLSearchParams({
               convenio: codConvenio.toString(),
-              mes: mesCorrente
+              mes: mesCorrente,
+              _t: timestamp.toString()
             }), 
-            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+            { 
+              headers: { 
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache'
+              } 
+            }
           ),
           
           // Total de Estornos
           axios.post('https://sas.makecard.com.br/total_estornos_convenio_app.php', 
             new URLSearchParams({
               convenio: codConvenio.toString(),
-              mes: mesCorrente
+              mes: mesCorrente,
+              _t: timestamp.toString()
             }), 
-            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+            { 
+              headers: { 
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache'
+              } 
+            }
           )
         ]);
 
