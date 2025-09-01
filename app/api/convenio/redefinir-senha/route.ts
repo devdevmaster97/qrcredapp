@@ -9,14 +9,14 @@ export async function POST(request: NextRequest) {
   try {
     // Obter dados do JSON
     const body = await request.json();
-    const usuario = body.usuario;
+    const email = body.email;
     const senha = body.senha;
     const token = body.token;
-    console.log('Dados extraídos:', { usuario, token, senha: '********' });
+    console.log('Dados extraídos:', { email, token, senha: '********' });
 
-    if (!usuario) {
+    if (!email) {
       return NextResponse.json(
-        { success: false, message: 'O nome de usuário é obrigatório' },
+        { success: false, message: 'O email é obrigatório' },
         { status: 400 }
       );
     }
@@ -46,13 +46,13 @@ export async function POST(request: NextRequest) {
     // Validar o token
     try {
       const tokenDecodificado = Buffer.from(token, 'base64').toString('utf-8');
-      const [tokenUsuario, tokenCodigo, tokenTimestamp] = tokenDecodificado.split(':');
+      const [tokenEmail, tokenCodigo, tokenTimestamp] = tokenDecodificado.split(':');
       
-      // Verificar se o token pertence ao usuário correto
-      if (tokenUsuario !== usuario) {
-        console.log('Token inválido: usuário do token não corresponde ao usuário fornecido');
-        console.log('Usuário do token:', tokenUsuario);
-        console.log('Usuário fornecido:', usuario);
+      // Verificar se o token pertence ao email correto
+      if (tokenEmail !== email) {
+        console.log('Token inválido: email do token não corresponde ao email fornecido');
+        console.log('Email do token:', tokenEmail);
+        console.log('Email fornecido:', email);
         return NextResponse.json({
           success: false,
           message: 'Token inválido'
@@ -98,13 +98,13 @@ export async function POST(request: NextRequest) {
       
       // Chamar API para alterar a senha
       console.log('Enviando dados para redefinição de senha:', { 
-        usuario, 
+        email, 
         senha: '********', // Ocultado por segurança
         codigo: tokenCodigo 
       });
       
       const dados = {
-        usuario,
+        email,
         senha,
         codigo: tokenCodigo
       };

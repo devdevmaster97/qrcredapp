@@ -24,13 +24,13 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const usuario = body.usuario;
+    const email = body.email;
     const codigo = body.codigo;
-    console.log('Dados extraídos:', { usuario, codigo });
+    console.log('Dados extraídos:', { email, codigo });
 
-    if (!usuario) {
+    if (!email) {
       return NextResponse.json(
-        { success: false, message: 'O nome de usuário é obrigatório' },
+        { success: false, message: 'O email é obrigatório' },
         { status: 400 }
       );
     }
@@ -42,15 +42,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`Validando código de recuperação para usuário: ${usuario}`);
+    console.log(`Validando código de recuperação para email: ${email}`);
 
     try {
       // Chamar API para validar o código
-      console.log('Enviando dados para validação:', { usuario, codigo });
+      console.log('Enviando dados para validação:', { email, codigo });
       
       // A API PHP está lendo os dados como JSON via php://input
       const dados = {
-        usuario,
+        email,
         codigo
       };
       
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
         console.log('Gerando token com timestamp:', timestamp);
         console.log('Horário em formato legível:', new Date(timestamp).toISOString());
         console.log('Dados do token:', {
-          usuario,
+          email,
           codigo,
           timestamp,
           expires: new Date(timestamp + 7200000).toISOString() // 2 horas
@@ -123,11 +123,11 @@ export async function POST(request: NextRequest) {
 /**
  * Função para gerar token
  */
-function gerarToken(usuario: string, codigo: string): string {
+function gerarToken(email: string, codigo: string): string {
   const timestamp = Date.now();
   console.log('Gerando token via função gerarToken com timestamp:', timestamp);
   console.log('Horário em formato legível:', new Date(timestamp).toISOString());
   
-  const tokenString = `${usuario}:${codigo}:${timestamp}`;
+  const tokenString = `${email}:${codigo}:${timestamp}`;
   return Buffer.from(tokenString).toString('base64');
 } 
