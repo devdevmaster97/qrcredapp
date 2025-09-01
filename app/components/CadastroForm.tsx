@@ -153,24 +153,49 @@ export default function CadastroForm() {
     
     // Formatação para campos específicos
     if (name === 'cpf') {
-      // Remove caracteres não numéricos
-      finalValue = value.replace(/\D/g, '');
-      // Limita a 11 dígitos
-      finalValue = finalValue.substring(0, 11);
-    } else if (name === 'celular' || name === 'telefoneResidencial') {
-      // Remove caracteres não numéricos
-      finalValue = value.replace(/\D/g, '');
-      // Limita a 11 dígitos (com DDD)
-      finalValue = finalValue.substring(0, 11);
+      const numericValue = value.replace(/\D/g, '');
+      const limitedValue = numericValue.substring(0, 11);
+      if (limitedValue.length <= 3) {
+        finalValue = limitedValue;
+      } else if (limitedValue.length <= 6) {
+        finalValue = limitedValue.replace(/(\d{3})(\d{0,3})/, '$1.$2');
+      } else if (limitedValue.length <= 9) {
+        finalValue = limitedValue.replace(/(\d{3})(\d{3})(\d{0,3})/, '$1.$2.$3');
+      } else {
+        finalValue = limitedValue.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4');
+      }
+    } else if (name === 'celular') {
+      const numericValue = value.replace(/\D/g, '');
+      const limitedValue = numericValue.substring(0, 11);
+      if (limitedValue.length <= 2) {
+        finalValue = limitedValue;
+      } else if (limitedValue.length <= 7) {
+        finalValue = limitedValue.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+      } else {
+        finalValue = limitedValue.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+      }
+    } else if (name === 'telefoneResidencial') {
+      const numericValue = value.replace(/\D/g, '');
+      const limitedValue = numericValue.substring(0, 10);
+      if (limitedValue.length <= 2) {
+        finalValue = limitedValue;
+      } else if (limitedValue.length <= 6) {
+        finalValue = limitedValue.replace(/(\d{2})(\d{0,4})/, '($1) $2');
+      } else {
+        finalValue = limitedValue.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+      }
     } else if (name === 'cep') {
-      // Remove caracteres não numéricos
-      finalValue = value.replace(/\D/g, '');
-      // Limita a 8 dígitos
-      finalValue = finalValue.substring(0, 8);
+      const numericValue = value.replace(/\D/g, '');
+      const limitedValue = numericValue.substring(0, 8);
+      if (limitedValue.length <= 5) {
+        finalValue = limitedValue;
+      } else {
+        finalValue = limitedValue.replace(/(\d{5})(\d{0,3})/, '$1-$2');
+      }
       
       // Se tiver 8 dígitos, busca o CEP
-      if (finalValue.length === 8 && finalValue !== formData.cep) {
-        buscarCep(finalValue);
+      if (limitedValue.length === 8 && limitedValue !== formData.cep.replace(/\D/g, '')) {
+        buscarCep(limitedValue);
       }
     }
     
