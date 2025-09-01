@@ -184,6 +184,16 @@ export default function CadastroForm() {
       } else {
         finalValue = limitedValue.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
       }
+    } else if (name === 'dataNascimento') {
+      const numericValue = value.replace(/\D/g, '');
+      const limitedValue = numericValue.substring(0, 8);
+      if (limitedValue.length <= 2) {
+        finalValue = limitedValue;
+      } else if (limitedValue.length <= 4) {
+        finalValue = limitedValue.replace(/(\d{2})(\d{0,2})/, '$1/$2');
+      } else {
+        finalValue = limitedValue.replace(/(\d{2})(\d{2})(\d{0,4})/, '$1/$2/$3');
+      }
     } else if (name === 'cep') {
       const numericValue = value.replace(/\D/g, '');
       const limitedValue = numericValue.substring(0, 8);
@@ -364,12 +374,14 @@ export default function CadastroForm() {
         throw new Error('CPF deve conter 11 dígitos');
       }
 
-      // Formatar data de nascimento se fornecida (YYYY-MM-DD para DD/MM/YYYY)
+      // Processar data de nascimento se fornecida (já está no formato DD/MM/YYYY)
       let dataNascimentoFormatada = '';
       if (formData.dataNascimento) {
-        const parts = formData.dataNascimento.split('-');
-        if (parts.length === 3) {
-          dataNascimentoFormatada = `${parts[2]}/${parts[1]}/${parts[0]}`;
+        // Remove caracteres não numéricos para validar
+        const numericDate = formData.dataNascimento.replace(/\D/g, '');
+        if (numericDate.length === 8) {
+          // Se temos 8 dígitos, a data já está formatada corretamente
+          dataNascimentoFormatada = formData.dataNascimento;
         }
       }
 
@@ -614,11 +626,13 @@ export default function CadastroForm() {
                   Data de Nascimento
                 </label>
                 <input
-                  type="date"
+                  type="text"
                   id="dataNascimento"
                   name="dataNascimento"
                   value={formData.dataNascimento}
                   onChange={handleChange}
+                  placeholder="DD/MM/AAAA"
+                  maxLength={10}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   disabled={loading}
                 />
