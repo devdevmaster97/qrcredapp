@@ -4,7 +4,7 @@ import axios from 'axios';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     // Obter o token do cookie
     const cookieStore = cookies();
@@ -113,6 +113,8 @@ export async function GET() {
 
         console.log('🔍 Dashboard Debug - codConvenio:', codConvenio, 'mesCorrente:', mesCorrente);
         console.log('🔍 Dashboard Debug - jsonData completo:', JSON.stringify(jsonData, null, 2));
+        console.log('🔍 USER-AGENT:', request?.headers?.get?.('user-agent') || 'N/A');
+        console.log('🔍 PLATFORM DEBUG - Enviando convenio:', codConvenio.toString());
 
         // Buscar dados das APIs em paralelo
         const [lancamentosResponse, vendasResponse, estornosResponse] = await Promise.allSettled([
