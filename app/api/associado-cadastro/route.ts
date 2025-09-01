@@ -47,6 +47,27 @@ export async function POST(request: NextRequest) {
       });
       
       console.log('Resposta da API (axios):', axiosResponse.data);
+      console.log('Status da resposta:', axiosResponse.status);
+      
+      // Se a resposta tem status 200, assumir sucesso independente da mensagem
+      // Isso corrige o problema onde o PHP salva o registro mas retorna erro de CPF duplicado
+      if (axiosResponse.status === 200) {
+        console.log('Status 200 recebido - assumindo sucesso');
+        
+        // Verificar se há indicação real de erro na resposta
+        if (axiosResponse.data && axiosResponse.data.success === false) {
+          // Se explicitamente marcado como falha, respeitar
+          console.log('Resposta explicitamente marcada como falha');
+          return NextResponse.json(axiosResponse.data);
+        }
+        
+        // Para status 200, sempre assumir sucesso
+        return NextResponse.json({
+          success: true,
+          message: 'Cadastro realizado com sucesso',
+          data: axiosResponse.data
+        });
+      }
       
       return NextResponse.json(axiosResponse.data || {
         success: true,
