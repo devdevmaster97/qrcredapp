@@ -51,12 +51,12 @@ export default function LoginPage() {
       
       <main className="flex-1 flex flex-col items-center justify-center p-4">
         <div className="w-full max-w-md space-y-8">
-          <Logo size="lg" />
+          <Logo size="xs" />
           
           <LoginForm onSubmit={handleSubmit} loading={loading} />
           
           <div className="text-center text-sm text-gray-500">
-            <p>© {new Date().getFullYear()} QRCred. Todos os direitos reservados.</p>
+            <p> {new Date().getFullYear()} QRCred. Todos os direitos reservados.</p>
           </div>
         </div>
       </main>
