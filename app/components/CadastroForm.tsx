@@ -407,13 +407,17 @@ export default function CadastroForm() {
         cadastroData.append('C_empregador_assoc', formData.C_empregador_assoc);
       }
       
-      // Contato
+      // Contato - enviar apenas números para telefones
       cadastroData.append('C_Email_assoc', formData.email);
-      cadastroData.append('C_cel_assoc', formData.celular);
-      cadastroData.append('C_telres', formData.telefoneResidencial);
+      cadastroData.append('C_cel_assoc', formData.celular.replace(/\D/g, ''));
+      if (formData.telefoneResidencial) {
+        cadastroData.append('C_telres', formData.telefoneResidencial.replace(/\D/g, ''));
+      }
       
-      // Endereço
-      cadastroData.append('C_cep_assoc', formData.cep);
+      // Endereço - enviar apenas números para CEP
+      if (formData.cep) {
+        cadastroData.append('C_cep_assoc', formData.cep.replace(/\D/g, ''));
+      }
       cadastroData.append('C_endereco_assoc', formData.endereco);
       cadastroData.append('C_numero_assoc', formData.numero);
       cadastroData.append('C_complemento_assoc', formData.complemento);
@@ -436,6 +440,10 @@ export default function CadastroForm() {
         method: 'POST',
         body: cadastroData
       });
+
+      if (!response.ok) {
+        throw new Error(`Erro HTTP ${response.status}: ${response.statusText}`);
+      }
 
       const result = await response.json();
       console.log('Resposta da API:', result);
@@ -466,7 +474,9 @@ export default function CadastroForm() {
         });
         
       } else {
-        setStatusMessage(result.message || 'Ocorreu um erro ao processar o cadastro. Tente novamente.');
+        const errorMsg = result.message || 'Ocorreu um erro ao processar o cadastro. Tente novamente.';
+        console.error('Erro retornado pela API:', result);
+        setStatusMessage(errorMsg);
         setStatusType('error');
       }
     } catch (err: any) {
