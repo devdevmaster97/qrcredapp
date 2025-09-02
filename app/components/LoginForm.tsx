@@ -320,11 +320,9 @@ export default function LoginForm({ onSubmit, loading }: LoginFormProps) {
         setMensagemRecuperacao('');
         
         // Se tiver apenas um método disponível, já seleciona automaticamente
-        if (result.temEmail && !result.temCelular && !result.temWhatsapp) {
+        if (result.temEmail && !result.temWhatsapp) {
           setMetodoRecuperacao('email');
-        } else if (!result.temEmail && result.temCelular && !result.temWhatsapp) {
-          setMetodoRecuperacao('sms');
-        } else if (!result.temEmail && !result.temCelular && result.temWhatsapp) {
+        } else if (!result.temEmail && result.temWhatsapp) {
           setMetodoRecuperacao('whatsapp');
         }
       } else {
@@ -808,28 +806,7 @@ export default function LoginForm({ onSubmit, loading }: LoginFormProps) {
                         </div>
                       )}
                       
-                      {dadosUsuarioRecuperacao.temCelular && (
-                        <div className="flex items-center p-3 border rounded-md cursor-pointer hover:bg-gray-50"
-                             onClick={() => setMetodoRecuperacao('sms')}>
-                          <input
-                            type="radio"
-                            id="metodoSMS"
-                            name="metodoRecuperacao"
-                            value="sms"
-                            checked={metodoRecuperacao === 'sms'}
-                            onChange={() => setMetodoRecuperacao('sms')}
-                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                          />
-                          <label htmlFor="metodoSMS" className="ml-2 flex items-center w-full cursor-pointer">
-                            <FaPhone className="text-green-500 mr-2" />
-                            <div>
-                              <p className="text-sm font-medium">SMS</p>
-                              <p className="text-xs text-gray-500">{dadosUsuarioRecuperacao.celular || 'Celular cadastrado'}</p>
-                            </div>
-                          </label>
-                        </div>
-                      )}
-                      
+
                       {dadosUsuarioRecuperacao.temWhatsapp && (
                         <div className="flex items-center p-3 border rounded-md cursor-pointer hover:bg-gray-50"
                              onClick={() => setMetodoRecuperacao('whatsapp')}>
