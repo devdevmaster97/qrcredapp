@@ -352,7 +352,7 @@ export async function POST(request: NextRequest) {
           });
           const errorMsg = whatsappError instanceof Error ? whatsappError.message : String(whatsappError);
           throw new Error(`Falha na API envia_codigo_recuperacao.php (WHATSAPP): ${errorMsg}`);
-        
+        }
       }
 
       console.log('=== VERIFICANDO RESULTADO DO ENVIO ===');
