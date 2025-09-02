@@ -153,6 +153,7 @@ export async function POST(request: NextRequest) {
     // Enviar código
     let sucesso = false;
     let errorMessage = '';
+    let respostaAPI = null;
 
     try {
       console.log('=== ETAPA 2: ENVIAR CÓDIGO ===');
@@ -192,6 +193,9 @@ export async function POST(request: NextRequest) {
           console.log('✅ Resposta da API de email:', responseEmail.data);
           console.log('Status HTTP email:', responseEmail.status);
           console.log('Tipo da resposta:', typeof responseEmail.data);
+          
+          // Armazenar resposta para debug
+          respostaAPI = responseEmail.data;
           
           // A API PHP retorna apenas a string "enviado" quando bem-sucedida
           sucesso = responseEmail.data === 'enviado';
@@ -253,6 +257,9 @@ export async function POST(request: NextRequest) {
           console.log('Status HTTP SMS:', responseSMS.status);
           console.log('Tipo da resposta SMS:', typeof responseSMS.data);
           
+          // Armazenar resposta para debug
+          respostaAPI = responseSMS.data;
+          
           // A API PHP retorna apenas a string "enviado" quando bem-sucedida
           sucesso = responseSMS.data === 'enviado';
         } catch (smsError) {
@@ -303,6 +310,9 @@ export async function POST(request: NextRequest) {
           console.log('Status HTTP WhatsApp:', responseWhatsApp.status);
           console.log('Tipo da resposta WhatsApp:', typeof responseWhatsApp.data);
           
+          // Armazenar resposta para debug
+          respostaAPI = responseWhatsApp.data;
+          
           // A API PHP retorna apenas a string "enviado" quando bem-sucedida
           sucesso = responseWhatsApp.data === 'enviado';
         } catch (whatsappError) {
@@ -335,8 +345,13 @@ export async function POST(request: NextRequest) {
             : mascaraTelefone(dadosAssociado.cel)
         });
       } else {
-        console.log('❌ Falha no envio - sucesso = false');
-        console.log('Resposta da API não foi "enviado"');
+        console.error('❌ FALHA NO ENVIO - RESPOSTA INESPERADA');
+        console.error('API:', 'envia_codigo_recuperacao.php');
+        console.error('Método:', metodo);
+        console.error('Resposta esperada: "enviado"');
+        console.error('Resposta recebida:', respostaAPI);
+        console.error('Tipo da resposta:', typeof respostaAPI);
+        console.error('Sucesso:', sucesso);
         
         // Limpar controles para permitir nova tentativa
         delete codigosRecuperacao[chaveCodigoCompleta];
@@ -345,10 +360,13 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           { 
             success: false, 
-            message: 'API retornou resposta inesperada. Código pode ter sido enviado.',
+            message: `API envia_codigo_recuperacao.php (${metodo.toUpperCase()}) retornou resposta inesperada. Código pode ter sido enviado.`,
             debug: {
-              resposta_api: 'Não foi "enviado"',
-              metodo: metodo
+              api: 'envia_codigo_recuperacao.php',
+              metodo: metodo,
+              resposta_esperada: 'enviado',
+              resposta_recebida: respostaAPI,
+              tipo_resposta: typeof respostaAPI
             }
           },
           { status: 500 }
