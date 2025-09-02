@@ -70,7 +70,8 @@ export async function POST(request: NextRequest) {
       delete requisicoesEmAndamento[chaveRequisicao];
     }
   } catch (error) {
-    console.error('Erro na recuperação de senha:', error);
+    console.error('Erro na recuperação de senha (função principal):', error);
+    
     return NextResponse.json(
       { 
         success: false, 
@@ -391,7 +392,14 @@ async function processarRecuperacao(cartaoLimpo: string, metodo: string) {
       );
     }
   } catch (error) {
-    console.error('Erro na recuperação de senha:', error);
+    console.error('Erro na processarRecuperacao:', error);
+    
+    // Limpar controles em caso de erro
+    const chaveEnvio = `${cartaoLimpo}_${metodo}`;
+    const chaveCodigoCompleta = `${cartaoLimpo}_${metodo}`;
+    delete enviosRecentes[chaveEnvio];
+    delete codigosRecuperacao[chaveCodigoCompleta];
+    
     return NextResponse.json(
       { 
         success: false, 
