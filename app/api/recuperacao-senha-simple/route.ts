@@ -200,7 +200,9 @@ export async function POST(request: NextRequest) {
           respostaAPI = responseEmail.data;
           
           // A API PHP retorna "enviado" para sucesso ou JSON para erro
-          sucesso = responseEmail.data === 'enviado';
+          // Remover espaços extras da resposta
+          const respostaTratada = typeof responseEmail.data === 'string' ? responseEmail.data.trim() : responseEmail.data;
+          sucesso = respostaTratada === 'enviado';
           
           // Se não for "enviado", verificar se é um JSON de erro
           if (!sucesso && typeof responseEmail.data === 'object' && responseEmail.data.erro) {
@@ -271,7 +273,9 @@ export async function POST(request: NextRequest) {
           respostaAPI = responseSMS.data;
           
           // A API PHP retorna "enviado" para sucesso ou JSON para erro
-          sucesso = responseSMS.data === 'enviado';
+          // Remover espaços extras da resposta
+          const respostaTratadaSMS = typeof responseSMS.data === 'string' ? responseSMS.data.trim() : responseSMS.data;
+          sucesso = respostaTratadaSMS === 'enviado';
           
           // Se não for "enviado", verificar se é um JSON de erro
           if (!sucesso && typeof responseSMS.data === 'object' && responseSMS.data.erro) {
@@ -332,7 +336,9 @@ export async function POST(request: NextRequest) {
           respostaAPI = responseWhatsApp.data;
           
           // A API PHP retorna "enviado" para sucesso ou JSON para erro
-          sucesso = responseWhatsApp.data === 'enviado';
+          // Remover espaços extras da resposta
+          const respostaTratadaWhatsApp = typeof responseWhatsApp.data === 'string' ? responseWhatsApp.data.trim() : responseWhatsApp.data;
+          sucesso = respostaTratadaWhatsApp === 'enviado';
           
           // Se não for "enviado", verificar se é um JSON de erro
           if (!sucesso && typeof responseWhatsApp.data === 'object' && responseWhatsApp.data.erro) {
