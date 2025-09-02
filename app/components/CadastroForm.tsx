@@ -437,6 +437,7 @@ export default function CadastroForm() {
       console.log('Enviando dados para cadastro:', Object.fromEntries(cadastroData));
       console.log('CPF formatado sendo enviado:', formData.cpf);
       console.log('Celular formatado sendo enviado:', formData.celular);
+      console.log('NOTA: Se os dados forem salvos sem formatação no banco, o problema está no PHP backend que está removendo os caracteres de formatação.');
       
       const response = await fetch('/api/associado-cadastro', {
         method: 'POST',
