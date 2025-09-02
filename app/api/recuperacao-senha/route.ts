@@ -73,7 +73,9 @@ export async function POST(request: NextRequest) {
     console.log('Resposta localiza_associado_app_2:', responseAssociado.data);
 
     // Verificar se o associado foi encontrado
-    if (!responseAssociado.data || !responseAssociado.data.matricula) {
+    // A API PHP retorna situacao: 3 quando não encontra o cartão
+    if (!responseAssociado.data || responseAssociado.data.situacao === 3 || !responseAssociado.data.matricula) {
+      console.log('Cartão não encontrado na base de dados, situacao:', responseAssociado.data?.situacao);
       return NextResponse.json(
         { success: false, message: 'Cartão não encontrado' },
         { status: 404 }
@@ -359,7 +361,9 @@ async function processarRecuperacao(cartaoLimpo: string, metodo: string) {
     console.log('Resposta localiza_associado_app_2:', responseAssociado.data);
 
     // Verificar se o associado foi encontrado
-    if (!responseAssociado.data || !responseAssociado.data.matricula) {
+    // A API PHP retorna situacao: 3 quando não encontra o cartão
+    if (!responseAssociado.data || responseAssociado.data.situacao === 3 || !responseAssociado.data.matricula) {
+      console.log('Cartão não encontrado na base de dados, situacao:', responseAssociado.data?.situacao);
       return NextResponse.json(
         { success: false, message: 'Cartão não encontrado' },
         { status: 404 }
