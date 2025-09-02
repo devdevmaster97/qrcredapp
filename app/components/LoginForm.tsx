@@ -1124,7 +1124,7 @@ export default function LoginForm({ onSubmit, loading }: LoginFormProps) {
             {/* Link para cadastro */}
             <div className="mt-4 text-center">
               <Link href="/cadastro" className="text-sm text-blue-600 hover:text-blue-800">
-                Não tem cadastro? Clique aqui para se cadastrar
+                Não tem cadastro? Clique aqui para fazer seu precadastro
               </Link>
             </div>
           </>
