@@ -407,16 +407,16 @@ export default function CadastroForm() {
         cadastroData.append('C_empregador_assoc', formData.C_empregador_assoc);
       }
       
-      // Contato - enviar apenas números para telefones
+      // Contato - enviar com formatação (pontos, parênteses e traços)
       cadastroData.append('C_Email_assoc', formData.email);
-      cadastroData.append('C_cel_assoc', formData.celular.replace(/\D/g, ''));
+      cadastroData.append('C_cel_assoc', formData.celular);
       if (formData.telefoneResidencial) {
-        cadastroData.append('C_telres', formData.telefoneResidencial.replace(/\D/g, ''));
+        cadastroData.append('C_telres', formData.telefoneResidencial);
       }
       
-      // Endereço - enviar apenas números para CEP
+      // Endereço - enviar CEP com formatação (traço)
       if (formData.cep) {
-        cadastroData.append('C_cep_assoc', formData.cep.replace(/\D/g, ''));
+        cadastroData.append('C_cep_assoc', formData.cep);
       }
       cadastroData.append('C_endereco_assoc', formData.endereco);
       cadastroData.append('C_numero_assoc', formData.numero);
