@@ -6,6 +6,9 @@ import { randomInt } from 'crypto';
 const enviosRecentes: { [key: string]: number } = {};
 const INTERVALO_MINIMO_ENVIO = 60000; // 1 minuto em milissegundos
 
+// Controle de requisições em andamento para evitar duplicatas
+const requisicoesEmAndamento: { [key: string]: Promise<any> } = {};
+
 // Armazenamento em memória para códigos de recuperação
 export const codigosRecuperacao: { [key: string]: { codigo: string; timestamp: number; metodo: string; enviado: boolean } } = {};
 
@@ -53,10 +56,24 @@ export async function POST(request: NextRequest) {
     const cartaoLimpo = cartao.replace(/\D/g, '');
     console.log('Cartão limpo:', cartaoLimpo);
 
-    // Rate limiting
+    // Controle de requisições simultâneas
     const chaveEnvio = `${cartaoLimpo}_${metodo}`;
     const agora = Date.now();
     
+    // Verificar se já existe uma requisição em andamento para este cartão/método
+    if (chaveEnvio in requisicoesEmAndamento) {
+      console.log('⚠️ Requisição já em andamento para:', chaveEnvio);
+      try {
+        // Aguardar a requisição em andamento
+        const resultado = await requisicoesEmAndamento[chaveEnvio];
+        return resultado;
+      } catch (error) {
+        console.error('Erro na requisição em andamento:', error);
+        delete requisicoesEmAndamento[chaveEnvio];
+      }
+    }
+    
+    // Rate limiting
     if (enviosRecentes[chaveEnvio] && (agora - enviosRecentes[chaveEnvio]) < INTERVALO_MINIMO_ENVIO) {
       const tempoRestante = Math.ceil((INTERVALO_MINIMO_ENVIO - (agora - enviosRecentes[chaveEnvio])) / 1000);
       return NextResponse.json({
@@ -64,6 +81,68 @@ export async function POST(request: NextRequest) {
         message: `Aguarde ${tempoRestante} segundos antes de solicitar um novo código.`
       }, { status: 429 });
     }
+
+    // Marcar requisição como em andamento ANTES de processar
+    const promiseRequisicao = processarRecuperacao(cartaoLimpo, metodo, agora);
+    requisicoesEmAndamento[chaveEnvio] = promiseRequisicao;
+    
+    try {
+      const resultado = await promiseRequisicao;
+      return resultado;
+    } finally {
+      // Limpar requisição em andamento
+      delete requisicoesEmAndamento[chaveEnvio];
+    }
+  } catch (error) {
+    console.error('=== ERRO GERAL CAPTURADO ===');
+    console.error('Timestamp:', new Date().toISOString());
+    console.error('Erro:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : 'Unknown'
+    });
+    
+    // Identificar em que etapa o erro ocorreu
+    let etapaErro = 'Desconhecida';
+    if (error instanceof Error) {
+      if (error.message.includes('JSON.parse')) {
+        etapaErro = 'Parse do JSON de entrada';
+      } else if (error.message.includes('localiza_associado')) {
+        etapaErro = 'Busca do associado (localiza_associado_app_cartao.php)';
+      } else if (error.message.includes('envia_codigo_recuperacao')) {
+        etapaErro = 'Envio do código (envia_codigo_recuperacao.php)';
+      } else if (error.message.includes('axios')) {
+        etapaErro = 'Requisição HTTP (axios)';
+      } else if (error.message.includes('timeout')) {
+        etapaErro = 'Timeout na requisição';
+      }
+    }
+    
+    console.error('Etapa do erro:', etapaErro);
+    console.error('===============================');
+    
+    return NextResponse.json(
+      { 
+        success: false, 
+        message: `Erro interno do servidor na etapa: ${etapaErro}`,
+        debug: {
+          etapa: etapaErro,
+          erro: error instanceof Error ? error.message : String(error),
+          timestamp: new Date().toISOString()
+        }
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * Processa a recuperação de senha
+ */
+async function processarRecuperacao(cartaoLimpo: string, metodo: string, agora: number) {
+  try {
+
+    const chaveEnvio = `${cartaoLimpo}_${metodo}`;
 
     // Buscar dados do associado
     console.log('=== ETAPA 1: BUSCAR DADOS DO ASSOCIADO ===');
@@ -395,6 +474,7 @@ export async function POST(request: NextRequest) {
         }
         
         // Limpar controles para permitir nova tentativa
+        const chaveCodigoCompleta = `${cartaoLimpo}_${metodo}`;
         delete codigosRecuperacao[chaveCodigoCompleta];
         delete enviosRecentes[chaveEnvio];
         
@@ -444,6 +524,7 @@ export async function POST(request: NextRequest) {
       console.error('================================');
       
       // Limpar controles
+      const chaveCodigoCompleta = `${cartaoLimpo}_${metodo}`;
       delete codigosRecuperacao[chaveCodigoCompleta];
       delete enviosRecentes[chaveEnvio];
       
