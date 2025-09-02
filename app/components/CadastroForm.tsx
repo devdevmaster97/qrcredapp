@@ -435,6 +435,8 @@ export default function CadastroForm() {
 
       // Enviar para a API
       console.log('Enviando dados para cadastro:', Object.fromEntries(cadastroData));
+      console.log('CPF formatado sendo enviado:', formData.cpf);
+      console.log('Celular formatado sendo enviado:', formData.celular);
       
       const response = await fetch('/api/associado-cadastro', {
         method: 'POST',

@@ -37,6 +37,10 @@ export async function POST(request: NextRequest) {
     
     const apiUrl = `${API_URL}/associado_cad.php`;
     console.log('Enviando dados para:', apiUrl);
+    console.log('CPF sendo enviado para PHP:', formDataObj['C_cpf_assoc']);
+    console.log('Celular sendo enviado para PHP:', formDataObj['C_cel_assoc']);
+    console.log('CEP sendo enviado para PHP:', formDataObj['C_cep_assoc']);
+    console.log('Telefone residencial sendo enviado para PHP:', formDataObj['C_telres']);
     
     try {
       // Usar axios que lida melhor com respostas problematicas
