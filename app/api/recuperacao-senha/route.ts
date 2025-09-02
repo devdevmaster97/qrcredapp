@@ -28,10 +28,29 @@ interface RecuperacaoResponse {
  */
 export async function POST(request: NextRequest) {
   console.log('=== POST RECUPERAÇÃO INICIADO ===');
+  console.log('Timestamp:', new Date().toISOString());
+  console.log('URL:', request.url);
+  console.log('Method:', request.method);
+  console.log('Headers:', Object.fromEntries(request.headers.entries()));
+  
   try {
     console.log('Fazendo parse do JSON...');
-    const { cartao, metodo } = await request.json();
-    console.log('JSON parseado com sucesso:', { cartao, metodo });
+    const body = await request.text();
+    console.log('Body bruto recebido:', body);
+    
+    let parsedData;
+    try {
+      parsedData = JSON.parse(body);
+      console.log('JSON parseado com sucesso:', parsedData);
+    } catch (parseError) {
+      console.error('Erro ao parsear JSON:', parseError);
+      return NextResponse.json(
+        { success: false, message: 'Dados inválidos enviados' },
+        { status: 400 }
+      );
+    }
+    
+    const { cartao, metodo } = parsedData;
 
     if (!cartao || !metodo) {
       return NextResponse.json(
@@ -59,16 +78,41 @@ export async function POST(request: NextRequest) {
     console.log('Timestamp:', new Date().toISOString());
     console.log('Buscando dados do associado para recuperação de senha:', cartaoLimpo);
 
-    const responseAssociado = await axios.post(
-      'https://sas.makecard.com.br/localiza_associado_app_2.php',
-      params,
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+    let responseAssociado;
+    try {
+      console.log('Fazendo chamada para localiza_associado_app_2.php...');
+      console.log('Parâmetros enviados:', params.toString());
+      
+      responseAssociado = await axios.post(
+        'https://sas.makecard.com.br/localiza_associado_app_2.php',
+        params,
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          timeout: 10000 // 10 segundos de timeout
+        }
+      );
+      
+      console.log('Chamada para localiza_associado_app_2.php concluída com sucesso');
+    } catch (axiosError) {
+      console.error('Erro na chamada axios para localiza_associado_app_2.php:', {
+        message: axiosError instanceof Error ? axiosError.message : String(axiosError),
+        code: (axiosError as any)?.code,
+        status: (axiosError as any)?.response?.status,
+        statusText: (axiosError as any)?.response?.statusText,
+        data: (axiosError as any)?.response?.data
+      });
+      
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: 'Erro ao conectar com o servidor. Tente novamente em alguns instantes.',
+          error: 'CONNECTION_ERROR'
         },
-        timeout: 10000 // 10 segundos de timeout
-      }
-    );
+        { status: 503 }
+      );
+    }
 
     console.log('Resposta localiza_associado_app_2:', responseAssociado.data);
 
@@ -211,37 +255,82 @@ export async function POST(request: NextRequest) {
         // Enviar por SMS
         const celularLimpo = dadosAssociado.cel.replace(/\D/g, '');
         
-        // Validação do celular
-        if (celularLimpo.length < 10 || celularLimpo.length > 11) {
-          throw new Error('Número de celular inválido');
+        // Validação mais rigorosa do celular
+        console.log('Celular original:', dadosAssociado.cel);
+        console.log('Celular limpo:', celularLimpo);
+        
+        if (celularLimpo.length < 10 || celularLimpo.length > 13) {
+          console.error('Número de celular inválido:', {
+            original: dadosAssociado.cel,
+            limpo: celularLimpo,
+            tamanho: celularLimpo.length
+          });
+          throw new Error(`Número de celular inválido: ${celularLimpo.length} dígitos`);
         }
 
+        // Formatação para padrão brasileiro
+        let celularFormatado = celularLimpo;
+        if (!celularFormatado.startsWith('55') && celularFormatado.length >= 10) {
+          celularFormatado = '55' + celularFormatado;
+        }
+        
+        console.log('Celular formatado:', celularFormatado);
+
         const paramsSMS = new URLSearchParams();
-        paramsSMS.append('celular', celularLimpo);
+        paramsSMS.append('celular', celularFormatado);
         paramsSMS.append('codigo', codigo.toString());
-        paramsSMS.append('token', 'seu_token_aqui'); // Adicionar token se necessário
+        paramsSMS.append('token', 'chave_segura_123');
+        paramsSMS.append('mensagem', `Seu código de recuperação QRCred: ${codigo}. Não compartilhe este código.`);
 
         console.log('Enviando código por SMS para:', mascaraTelefone(dadosAssociado.cel));
+        console.log('Parâmetros SMS:', paramsSMS.toString());
 
-        const responseSMS = await axios.post(
-          'https://sas.makecard.com.br/envia_sms.php',
-          paramsSMS,
-          {
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            timeout: 15000
+        try {
+          const responseSMS = await axios.post(
+            'https://sas.makecard.com.br/envia_sms.php',
+            paramsSMS,
+            {
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+              },
+              timeout: 15000
+            }
+          );
+
+          console.log('Resposta do envio de SMS:', responseSMS.data);
+
+          if (responseSMS.data === 'enviado' || 
+              (typeof responseSMS.data === 'object' && responseSMS.data.status === 'success')) {
+            sucesso = true;
+            codigosRecuperacao[chaveCodigoCompleta].enviado = true;
+          } else {
+            // Tentar endpoint alternativo
+            console.log('Tentando endpoint alternativo para SMS...');
+            
+            const responseSMSAlt = await axios.post(
+              'https://sas.makecard.com.br/envia_sms_direto.php',
+              paramsSMS,
+              {
+                headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                timeout: 15000
+              }
+            );
+            
+            console.log('Resposta do endpoint alternativo SMS:', responseSMSAlt.data);
+            
+            if (responseSMSAlt.data === 'enviado' || 
+                (typeof responseSMSAlt.data === 'object' && responseSMSAlt.data.status === 'success')) {
+              sucesso = true;
+              codigosRecuperacao[chaveCodigoCompleta].enviado = true;
+            } else {
+              errorMessage = `Erro no envio principal: ${typeof responseSMS.data === 'string' ? responseSMS.data : JSON.stringify(responseSMS.data)}. Erro no fallback: ${typeof responseSMSAlt.data === 'string' ? responseSMSAlt.data : JSON.stringify(responseSMSAlt.data)}`;
+            }
           }
-        );
-
-        console.log('Resposta do envio de SMS:', responseSMS.data);
-
-        if (responseSMS.data === 'enviado' || 
-            (typeof responseSMS.data === 'object' && responseSMS.data.status === 'success')) {
-          sucesso = true;
-          codigosRecuperacao[chaveCodigoCompleta].enviado = true;
-        } else {
-          errorMessage = typeof responseSMS.data === 'string' ? responseSMS.data : 'Erro desconhecido no envio de SMS';
+        } catch (smsError) {
+          console.error('Erro no envio de SMS:', smsError);
+          errorMessage = `Erro na conexão SMS: ${smsError instanceof Error ? smsError.message : String(smsError)}`;
         }
       } else if (metodo === 'whatsapp') {
         // Enviar por WhatsApp
@@ -322,8 +411,24 @@ export async function POST(request: NextRequest) {
     console.error('ERRO DETALHADO na recuperação de senha:', {
       message: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      url: request.url,
+      method: request.method
     });
+    
+    // Log adicional para axios errors
+    if (error && typeof error === 'object' && 'response' in error) {
+      console.error('Axios error details:', {
+        status: (error as any).response?.status,
+        statusText: (error as any).response?.statusText,
+        data: (error as any).response?.data,
+        config: {
+          url: (error as any).config?.url,
+          method: (error as any).config?.method,
+          timeout: (error as any).config?.timeout
+        }
+      });
+    }
     
     return NextResponse.json(
       { 
