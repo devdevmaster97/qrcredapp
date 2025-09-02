@@ -350,6 +350,11 @@ export default function LoginForm({ onSubmit, loading }: LoginFormProps) {
       return;
     }
     
+    // Prevenir múltiplos cliques
+    if (enviandoRecuperacao) {
+      return;
+    }
+    
     setEnviandoRecuperacao(true);
     setMensagemRecuperacao('');
     
@@ -387,7 +392,12 @@ export default function LoginForm({ onSubmit, loading }: LoginFormProps) {
           setEtapaRecuperacao('codigo');
         }, 1500);
       } else {
-        setMensagemRecuperacao(result.message || 'Erro ao solicitar recuperação de senha.');
+        // Tratar erro de limite de tempo (429)
+        if (response.status === 429) {
+          setMensagemRecuperacao(result.message || 'Aguarde antes de solicitar um novo código.');
+        } else {
+          setMensagemRecuperacao(result.message || 'Erro ao solicitar recuperação de senha.');
+        }
       }
     } catch (error) {
       console.error('Erro ao solicitar recuperação de senha:', error);

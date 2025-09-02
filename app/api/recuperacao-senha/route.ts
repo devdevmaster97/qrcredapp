@@ -6,6 +6,11 @@ import { randomInt } from 'crypto';
 // Formato: { cartao: { codigo: string, timestamp: number, metodo: string } }
 export const codigosRecuperacao: Record<string, { codigo: string, timestamp: number, metodo: string }> = {};
 
+// Controle de envios para evitar duplicatas
+// Formato: { cartao_metodo: timestamp }
+const enviosRecentes: Record<string, number> = {};
+const INTERVALO_MINIMO_ENVIO = 60000; // 1 minuto entre envios
+
 // Interface para a resposta da API de recuperação
 interface RecuperacaoResponse {
   success: boolean;
@@ -44,6 +49,22 @@ export async function POST(request: NextRequest) {
 
     // Limpar o cartão (remover não numéricos)
     const cartaoLimpo = cartao.replace(/\D/g, '');
+
+    // Verificar se já foi enviado um código recentemente para evitar duplicatas
+    const chaveEnvio = `${cartaoLimpo}_${metodo}`;
+    const agora = Date.now();
+    const ultimoEnvio = enviosRecentes[chaveEnvio];
+    
+    if (ultimoEnvio && (agora - ultimoEnvio) < INTERVALO_MINIMO_ENVIO) {
+      const tempoRestante = Math.ceil((INTERVALO_MINIMO_ENVIO - (agora - ultimoEnvio)) / 1000);
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: `Aguarde ${tempoRestante} segundos antes de solicitar um novo código.` 
+        },
+        { status: 429 }
+      );
+    }
 
     // Consultar dados do associado para verificar se existe e obter email/celular
     const params = new URLSearchParams();
@@ -181,6 +202,9 @@ export async function POST(request: NextRequest) {
 
     console.log('Enviando solicitação para envio do código:', paramsCodigo.toString());
 
+    // Marcar o envio como realizado ANTES de tentar enviar para evitar duplicatas
+    enviosRecentes[chaveEnvio] = agora;
+
     try {
       // Chamar API para enviar o código
       const responseEnvio = await axios.post(
@@ -229,54 +253,9 @@ export async function POST(request: NextRequest) {
         
         console.error('Erro no envio do código:', mensagemErro);
         
-        // Se o erro ocorreu com SMS ou WhatsApp, tentar enviar via endpoint alternativo diretamente
-        if (metodo === 'sms' || metodo === 'whatsapp') {
-          try {
-            console.log('Tentando enviar por endpoint alternativo para SMS/WhatsApp...');
-            
-            // Preparar parâmetros para o endpoint alternativo
-            const paramsSmsAlternativo = new URLSearchParams();
-            paramsSmsAlternativo.append('celular', paramsCodigo.get('celular') || '');
-            paramsSmsAlternativo.append('mensagem', `Seu código de recuperação QRCred: ${codigo}. Não compartilhe com ninguém.`);
-            
-            if (metodo === 'whatsapp') {
-              paramsSmsAlternativo.append('whatsapp', 'true');
-            } else {
-              paramsSmsAlternativo.append('sms', 'true');
-            }
-            
-            // Adicionar token de autenticação se necessário
-            paramsSmsAlternativo.append('token', 'chave_segura_123');
-            
-            // Chamar API alternativa para SMS ou WhatsApp
-            const responseSmsAlternativo = await axios.post(
-              'https://sas.makecard.com.br/envia_sms_direto.php',
-              paramsSmsAlternativo,
-              {
-                headers: {
-                  'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                timeout: 15000
-              }
-            );
-            
-            console.log('Resposta do envio alternativo:', responseSmsAlternativo.data);
-            
-            // Se o envio alternativo foi bem-sucedido, retornar sucesso
-            if (responseSmsAlternativo.data === 'enviado' || 
-                (typeof responseSmsAlternativo.data === 'object' && responseSmsAlternativo.data.success)) {
-              const resposta: RecuperacaoResponse = {
-                success: true,
-                message: `Código de recuperação enviado com sucesso para o ${metodo === 'sms' ? 'celular via SMS' : 'WhatsApp'} cadastrado.`,
-                destino: mascaraTelefone(dadosAssociado.cel)
-              };
-              
-              return NextResponse.json(resposta);
-            }
-          } catch (smsError) {
-            console.error('Erro ao enviar por endpoint alternativo:', smsError);
-          }
-        }
+        // Remover tentativa de endpoint alternativo para evitar duplicatas
+        // O código já foi salvo no banco, então retornamos sucesso mesmo com erro de envio
+        console.log('Erro no envio, mas código foi salvo no banco. Permitindo prosseguir.');
         
         // Tenta seguir mesmo com erro para garantir que o código seja válido
         // já que o código foi gerado e armazenado no banco, podemos permitir que o usuário tente usá-lo
@@ -296,20 +275,16 @@ export async function POST(request: NextRequest) {
     } catch (envioError) {
       console.error('Erro ao enviar código:', envioError);
       
-      // Tenta seguir mesmo com erro para garantir que o código seja válido
-      // já que o código foi gerado e armazenado no banco, podemos permitir que o usuário tente usá-lo
-      const errorMessage = envioError instanceof Error ? envioError.message : String(envioError);
-      console.log('Detalhes do erro de envio:', errorMessage);
+      // Remover o registro de envio em caso de erro para permitir nova tentativa
+      delete enviosRecentes[chaveEnvio];
       
-      const resposta: RecuperacaoResponse = {
-        success: true,
-        message: `Código de recuperação enviado com sucesso para o ${metodo === 'email' ? 'e-mail' : metodo === 'sms' ? 'celular via SMS' : 'WhatsApp'} cadastrado.`,
-        destino: metodo === 'email' 
-          ? mascaraEmail(dadosAssociado.email) 
-          : mascaraTelefone(dadosAssociado.cel)
-      };
-      
-      return NextResponse.json(resposta);
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: 'Erro ao enviar código de recuperação. Tente novamente.' 
+        },
+        { status: 500 }
+      );
     }
   } catch (error) {
     console.error('Erro na recuperação de senha:', error);
