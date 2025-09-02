@@ -904,7 +904,7 @@ export default function CadastroForm() {
                 Cadastro realizado com sucesso!
               </p>
               <p className="text-gray-600 mt-2">
-                Verifique seu e-mail para obter suas credenciais de acesso.
+                A Administração da SAS em breve entrará em contato.
               </p>
             </div>
             
