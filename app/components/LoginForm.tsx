@@ -366,11 +366,40 @@ export default function LoginForm({ onSubmit, loading }: LoginFormProps) {
       
       console.log(`Solicitando código de recuperação para cartão: ${cartaoRecuperacao}, método: ${metodoRecuperacao}`);
       
-      // Chamar a API de recuperação de senha
-      const response = await fetch('/api/recuperacao-senha', {
-        method: 'POST',
-        body: formData
-      });
+      // Chamar a API de recuperação de senha com retry automático
+      let response: Response | undefined;
+      let tentativas = 0;
+      const maxTentativas = 3;
+      
+      while (tentativas < maxTentativas) {
+        try {
+          response = await fetch('/api/recuperacao-senha', {
+            method: 'POST',
+            body: JSON.stringify({
+              cartao: cartaoRecuperacao,
+              metodo: metodoRecuperacao
+            }),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+          break; // Sucesso, sair do loop
+        } catch (error) {
+          tentativas++;
+          console.log(`Tentativa ${tentativas} falhou:`, error);
+          
+          if (tentativas >= maxTentativas) {
+            throw new Error(`Falha na conexão após ${maxTentativas} tentativas. Verifique sua conexão com a internet.`);
+          }
+          
+          // Aguardar antes da próxima tentativa
+          await new Promise(resolve => setTimeout(resolve, 1000 * tentativas));
+        }
+      }
+      
+      if (!response) {
+        throw new Error('Falha na conexão com o servidor');
+      }
       
       const result = await response.json();
       console.log('Resposta da solicitação de código:', result);
