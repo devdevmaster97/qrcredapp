@@ -197,8 +197,16 @@ export async function POST(request: NextRequest) {
           // Armazenar resposta para debug
           respostaAPI = responseEmail.data;
           
-          // A API PHP retorna apenas a string "enviado" quando bem-sucedida
+          // A API PHP retorna "enviado" para sucesso ou JSON para erro
           sucesso = responseEmail.data === 'enviado';
+          
+          // Se não for "enviado", verificar se é um JSON de erro
+          if (!sucesso && typeof responseEmail.data === 'object' && responseEmail.data.erro) {
+            console.error('❌ API retornou erro:', responseEmail.data.erro);
+            throw new Error(`API PHP retornou erro: ${responseEmail.data.erro}`);
+          } else if (!sucesso) {
+            console.error('❌ Resposta inesperada da API:', responseEmail.data);
+          }
         } catch (emailError) {
           console.error('❌ ERRO ESPECÍFICO NA API DE EMAIL (envia_codigo_recuperacao.php)');
           console.error('Detalhes do erro email:', emailError);
@@ -260,8 +268,16 @@ export async function POST(request: NextRequest) {
           // Armazenar resposta para debug
           respostaAPI = responseSMS.data;
           
-          // A API PHP retorna apenas a string "enviado" quando bem-sucedida
+          // A API PHP retorna "enviado" para sucesso ou JSON para erro
           sucesso = responseSMS.data === 'enviado';
+          
+          // Se não for "enviado", verificar se é um JSON de erro
+          if (!sucesso && typeof responseSMS.data === 'object' && responseSMS.data.erro) {
+            console.error('❌ API retornou erro:', responseSMS.data.erro);
+            throw new Error(`API PHP retornou erro: ${responseSMS.data.erro}`);
+          } else if (!sucesso) {
+            console.error('❌ Resposta inesperada da API:', responseSMS.data);
+          }
         } catch (smsError) {
           console.error('❌ ERRO ESPECÍFICO NA API DE SMS (envia_codigo_recuperacao.php)');
           console.error('Detalhes do erro SMS:', smsError);
@@ -313,8 +329,16 @@ export async function POST(request: NextRequest) {
           // Armazenar resposta para debug
           respostaAPI = responseWhatsApp.data;
           
-          // A API PHP retorna apenas a string "enviado" quando bem-sucedida
+          // A API PHP retorna "enviado" para sucesso ou JSON para erro
           sucesso = responseWhatsApp.data === 'enviado';
+          
+          // Se não for "enviado", verificar se é um JSON de erro
+          if (!sucesso && typeof responseWhatsApp.data === 'object' && responseWhatsApp.data.erro) {
+            console.error('❌ API retornou erro:', responseWhatsApp.data.erro);
+            throw new Error(`API PHP retornou erro: ${responseWhatsApp.data.erro}`);
+          } else if (!sucesso) {
+            console.error('❌ Resposta inesperada da API:', responseWhatsApp.data);
+          }
         } catch (whatsappError) {
           console.error('❌ ERRO ESPECÍFICO NA API DE WHATSAPP (envia_codigo_recuperacao.php)');
           console.error('Detalhes do erro WhatsApp:', whatsappError);
