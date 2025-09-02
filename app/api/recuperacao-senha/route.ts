@@ -45,33 +45,272 @@ export async function POST(request: NextRequest) {
     }
 
     const cartaoLimpo = cartao.replace(/\D/g, '');
-    const chaveRequisicao = `${cartaoLimpo}_${metodo}`;
-    
-    // Verificar se já existe uma requisição em andamento para evitar duplicatas
-    if (chaveRequisicao in requisicoesEmAndamento) {
-      console.log('Requisição já em andamento, aguardando resultado...');
-      try {
-        return await requisicoesEmAndamento[chaveRequisicao];
-      } catch (error) {
-        console.error('Erro na requisição em andamento:', error);
-        delete requisicoesEmAndamento[chaveRequisicao];
+
+    // Consultar dados do associado para verificar se existe e obter email/celular
+    const params = new URLSearchParams();
+    params.append('cartao', cartaoLimpo);
+
+    console.log('Buscando dados do associado para recuperação de senha:', cartaoLimpo);
+
+    const responseAssociado = await axios.post(
+      'https://sas.makecard.com.br/localiza_associado_app_2.php',
+      params,
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        timeout: 10000 // 10 segundos de timeout
       }
+    );
+
+    console.log('Resposta localiza_associado_app_2:', responseAssociado.data);
+
+    // Verificar se o associado foi encontrado
+    if (!responseAssociado.data || !responseAssociado.data.matricula) {
+      return NextResponse.json(
+        { success: false, message: 'Cartão não encontrado' },
+        { status: 404 }
+      );
+    }
+
+    const dadosAssociado = responseAssociado.data;
+
+    // Verificar se o método de contato está disponível
+    if (metodo === 'email' && !dadosAssociado.email) {
+      return NextResponse.json(
+        { success: false, message: 'E-mail não cadastrado para este cartão' },
+        { status: 400 }
+      );
+    }
+
+    if ((metodo === 'sms' || metodo === 'whatsapp') && !dadosAssociado.cel) {
+      return NextResponse.json(
+        { success: false, message: 'Celular não cadastrado para este cartão' },
+        { status: 400 }
+      );
+    }
+
+    // Controle mais rigoroso de duplicatas usando múltiplas verificações
+    const chaveEnvio = `${cartaoLimpo}_${metodo}`;
+    const agora = Date.now();
+    
+    // 1. Verificar envios recentes (controle de rate limiting)
+    if (enviosRecentes[chaveEnvio] && (agora - enviosRecentes[chaveEnvio]) < INTERVALO_MINIMO_ENVIO) {
+      const tempoRestante = Math.ceil((INTERVALO_MINIMO_ENVIO - (agora - enviosRecentes[chaveEnvio])) / 1000);
+      console.log('Rate limiting ativo, bloqueando novo envio');
+      
+      return NextResponse.json({
+        success: false,
+        message: `Aguarde ${tempoRestante} segundos antes de solicitar um novo código.`,
+        rateLimited: true
+      }, { status: 429 });
     }
     
-    // Criar promise para esta requisição
-    const promiseRequisicao = processarRecuperacao(cartaoLimpo, metodo);
-    requisicoesEmAndamento[chaveRequisicao] = promiseRequisicao;
+    // 2. Verificar se já existe um código válido para reutilizar
+    const chaveCodigoVerificacao = `${cartaoLimpo}_${metodo}`;
+    const codigoExistente = codigosRecuperacao[chaveCodigoVerificacao];
     
+    if (codigoExistente && (agora - codigoExistente.timestamp) < 600000) { // 10 minutos
+      console.log('Código válido encontrado, reutilizando para evitar duplicata');
+      
+      // Marcar como enviado recentemente para bloquear próximas tentativas
+      enviosRecentes[chaveEnvio] = agora;
+      
+      return NextResponse.json({
+        success: true,
+        message: `Código de recuperação enviado com sucesso para o ${metodo === 'email' ? 'e-mail' : metodo === 'sms' ? 'celular via SMS' : 'WhatsApp'} cadastrado.`,
+        destino: metodo === 'email' 
+          ? mascaraEmail(dadosAssociado.email) 
+          : mascaraTelefone(dadosAssociado.cel),
+        codigoReutilizado: true
+      });
+    }
+
+    // Verificar se já existe um código válido para reutilizar (evitar códigos diferentes)
+    const chaveCodigoCompleta = `${cartaoLimpo}_${metodo}`;
+    let codigo: number;
+    
+    if (codigosRecuperacao[chaveCodigoCompleta]) {
+      // Reutilizar código existente se ainda for válido (menos de 10 minutos)
+      const tempoDecorrido = agora - codigosRecuperacao[chaveCodigoCompleta].timestamp;
+      if (tempoDecorrido < 600000) { // 10 minutos
+        codigo = parseInt(codigosRecuperacao[chaveCodigoCompleta].codigo);
+        console.log('Reutilizando código existente para evitar duplicatas:', codigo);
+      } else {
+        // Código expirado, gerar novo
+        codigo = randomInt(100000, 999999);
+        console.log('Código anterior expirado, gerando novo:', codigo);
+      }
+    } else {
+      // Não existe código, gerar novo
+      codigo = randomInt(100000, 999999);
+      console.log('Gerando novo código:', codigo);
+    }
+
+    // Marcar envio como iniciado ANTES de fazer a chamada
+    enviosRecentes[chaveEnvio] = agora;
+    
+    // Armazenar/atualizar código localmente
+    codigosRecuperacao[chaveCodigoCompleta] = {
+      codigo: codigo.toString(),
+      timestamp: agora,
+      metodo: metodo,
+      enviado: false
+    };
+    
+    console.log('Código de recuperação gerado:', {
+      cartao: cartaoLimpo,
+      codigo: codigo.toString(),
+      metodo
+    });
+
+    // Enviar código baseado no método escolhido
     try {
-      const resultado = await promiseRequisicao;
-      return resultado;
-    } finally {
-      // Limpar a requisição em andamento após completar
-      delete requisicoesEmAndamento[chaveRequisicao];
+      let sucesso = false;
+      let errorMessage = '';
+
+      if (metodo === 'email') {
+        // Enviar por e-mail
+        const paramsEmail = new URLSearchParams();
+        paramsEmail.append('email', dadosAssociado.email);
+        paramsEmail.append('codigo', codigo.toString());
+        paramsEmail.append('nome', dadosAssociado.nome || 'Associado');
+
+        console.log('Enviando código por e-mail para:', mascaraEmail(dadosAssociado.email));
+
+        const responseEmail = await axios.post(
+          'https://sas.makecard.com.br/envia_codigo_email.php',
+          paramsEmail,
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            timeout: 15000
+          }
+        );
+
+        console.log('Resposta do envio de e-mail:', responseEmail.data);
+
+        if (responseEmail.data === 'enviado' || 
+            (typeof responseEmail.data === 'object' && responseEmail.data.status === 'success')) {
+          sucesso = true;
+          codigosRecuperacao[chaveCodigoCompleta].enviado = true;
+        } else {
+          errorMessage = typeof responseEmail.data === 'string' ? responseEmail.data : 'Erro desconhecido no envio de e-mail';
+        }
+      } else if (metodo === 'sms') {
+        // Enviar por SMS
+        const celularLimpo = dadosAssociado.cel.replace(/\D/g, '');
+        
+        // Validação do celular
+        if (celularLimpo.length < 10 || celularLimpo.length > 11) {
+          throw new Error('Número de celular inválido');
+        }
+
+        const paramsSMS = new URLSearchParams();
+        paramsSMS.append('celular', celularLimpo);
+        paramsSMS.append('codigo', codigo.toString());
+        paramsSMS.append('token', 'seu_token_aqui'); // Adicionar token se necessário
+
+        console.log('Enviando código por SMS para:', mascaraTelefone(dadosAssociado.cel));
+
+        const responseSMS = await axios.post(
+          'https://sas.makecard.com.br/envia_sms.php',
+          paramsSMS,
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            timeout: 15000
+          }
+        );
+
+        console.log('Resposta do envio de SMS:', responseSMS.data);
+
+        if (responseSMS.data === 'enviado' || 
+            (typeof responseSMS.data === 'object' && responseSMS.data.status === 'success')) {
+          sucesso = true;
+          codigosRecuperacao[chaveCodigoCompleta].enviado = true;
+        } else {
+          errorMessage = typeof responseSMS.data === 'string' ? responseSMS.data : 'Erro desconhecido no envio de SMS';
+        }
+      } else if (metodo === 'whatsapp') {
+        // Enviar por WhatsApp
+        const celularLimpo = dadosAssociado.cel.replace(/\D/g, '');
+        
+        const paramsWhatsApp = new URLSearchParams();
+        paramsWhatsApp.append('celular', celularLimpo);
+        paramsWhatsApp.append('codigo', codigo.toString());
+        paramsWhatsApp.append('nome', dadosAssociado.nome || 'Associado');
+
+        console.log('Enviando código por WhatsApp para:', mascaraTelefone(dadosAssociado.cel));
+
+        const responseWhatsApp = await axios.post(
+          'https://sas.makecard.com.br/envia_whatsapp.php',
+          paramsWhatsApp,
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            timeout: 15000
+          }
+        );
+
+        console.log('Resposta do envio de WhatsApp:', responseWhatsApp.data);
+
+        if (responseWhatsApp.data === 'enviado' || 
+            (typeof responseWhatsApp.data === 'object' && responseWhatsApp.data.status === 'success')) {
+          sucesso = true;
+          codigosRecuperacao[chaveCodigoCompleta].enviado = true;
+        } else {
+          errorMessage = typeof responseWhatsApp.data === 'string' ? responseWhatsApp.data : 'Erro desconhecido no envio de WhatsApp';
+        }
+      }
+
+      if (sucesso) {
+        console.log('Código enviado com sucesso via', metodo);
+        
+        const resposta: RecuperacaoResponse = {
+          success: true,
+          message: `Código de recuperação enviado com sucesso para o ${metodo === 'email' ? 'e-mail' : metodo === 'sms' ? 'celular via SMS' : 'WhatsApp'} cadastrado.`,
+          destino: metodo === 'email' 
+            ? mascaraEmail(dadosAssociado.email) 
+            : mascaraTelefone(dadosAssociado.cel)
+        };
+        
+        return NextResponse.json(resposta);
+      } else {
+        console.log('Falha no envio:', errorMessage);
+        
+        // Remover o código e controle de envio em caso de erro para permitir nova tentativa
+        delete codigosRecuperacao[chaveCodigoCompleta];
+        delete enviosRecentes[chaveEnvio];
+        
+        return NextResponse.json(
+          { 
+            success: false, 
+            message: 'Erro ao enviar código de recuperação. Tente novamente.' 
+          },
+          { status: 500 }
+        );
+      }
+    } catch (envioError) {
+      console.error('Erro ao enviar código:', envioError);
+      
+      // Remover o código e controle de envio em caso de erro para permitir nova tentativa
+      delete codigosRecuperacao[chaveCodigoCompleta];
+      delete enviosRecentes[chaveEnvio];
+      
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: 'Erro ao enviar código de recuperação. Tente novamente.' 
+        },
+        { status: 500 }
+      );
     }
   } catch (error) {
-    console.error('Erro na recuperação de senha (função principal):', error);
-    
+    console.error('Erro na recuperação de senha:', error);
     return NextResponse.json(
       { 
         success: false, 
