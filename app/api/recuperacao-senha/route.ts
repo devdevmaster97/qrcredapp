@@ -2,11 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 import { randomInt } from 'crypto';
 
-// Armazenamento temporário dos códigos de recuperação (apenas para desenvolvimento)
-// Formato: { cartao_metodo: { codigo: string, timestamp: number, metodo: string, enviado: boolean } }
-export const codigosRecuperacao: Record<string, { codigo: string, timestamp: number, metodo: string, enviado: boolean }> = {};
+// Armazenamento em memória para controle de rate limiting
+const enviosRecentes: { [key: string]: number } = {};
+const INTERVALO_MINIMO_ENVIO = 60000; // 1 minuto em milissegundos
 
-const INTERVALO_MINIMO_ENVIO = 60000; // 1 minuto entre envios
+// Controle de requisições em andamento para evitar duplicatas
+const requisicoesEmAndamento: { [key: string]: Promise<any> } = {};
+
+// Armazenamento em memória para códigos de recuperação (apenas para debug/desenvolvimento)
+export const codigosRecuperacao: { [key: string]: { codigo: string; timestamp: number; metodo: string; enviado: boolean } } = {};
 
 // Interface para a resposta da API de recuperação
 interface RecuperacaoResponse {
@@ -24,29 +28,62 @@ interface RecuperacaoResponse {
  */
 export async function POST(request: NextRequest) {
   try {
-    // Extrair dados do formulário
-    const formData = await request.formData();
-    const cartao = formData.get('cartao') as string;
-    const metodo = formData.get('metodo') as string;
+    const { cartao, metodo } = await request.json();
 
-    // Validar campos obrigatórios
-    if (!cartao) {
+    if (!cartao || !metodo) {
       return NextResponse.json(
-        { success: false, message: 'Número do cartão é obrigatório' },
+        { success: false, message: 'Cartão e método são obrigatórios' },
         { status: 400 }
       );
     }
 
-    if (!metodo || !['email', 'sms', 'whatsapp'].includes(metodo)) {
+    if (!['email', 'sms', 'whatsapp'].includes(metodo)) {
       return NextResponse.json(
-        { success: false, message: 'Método de recuperação inválido' },
+        { success: false, message: 'Método inválido' },
         { status: 400 }
       );
     }
 
-    // Limpar o cartão (remover não numéricos)
     const cartaoLimpo = cartao.replace(/\D/g, '');
+    const chaveRequisicao = `${cartaoLimpo}_${metodo}`;
+    
+    // Verificar se já existe uma requisição em andamento para evitar duplicatas
+    if (chaveRequisicao in requisicoesEmAndamento) {
+      console.log('Requisição já em andamento, aguardando resultado...');
+      try {
+        return await requisicoesEmAndamento[chaveRequisicao];
+      } catch (error) {
+        console.error('Erro na requisição em andamento:', error);
+        delete requisicoesEmAndamento[chaveRequisicao];
+      }
+    }
+    
+    // Criar promise para esta requisição
+    const promiseRequisicao = processarRecuperacao(cartaoLimpo, metodo);
+    requisicoesEmAndamento[chaveRequisicao] = promiseRequisicao;
+    
+    try {
+      const resultado = await promiseRequisicao;
+      return resultado;
+    } finally {
+      // Limpar a requisição em andamento após completar
+      delete requisicoesEmAndamento[chaveRequisicao];
+    }
+  } catch (error) {
+    console.error('Erro na recuperação de senha:', error);
+    return NextResponse.json(
+      { 
+        success: false, 
+        message: 'Erro ao processar solicitação de recuperação de senha',
+        error: error instanceof Error ? error.message : String(error)
+      },
+      { status: 500 }
+    );
+  }
+}
 
+async function processarRecuperacao(cartaoLimpo: string, metodo: string) {
+  try {
     // Consultar dados do associado para verificar se existe e obter email/celular
     const params = new URLSearchParams();
     params.append('cartao', cartaoLimpo);
@@ -91,21 +128,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar se já foi enviado um código recentemente para evitar duplicatas
+    // Controle mais rigoroso de duplicatas usando múltiplas verificações
     const chaveEnvio = `${cartaoLimpo}_${metodo}`;
     const agora = Date.now();
     
-    // Verificar se já existe um código válido e recente para este cartão/método
+    // 1. Verificar envios recentes (controle de rate limiting)
+    if (enviosRecentes[chaveEnvio] && (agora - enviosRecentes[chaveEnvio]) < INTERVALO_MINIMO_ENVIO) {
+      const tempoRestante = Math.ceil((INTERVALO_MINIMO_ENVIO - (agora - enviosRecentes[chaveEnvio])) / 1000);
+      console.log('Rate limiting ativo, bloqueando novo envio');
+      
+      return NextResponse.json({
+        success: false,
+        message: `Aguarde ${tempoRestante} segundos antes de solicitar um novo código.`,
+        rateLimited: true
+      }, { status: 429 });
+    }
+    
+    // 2. Verificar se já existe um código válido para reutilizar
     const chaveCodigoVerificacao = `${cartaoLimpo}_${metodo}`;
     const codigoExistente = codigosRecuperacao[chaveCodigoVerificacao];
     
-    if (codigoExistente && (agora - codigoExistente.timestamp) < INTERVALO_MINIMO_ENVIO) {
-      const tempoRestante = Math.ceil((INTERVALO_MINIMO_ENVIO - (agora - codigoExistente.timestamp)) / 1000);
-      console.log('Código já existe e é válido, reutilizando para evitar duplicata');
+    if (codigoExistente && (agora - codigoExistente.timestamp) < 600000) { // 10 minutos
+      console.log('Código válido encontrado, reutilizando para evitar duplicata');
+      
+      // Marcar como enviado recentemente para bloquear próximas tentativas
+      enviosRecentes[chaveEnvio] = agora;
       
       return NextResponse.json({
         success: true,
-        message: `Código já foi enviado para o ${metodo === 'email' ? 'e-mail' : metodo === 'sms' ? 'celular via SMS' : 'WhatsApp'} cadastrado. Aguarde ${tempoRestante} segundos para solicitar um novo.`,
+        message: `Código de recuperação enviado com sucesso para o ${metodo === 'email' ? 'e-mail' : metodo === 'sms' ? 'celular via SMS' : 'WhatsApp'} cadastrado.`,
         destino: metodo === 'email' 
           ? mascaraEmail(dadosAssociado.email) 
           : mascaraTelefone(dadosAssociado.cel),
@@ -134,6 +185,9 @@ export async function POST(request: NextRequest) {
       console.log('Gerando novo código:', codigo);
     }
 
+    // Marcar envio como iniciado ANTES de fazer a chamada
+    enviosRecentes[chaveEnvio] = agora;
+    
     // Armazenar/atualizar código localmente
     codigosRecuperacao[chaveCodigoCompleta] = {
       codigo: codigo.toString(),
@@ -324,8 +378,9 @@ export async function POST(request: NextRequest) {
     } catch (envioError) {
       console.error('Erro ao enviar código:', envioError);
       
-      // Remover o código em caso de erro para permitir nova tentativa
+      // Remover o código e controle de envio em caso de erro para permitir nova tentativa
       delete codigosRecuperacao[chaveCodigoCompleta];
+      delete enviosRecentes[chaveEnvio];
       
       return NextResponse.json(
         { 
