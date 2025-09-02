@@ -136,79 +136,109 @@ export async function POST(request: NextRequest) {
     let errorMessage = '';
 
     try {
+      console.log(`Iniciando envio por ${metodo}...`);
+      
       if (metodo === 'email') {
         console.log('Enviando por email...');
+        console.log('Email destino:', dadosAssociado.email);
+        
         const paramsEmail = new URLSearchParams();
-        paramsEmail.append('email', dadosAssociado.email);
+        paramsEmail.append('cartao', cartaoLimpo);
+        paramsEmail.append('metodo', 'email');
         paramsEmail.append('codigo', codigo.toString());
-        paramsEmail.append('nome', dadosAssociado.nome || 'Associado');
+        paramsEmail.append('email', dadosAssociado.email);
+        paramsEmail.append('celular', dadosAssociado.cel || '');
 
-        const responseEmail = await axios.post(
-          'https://sas.makecard.com.br/envia_codigo_email.php',
-          paramsEmail,
-          {
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            timeout: 15000
-          }
-        );
+        try {
+          const responseEmail = await axios.post(
+            'https://sas.makecard.com.br/envia_codigo_recuperacao.php',
+            paramsEmail,  
+            {
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              timeout: 15000
+            }
+          );
 
-        console.log('Resposta email:', responseEmail.data);
-        sucesso = responseEmail.data === 'enviado' || 
-                  (typeof responseEmail.data === 'object' && responseEmail.data.status === 'success');
+          console.log('Resposta email:', responseEmail.data);
+          sucesso = responseEmail.data === 'enviado' || 
+                    (typeof responseEmail.data === 'object' && responseEmail.data.status === 'success');
+        } catch (emailError) {
+          console.error('Erro específico no envio de email:', emailError);
+          const errorMsg = emailError instanceof Error ? emailError.message : String(emailError);
+          throw new Error(`Falha no envio de email: ${errorMsg}`);
+        }
 
       } else if (metodo === 'sms') {
         console.log('Enviando por SMS...');
         const celularLimpo = dadosAssociado.cel.replace(/\D/g, '');
+        console.log('Celular original:', dadosAssociado.cel, 'Limpo:', celularLimpo);
         
         if (celularLimpo.length < 10 || celularLimpo.length > 13) {
-          throw new Error('Número de celular inválido');
+          throw new Error(`Número de celular inválido: ${celularLimpo} (${celularLimpo.length} dígitos)`);
         }
 
         let celularFormatado = celularLimpo;
         if (!celularFormatado.startsWith('55') && celularFormatado.length >= 10) {
           celularFormatado = '55' + celularFormatado;
         }
+        console.log('Celular formatado:', celularFormatado);
 
         const paramsSMS = new URLSearchParams();
-        paramsSMS.append('celular', celularFormatado);
+        paramsSMS.append('cartao', cartaoLimpo);
+        paramsSMS.append('metodo', 'sms');
         paramsSMS.append('codigo', codigo.toString());
-        paramsSMS.append('token', 'chave_segura_123');
-        paramsSMS.append('mensagem', `Seu código QRCred: ${codigo}`);
+        paramsSMS.append('email', dadosAssociado.email || '');
+        paramsSMS.append('celular', celularFormatado);
 
-        const responseSMS = await axios.post(
-          'https://sas.makecard.com.br/envia_sms.php',
-          paramsSMS,
-          {
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            timeout: 15000
-          }
-        );
+        try {
+          const responseSMS = await axios.post(
+            'https://sas.makecard.com.br/envia_codigo_recuperacao.php',
+            paramsSMS,
+            {
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              timeout: 15000
+            }
+          );
 
-        console.log('Resposta SMS:', responseSMS.data);
-        sucesso = responseSMS.data === 'enviado' || 
-                  (typeof responseSMS.data === 'object' && responseSMS.data.status === 'success');
+          console.log('Resposta SMS:', responseSMS.data);
+          sucesso = responseSMS.data === 'enviado' || 
+                    (typeof responseSMS.data === 'object' && responseSMS.data.status === 'success');
+        } catch (smsError) {
+          console.error('Erro específico SMS:', smsError);
+          const errorMsg = smsError instanceof Error ? smsError.message : String(smsError);
+          throw new Error(`Falha no envio de SMS: ${errorMsg}`);
+        }
 
       } else if (metodo === 'whatsapp') {
         console.log('Enviando por WhatsApp...');
         const celularLimpo = dadosAssociado.cel.replace(/\D/g, '');
+        console.log('Celular WhatsApp:', celularLimpo);
         
         const paramsWhatsApp = new URLSearchParams();
-        paramsWhatsApp.append('celular', celularLimpo);
+        paramsWhatsApp.append('cartao', cartaoLimpo);
+        paramsWhatsApp.append('metodo', 'whatsapp');
         paramsWhatsApp.append('codigo', codigo.toString());
-        paramsWhatsApp.append('nome', dadosAssociado.nome || 'Associado');
+        paramsWhatsApp.append('email', dadosAssociado.email || '');
+        paramsWhatsApp.append('celular', celularLimpo);
 
-        const responseWhatsApp = await axios.post(
-          'https://sas.makecard.com.br/envia_whatsapp.php',
-          paramsWhatsApp,
-          {
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            timeout: 15000
-          }
-        );
+        try {
+          const responseWhatsApp = await axios.post(
+            'https://sas.makecard.com.br/envia_codigo_recuperacao.php',
+            paramsWhatsApp,
+            {
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              timeout: 15000
+            }
+          );
 
-        console.log('Resposta WhatsApp:', responseWhatsApp.data);
-        sucesso = responseWhatsApp.data === 'enviado' || 
-                  (typeof responseWhatsApp.data === 'object' && responseWhatsApp.data.status === 'success');
+          console.log('Resposta WhatsApp:', responseWhatsApp.data);
+          sucesso = responseWhatsApp.data === 'enviado' || 
+                    (typeof responseWhatsApp.data === 'object' && responseWhatsApp.data.status === 'success');
+        } catch (whatsappError) {
+          console.error('Erro específico WhatsApp:', whatsappError);
+          const errorMsg = whatsappError instanceof Error ? whatsappError.message : String(whatsappError);
+          throw new Error(`Falha no envio de WhatsApp: ${errorMsg}`);
+        }
       }
 
       if (sucesso) {
