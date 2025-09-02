@@ -27,8 +27,11 @@ interface RecuperacaoResponse {
  * @returns Resposta com status da operação
  */
 export async function POST(request: NextRequest) {
+  console.log('=== POST RECUPERAÇÃO INICIADO ===');
   try {
+    console.log('Fazendo parse do JSON...');
     const { cartao, metodo } = await request.json();
+    console.log('JSON parseado com sucesso:', { cartao, metodo });
 
     if (!cartao || !metodo) {
       return NextResponse.json(
@@ -50,6 +53,10 @@ export async function POST(request: NextRequest) {
     const params = new URLSearchParams();
     params.append('cartao', cartaoLimpo);
 
+    console.log('=== INÍCIO RECUPERAÇÃO ===');
+    console.log('Cartão limpo:', cartaoLimpo);
+    console.log('Método:', metodo);
+    console.log('Timestamp:', new Date().toISOString());
     console.log('Buscando dados do associado para recuperação de senha:', cartaoLimpo);
 
     const responseAssociado = await axios.post(
@@ -310,12 +317,20 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error('Erro na recuperação de senha:', error);
+    console.error('ERRO DETALHADO na recuperação de senha:', {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString()
+    });
+    
     return NextResponse.json(
       { 
         success: false, 
         message: 'Erro ao processar solicitação de recuperação de senha',
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
+        debug: process.env.NODE_ENV === 'development' ? {
+          stack: error instanceof Error ? error.stack : undefined
+        } : undefined
       },
       { status: 500 }
     );
