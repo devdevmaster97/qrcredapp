@@ -152,7 +152,10 @@ export default function CadastroForm() {
     let finalValue = value;
     
     // Formatação para campos específicos
-    if (name === 'cpf') {
+    if (name === 'C_codigo_assoc') {
+      // Remove caracteres não numéricos
+      finalValue = value.replace(/\D/g, '');
+    } else if (name === 'cpf') {
       const numericValue = value.replace(/\D/g, '');
       const limitedValue = numericValue.substring(0, 11);
       if (limitedValue.length <= 3) {
@@ -548,8 +551,9 @@ export default function CadastroForm() {
                     name="C_codigo_assoc"
                     value={formData.C_codigo_assoc}
                     onChange={handleChange}
+                    inputMode="numeric"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none"
-                    placeholder="Digite o código"
+                    placeholder="Apenas números"
                   />
               
               </div>
