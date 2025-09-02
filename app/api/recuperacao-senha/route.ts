@@ -176,14 +176,38 @@ export async function POST(request: NextRequest) {
       // Para SMS e WhatsApp, enviar o número do celular
       // Garantir que o celular esteja no formato internacional (55 + DDD + número)
       let celular = dadosAssociado.cel.replace(/\D/g, '');
+      
+      console.log('Celular original do banco:', dadosAssociado.cel);
+      console.log('Celular após limpeza:', celular);
+      
       // Se não começar com 55, adicionar
       if (!celular.startsWith('55')) {
         celular = `55${celular}`;
       }
-      // Garantir que tenha pelo menos 12 dígitos (55 + 10 dígitos)
+      
+      // Validação mais rigorosa do celular
       if (celular.length < 12) {
-        console.warn('Número de celular possivelmente inválido:', celular);
+        console.error('Número de celular inválido:', {
+          original: dadosAssociado.cel,
+          limpo: celular,
+          tamanho: celular.length
+        });
+        return NextResponse.json(
+          { 
+            success: false, 
+            message: 'Número de celular cadastrado é inválido. Entre em contato com o suporte.' 
+          },
+          { status: 400 }
+        );
       }
+      
+      // Validação adicional para celulares brasileiros
+      if (celular.length > 13) {
+        console.warn('Celular muito longo, truncando:', celular);
+        celular = celular.substring(0, 13);
+      }
+      
+      console.log('Celular formatado final:', celular);
       
       paramsCodigo.append('celular', celular);
       paramsCodigo.append('destino', celular);
@@ -198,6 +222,9 @@ export async function POST(request: NextRequest) {
       } else if (metodo === 'sms') {
         paramsCodigo.append('sms', 'true');
       }
+      
+      // Adicionar token de autenticação para SMS
+      paramsCodigo.append('token', 'chave_segura_123');
     }
 
     console.log('Enviando solicitação para envio do código:', paramsCodigo.toString());
