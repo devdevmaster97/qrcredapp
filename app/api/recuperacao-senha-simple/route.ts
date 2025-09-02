@@ -193,6 +193,8 @@ export async function POST(request: NextRequest) {
           console.log('✅ Resposta da API de email:', responseEmail.data);
           console.log('Status HTTP email:', responseEmail.status);
           console.log('Tipo da resposta:', typeof responseEmail.data);
+          console.log('Resposta como string:', String(responseEmail.data));
+          console.log('Resposta serializada:', JSON.stringify(responseEmail.data));
           
           // Armazenar resposta para debug
           respostaAPI = responseEmail.data;
@@ -350,7 +352,7 @@ export async function POST(request: NextRequest) {
           });
           const errorMsg = whatsappError instanceof Error ? whatsappError.message : String(whatsappError);
           throw new Error(`Falha na API envia_codigo_recuperacao.php (WHATSAPP): ${errorMsg}`);
-        }
+        
       }
 
       console.log('=== VERIFICANDO RESULTADO DO ENVIO ===');
@@ -373,9 +375,18 @@ export async function POST(request: NextRequest) {
         console.error('API:', 'envia_codigo_recuperacao.php');
         console.error('Método:', metodo);
         console.error('Resposta esperada: "enviado"');
-        console.error('Resposta recebida:', respostaAPI);
+        console.error('Resposta recebida (VALOR EXATO):', JSON.stringify(respostaAPI));
         console.error('Tipo da resposta:', typeof respostaAPI);
         console.error('Sucesso:', sucesso);
+        console.error('Comparação direta:', `"${respostaAPI}" === "enviado"`, respostaAPI === 'enviado');
+        
+        // Se o email foi enviado mas a API não retornou "enviado", 
+        // pode ser um problema na inserção do código no banco
+        if (metodo === 'email') {
+          console.error('🚨 EMAIL FOI ENVIADO MAS API NÃO RETORNOU "enviado"');
+          console.error('Possível problema: Inserção do código no banco PostgreSQL falhou');
+          console.error('Verifique o arquivo recuperacao_debug.log no servidor PHP');
+        }
         
         // Limpar controles para permitir nova tentativa
         delete codigosRecuperacao[chaveCodigoCompleta];
@@ -384,13 +395,15 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           { 
             success: false, 
-            message: `API envia_codigo_recuperacao.php (${metodo.toUpperCase()}) retornou resposta inesperada. Código pode ter sido enviado.`,
+            message: `API envia_codigo_recuperacao.php (${metodo.toUpperCase()}) - Email enviado mas resposta inesperada: "${respostaAPI}"`,
             debug: {
               api: 'envia_codigo_recuperacao.php',
               metodo: metodo,
               resposta_esperada: 'enviado',
               resposta_recebida: respostaAPI,
-              tipo_resposta: typeof respostaAPI
+              tipo_resposta: typeof respostaAPI,
+              comparacao: `"${respostaAPI}" === "enviado"`,
+              resultado_comparacao: respostaAPI === 'enviado'
             }
           },
           { status: 500 }
