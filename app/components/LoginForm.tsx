@@ -373,7 +373,7 @@ export default function LoginForm({ onSubmit, loading }: LoginFormProps) {
       
       while (tentativas < maxTentativas) {
         try {
-          response = await fetch('/api/recuperacao-senha', {
+          response = await fetch('/api/recuperacao-senha-simple', {
             method: 'POST',
             body: JSON.stringify({
               cartao: cartaoRecuperacao,
