@@ -48,12 +48,21 @@ export async function POST(request: NextRequest) {
       });
     }
     
-    // Verificar se temos o código no armazenamento local (apenas desenvolvimento)
-    if (isDev && codigosRecuperacao[cartaoLimpo]?.codigo === codigo) {
-      console.log('Validação local: código encontrado no armazenamento local:', codigosRecuperacao[cartaoLimpo]);
-      
+    // Verificar se temos o código no armazenamento local (buscar por cartao_metodo)
+    let codigoLocalEncontrado = null;
+    
+    // Buscar código para qualquer método deste cartão
+    for (const [chave, dadosCodigo] of Object.entries(codigosRecuperacao)) {
+      if (chave.startsWith(cartaoLimpo + '_') && dadosCodigo.codigo === codigo) {
+        codigoLocalEncontrado = dadosCodigo;
+        console.log('Código encontrado no armazenamento local:', { chave, dadosCodigo });
+        break;
+      }
+    }
+    
+    if (isDev && codigoLocalEncontrado) {
       // Verificar se o código não expirou (10 minutos)
-      const tempoCodigo = (Date.now() - codigosRecuperacao[cartaoLimpo].timestamp) / 1000;
+      const tempoCodigo = (Date.now() - codigoLocalEncontrado.timestamp) / 1000;
       if (tempoCodigo < 600) {
         return NextResponse.json({
           success: true,
@@ -180,8 +189,8 @@ export async function POST(request: NextRequest) {
         
         // Verificar se é o erro específico de "nenhum código solicitado"
         if (mensagemErro === 'Nenhum código solicitado para este cartão.' && isDev) {
-          // Em ambiente de desenvolvimento, podemos prosseguir se o código existir no armazenamento local
-          if (codigosRecuperacao[cartaoLimpo]?.codigo === codigo) {
+          // Em ambiente de desenvolvimento, verificar se o código existe no armazenamento local
+          if (codigoLocalEncontrado) {
             console.log('Código não encontrado no banco, mas existe no armazenamento local. Permitindo em modo DEV.');
             return NextResponse.json({
               success: true,
@@ -206,14 +215,14 @@ export async function POST(request: NextRequest) {
       // Em ambiente de desenvolvimento, permitir que continue mesmo com erro
       if (isDev) {
         // Verificar se temos o código localmente antes de permitir
-        if (codigosRecuperacao[cartaoLimpo]?.codigo === codigo) {
+        if (codigoLocalEncontrado) {
           console.log('Ambiente de desenvolvimento: usando validação local após erro de API');
           return NextResponse.json({
             success: true,
             message: 'Código válido (modo desenvolvimento - API indisponível)',
             token: gerarTokenRecuperacao(cartaoLimpo),
             dev: true,
-            codigoInfo: codigosRecuperacao[cartaoLimpo]
+            codigoInfo: codigoLocalEncontrado
           });
         }
         

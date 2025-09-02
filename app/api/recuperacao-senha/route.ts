@@ -3,12 +3,9 @@ import axios from 'axios';
 import { randomInt } from 'crypto';
 
 // Armazenamento temporário dos códigos de recuperação (apenas para desenvolvimento)
-// Formato: { cartao: { codigo: string, timestamp: number, metodo: string } }
-export const codigosRecuperacao: Record<string, { codigo: string, timestamp: number, metodo: string }> = {};
+// Formato: { cartao_metodo: { codigo: string, timestamp: number, metodo: string, enviado: boolean } }
+export const codigosRecuperacao: Record<string, { codigo: string, timestamp: number, metodo: string, enviado: boolean }> = {};
 
-// Controle de envios para evitar duplicatas
-// Formato: { cartao_metodo: timestamp }
-const enviosRecentes: Record<string, number> = {};
 const INTERVALO_MINIMO_ENVIO = 60000; // 1 minuto entre envios
 
 // Interface para a resposta da API de recuperação
@@ -49,22 +46,6 @@ export async function POST(request: NextRequest) {
 
     // Limpar o cartão (remover não numéricos)
     const cartaoLimpo = cartao.replace(/\D/g, '');
-
-    // Verificar se já foi enviado um código recentemente para evitar duplicatas
-    const chaveEnvio = `${cartaoLimpo}_${metodo}`;
-    const agora = Date.now();
-    const ultimoEnvio = enviosRecentes[chaveEnvio];
-    
-    if (ultimoEnvio && (agora - ultimoEnvio) < INTERVALO_MINIMO_ENVIO) {
-      const tempoRestante = Math.ceil((INTERVALO_MINIMO_ENVIO - (agora - ultimoEnvio)) / 1000);
-      return NextResponse.json(
-        { 
-          success: false, 
-          message: `Aguarde ${tempoRestante} segundos antes de solicitar um novo código.` 
-        },
-        { status: 429 }
-      );
-    }
 
     // Consultar dados do associado para verificar se existe e obter email/celular
     const params = new URLSearchParams();
@@ -110,14 +91,55 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Gerar código de recuperação (6 dígitos)
-    const codigo = randomInt(100000, 999999);
+    // Verificar se já foi enviado um código recentemente para evitar duplicatas
+    const chaveEnvio = `${cartaoLimpo}_${metodo}`;
+    const agora = Date.now();
+    
+    // Verificar se já existe um código válido e recente para este cartão/método
+    const chaveCodigoVerificacao = `${cartaoLimpo}_${metodo}`;
+    const codigoExistente = codigosRecuperacao[chaveCodigoVerificacao];
+    
+    if (codigoExistente && (agora - codigoExistente.timestamp) < INTERVALO_MINIMO_ENVIO) {
+      const tempoRestante = Math.ceil((INTERVALO_MINIMO_ENVIO - (agora - codigoExistente.timestamp)) / 1000);
+      console.log('Código já existe e é válido, reutilizando para evitar duplicata');
+      
+      return NextResponse.json({
+        success: true,
+        message: `Código já foi enviado para o ${metodo === 'email' ? 'e-mail' : metodo === 'sms' ? 'celular via SMS' : 'WhatsApp'} cadastrado. Aguarde ${tempoRestante} segundos para solicitar um novo.`,
+        destino: metodo === 'email' 
+          ? mascaraEmail(dadosAssociado.email) 
+          : mascaraTelefone(dadosAssociado.cel),
+        codigoReutilizado: true
+      });
+    }
 
-    // Armazenar localmente apenas para debug e desenvolvimento
-    codigosRecuperacao[cartaoLimpo] = {
+    // Verificar se já existe um código válido para reutilizar (evitar códigos diferentes)
+    const chaveCodigoCompleta = `${cartaoLimpo}_${metodo}`;
+    let codigo: number;
+    
+    if (codigosRecuperacao[chaveCodigoCompleta]) {
+      // Reutilizar código existente se ainda for válido (menos de 10 minutos)
+      const tempoDecorrido = agora - codigosRecuperacao[chaveCodigoCompleta].timestamp;
+      if (tempoDecorrido < 600000) { // 10 minutos
+        codigo = parseInt(codigosRecuperacao[chaveCodigoCompleta].codigo);
+        console.log('Reutilizando código existente para evitar duplicatas:', codigo);
+      } else {
+        // Código expirado, gerar novo
+        codigo = randomInt(100000, 999999);
+        console.log('Código anterior expirado, gerando novo:', codigo);
+      }
+    } else {
+      // Não existe código, gerar novo
+      codigo = randomInt(100000, 999999);
+      console.log('Gerando novo código:', codigo);
+    }
+
+    // Armazenar/atualizar código localmente
+    codigosRecuperacao[chaveCodigoCompleta] = {
       codigo: codigo.toString(),
-      timestamp: Date.now(),
-      metodo: metodo
+      timestamp: agora,
+      metodo: metodo,
+      enviado: false
     };
     
     console.log('Código de recuperação gerado:', {
@@ -229,8 +251,8 @@ export async function POST(request: NextRequest) {
 
     console.log('Enviando solicitação para envio do código:', paramsCodigo.toString());
 
-    // Marcar o envio como realizado ANTES de tentar enviar para evitar duplicatas
-    enviosRecentes[chaveEnvio] = agora;
+    // Marcar que o código foi processado para evitar duplicatas
+    codigosRecuperacao[chaveCodigoCompleta].enviado = true;
 
     try {
       // Chamar API para enviar o código
@@ -302,8 +324,8 @@ export async function POST(request: NextRequest) {
     } catch (envioError) {
       console.error('Erro ao enviar código:', envioError);
       
-      // Remover o registro de envio em caso de erro para permitir nova tentativa
-      delete enviosRecentes[chaveEnvio];
+      // Remover o código em caso de erro para permitir nova tentativa
+      delete codigosRecuperacao[chaveCodigoCompleta];
       
       return NextResponse.json(
         { 
