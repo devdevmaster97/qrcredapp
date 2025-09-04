@@ -337,6 +337,14 @@ export default function NovoLancamentoPage() {
             if (xhr.readyState === 4) {
               if (xhr.status === 200) {
                 try {
+                  console.log('🔐 Resposta bruta da API:', xhr.responseText);
+                  
+                  if (!xhr.responseText || xhr.responseText.trim() === '') {
+                    console.error('❌ Resposta vazia da API de verificação de senha');
+                    reject(new Error('API de verificação de senha retornou resposta vazia'));
+                    return;
+                  }
+                  
                   const response = JSON.parse(xhr.responseText);
                   console.log('🔐 Resposta verificação senha:', response);
                   
@@ -349,7 +357,8 @@ export default function NovoLancamentoPage() {
                   }
                 } catch (error) {
                   console.error('❌ Erro ao processar resposta da verificação de senha:', error);
-                  reject(error);
+                  console.error('❌ Resposta recebida:', xhr.responseText);
+                  reject(new Error('Erro ao processar resposta da API de verificação de senha'));
                 }
               } else {
                 console.error('❌ Erro HTTP na verificação de senha:', xhr.status);
@@ -394,6 +403,14 @@ export default function NovoLancamentoPage() {
             if (xhr.readyState === 4) {
               if (xhr.status === 200) {
                 try {
+                  console.log('💾 Resposta bruta da API de gravação:', xhr.responseText);
+                  
+                  if (!xhr.responseText || xhr.responseText.trim() === '') {
+                    console.error('❌ Resposta vazia da API de gravação de venda');
+                    reject(new Error('API de gravação retornou resposta vazia'));
+                    return;
+                  }
+                  
                   const response = JSON.parse(xhr.responseText);
                   console.log('💾 Resposta gravação venda:', response);
                   
@@ -406,7 +423,8 @@ export default function NovoLancamentoPage() {
                   }
                 } catch (error) {
                   console.error('❌ Erro ao processar resposta da gravação:', error);
-                  reject(error);
+                  console.error('❌ Resposta recebida:', xhr.responseText);
+                  reject(new Error('Erro ao processar resposta da API de gravação'));
                 }
               } else {
                 console.error('❌ Erro HTTP na gravação:', xhr.status);
