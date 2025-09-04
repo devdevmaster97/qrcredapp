@@ -324,8 +324,48 @@ export default function NovoLancamentoPage() {
       }
 
       const dadosConvenio = JSON.parse(dadosConvenioString);
-      
-      // Preparar dados para gravação na tabela sind.conta
+
+      // 1. Verificar senha do associado
+      console.log('🔐 Verificando senha do associado...');
+      const verificarSenha = () => {
+        return new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', API_SENHA, true);
+          xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+          
+          xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+              if (xhr.status === 200) {
+                try {
+                  const response = JSON.parse(xhr.responseText);
+                  console.log('🔐 Resposta verificação senha:', response);
+                  
+                  if (response.situacao === 1) {
+                    console.log('✅ Senha verificada com sucesso');
+                    resolve(response);
+                  } else {
+                    console.log('❌ Senha incorreta');
+                    reject(new Error('Senha incorreta'));
+                  }
+                } catch (error) {
+                  console.error('❌ Erro ao processar resposta da verificação de senha:', error);
+                  reject(error);
+                }
+              } else {
+                console.error('❌ Erro HTTP na verificação de senha:', xhr.status);
+                reject(new Error('Erro na verificação de senha'));
+              }
+            }
+          };
+
+          const params = `matricula=${encodeURIComponent(associado.matricula)}&senha=${encodeURIComponent(senha)}`;
+          xhr.send(params);
+        });
+      };
+
+      await verificarSenha();
+
+      // 2. Preparar dados para gravação na tabela sind.conta
       const dadosVenda = {
         associado: associado.matricula,
         convenio: dadosConvenio.cod_convenio,
@@ -334,27 +374,82 @@ export default function NovoLancamentoPage() {
         mes: mesCorrente,
         empregador: associado.empregador,
         parcela: parcelas,
-        divisao: associado.id_divisao, // Campo divisao agora será preenchido com id_divisao
-        id_associado: associado.id
+        divisao: associado.id_divisao, // Campo divisao preenchido com id_divisao
+        id_associado: associado.id,
+        token_associado: associado.token_associado
       };
 
       console.log('💳 Dados para gravação na tabela sind.conta:', dadosVenda);
       console.log('🏢 Campo divisao será gravado com valor:', associado.id_divisao);
 
-      // Simular gravação (aqui você faria a chamada real para a API)
-      toast.success('Pagamento autorizado com sucesso!');
+      // 3. Gravar venda na API
+      console.log('💾 Gravando venda na API...');
+      const gravarVenda = () => {
+        return new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', API_GRAVA_VENDA, true);
+          xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+          
+          xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+              if (xhr.status === 200) {
+                try {
+                  const response = JSON.parse(xhr.responseText);
+                  console.log('💾 Resposta gravação venda:', response);
+                  
+                  if (response.situacao === 1 || response.success) {
+                    console.log('✅ Venda gravada com sucesso na tabela sind.conta');
+                    resolve(response);
+                  } else {
+                    console.log('❌ Erro ao gravar venda:', response.erro || response.message);
+                    reject(new Error(response.erro || response.message || 'Erro ao gravar venda'));
+                  }
+                } catch (error) {
+                  console.error('❌ Erro ao processar resposta da gravação:', error);
+                  reject(error);
+                }
+              } else {
+                console.error('❌ Erro HTTP na gravação:', xhr.status);
+                reject(new Error('Erro na gravação da venda'));
+              }
+            }
+          };
+
+          // Preparar parâmetros para envio
+          const params = Object.keys(dadosVenda)
+            .map(key => `${encodeURIComponent(key)}=${encodeURIComponent((dadosVenda as any)[key] || '')}`)
+            .join('&');
+          
+          console.log('📤 Parâmetros enviados:', params);
+          xhr.send(params);
+        });
+      };
+
+      await gravarVenda();
+
+      // 4. Sucesso - redirecionar para página de sucesso
+      console.log('🎉 Pagamento processado com sucesso!');
       
-      // Limpar formulário
-      setCartao('');
-      setValor('');
-      setSenha('');
-      setDescricao('');
-      setAssociado(null);
-      setParcelas(1);
+      // Salvar dados da transação para a página de sucesso
+      const dadosTransacao = {
+        associado: associado.nome,
+        matricula: associado.matricula,
+        valor: valor,
+        parcelas: parcelas,
+        valorParcela: valorParcela,
+        descricao: descricao || 'Lançamento via app',
+        timestamp: new Date().toISOString()
+      };
+      
+      localStorage.setItem('ultimaTransacao', JSON.stringify(dadosTransacao));
+      
+      // Redirecionar para página de sucesso
+      router.push('/convenio/dashboard/lancamentos/sucesso');
       
     } catch (error) {
       console.error('❌ Erro ao autorizar pagamento:', error);
-      toast.error('Erro ao processar pagamento');
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao processar pagamento';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
