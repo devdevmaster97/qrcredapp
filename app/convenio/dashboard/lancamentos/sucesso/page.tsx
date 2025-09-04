@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaCheckCircle, FaHome, FaPlus, FaReceipt } from 'react-icons/fa';
-import Header from '../../../components/Header';
+import Header from '../../../../components/Header';
 
 interface DadosTransacao {
   associado: string;
