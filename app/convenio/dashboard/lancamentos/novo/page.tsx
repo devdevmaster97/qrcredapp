@@ -683,7 +683,9 @@ export default function NovoLancamentoPage() {
             </label>
             <div className="flex flex-col sm:flex-row gap-3">
               <input
-                type="text"
+                type="tel"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={cartao}
                 onChange={(e) => setCartao(e.target.value)}
                 placeholder="Digite o número do cartão"
@@ -769,7 +771,9 @@ export default function NovoLancamentoPage() {
                   Valor do Lançamento
                 </label>
                 <input
-                  type="text"
+                  type="tel"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={valor}
                   onChange={handleValorChange}
                   placeholder="R$ 0,00"
