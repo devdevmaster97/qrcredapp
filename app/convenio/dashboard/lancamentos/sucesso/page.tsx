@@ -63,7 +63,11 @@ export default function SucessoPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
-      <Header title="" showBackButton={false} />
+      <div className="bg-gradient-to-br from-green-50 to-emerald-100 text-white p-4 shadow-md">
+        <div className="container mx-auto flex items-center">
+          <h1 className="text-xl font-bold"></h1>
+        </div>
+      </div>
       
       <div className="max-w-2xl mx-auto px-4 py-8">
         {/* Ícone de Sucesso Animado */}
