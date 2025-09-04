@@ -71,7 +71,7 @@ export default function SucessoPage() {
       
       <div className="max-w-2xl mx-auto px-4 py-8">
         {/* Ícone de Sucesso Animado */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-8" style={{ paddingTop: '30px' }}>
           <div className="relative inline-block mb-6">
             {/* Círculo animado de fundo */}
             <div className="w-32 h-32 bg-green-500 rounded-full flex items-center justify-center animate-bounce shadow-2xl">
