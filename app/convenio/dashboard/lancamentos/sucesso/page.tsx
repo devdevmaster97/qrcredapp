@@ -63,13 +63,21 @@ export default function SucessoPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
-      <Header title="Transação Realizada" showBackButton={false} />
+      <Header title="" showBackButton={false} />
       
       <div className="max-w-2xl mx-auto px-4 py-8">
-        {/* Ícone de Sucesso */}
+        {/* Ícone de Sucesso Animado */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-24 h-24 bg-green-500 rounded-full mb-4 animate-pulse">
-            <FaCheckCircle className="text-white text-4xl" />
+          <div className="relative inline-block mb-6">
+            {/* Círculo animado de fundo */}
+            <div className="w-32 h-32 bg-green-500 rounded-full flex items-center justify-center animate-bounce shadow-2xl">
+              <div className="w-24 h-24 bg-green-600 rounded-full flex items-center justify-center animate-pulse">
+                <FaCheckCircle className="text-white text-5xl animate-ping" />
+              </div>
+            </div>
+            {/* Efeito de ondas */}
+            <div className="absolute inset-0 w-32 h-32 bg-green-400 rounded-full animate-ping opacity-30"></div>
+            <div className="absolute inset-0 w-32 h-32 bg-green-300 rounded-full animate-ping opacity-20" style={{animationDelay: '0.5s'}}></div>
           </div>
           <h1 className="text-3xl font-bold text-green-800 mb-2">
             Transação Efetuada com Sucesso!
@@ -151,26 +159,10 @@ export default function SucessoPage() {
             className="w-full py-4 bg-gray-600 text-white rounded-xl hover:bg-gray-700 flex items-center justify-center gap-3 font-bold text-lg transition-all transform hover:scale-[1.02] shadow-lg"
           >
             <FaHome className="text-xl" />
-            Voltar ao Dashboard
+            Voltar à Página Principal
           </button>
         </div>
 
-        {/* Nota Informativa */}
-        <div className="mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <div className="flex items-start">
-            <div className="flex-shrink-0">
-              <div className="w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center">
-                <span className="text-yellow-800 text-xs font-bold">!</span>
-              </div>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-yellow-800">
-                <strong>Importante:</strong> Esta transação foi gravada na tabela <code className="bg-yellow-200 px-1 rounded">sind.conta</code> 
-                e pode ser consultada nos relatórios do sistema.
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
