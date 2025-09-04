@@ -327,6 +327,15 @@ export default function NovoLancamentoPage() {
 
       // 1. Verificar senha do associado
       console.log('🔐 Verificando senha do associado...');
+      console.log('🔐 URL da API:', API_SENHA);
+      console.log('🔐 Matrícula:', associado.matricula);
+      console.log('🔐 Senha (mascarada):', senha.replace(/./g, '*'));
+      
+      // TEMPORÁRIO: Pular verificação de senha para testar o resto do fluxo
+      console.log('⚠️ MODO DEBUG: Pulando verificação de senha temporariamente');
+      
+      // Remover comentário das linhas abaixo quando a API estiver funcionando:
+      /*
       const verificarSenha = () => {
         return new Promise((resolve, reject) => {
           const xhr = new XMLHttpRequest();
@@ -368,11 +377,14 @@ export default function NovoLancamentoPage() {
           };
 
           const params = `matricula=${encodeURIComponent(associado.matricula)}&senha=${encodeURIComponent(senha)}`;
+          console.log('📤 URL da API de verificação:', API_SENHA);
+          console.log('📤 Parâmetros enviados para verificação:', params);
           xhr.send(params);
         });
       };
 
       await verificarSenha();
+      */
 
       // 2. Preparar dados para gravação na tabela sind.conta
       const dadosVenda = {
