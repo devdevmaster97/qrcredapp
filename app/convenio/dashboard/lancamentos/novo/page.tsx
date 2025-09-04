@@ -386,25 +386,42 @@ export default function NovoLancamentoPage() {
       await verificarSenha();
       */
 
-      // 2. Preparar dados para gravação na tabela sind.conta
+      // 2. Preparar dados para gravação na tabela sind.conta (parâmetros corretos para a API)
+      const valorLimpo = valor.replace(/[^\d,]/g, '').replace(',', '.');
+      const valorPorParcela = (parseFloat(valorLimpo) / parcelas).toFixed(2);
+      
       const dadosVenda = {
-        associado: associado.matricula,
-        convenio: dadosConvenio.cod_convenio,
-        valor: valor.replace(/[^\d,]/g, '').replace(',', '.'),
-        descricao: descricao || 'Lançamento via app',
-        mes: mesCorrente,
+        // Parâmetros obrigatórios que a API espera
+        valor_pedido: valorLimpo,
+        cod_convenio: dadosConvenio.cod_convenio,
+        matricula: associado.matricula,
+        qtde_parcelas: parcelas,
+        mes_corrente: mesCorrente,
+        valor_parcela: valorPorParcela,
+        primeiro_mes: mesCorrente,
+        pass: senha,
+        nome: associado.nome,
+        cartao: '', // Será preenchido se necessário
         empregador: associado.empregador,
-        parcela: parcelas,
-        divisao: associado.id_divisao, // Campo divisao preenchido com id_divisao
+        descricao: descricao || 'Lançamento via app',
+        uri_cupom: '', // Será preenchido se necessário
         id_associado: associado.id,
-        token_associado: associado.token_associado
+        divisao: associado.id_divisao || null // NOVO: Campo divisao será gravado na tabela sind.conta
       };
 
       console.log('💳 Dados para gravação na tabela sind.conta:', dadosVenda);
       console.log('🏢 Campo divisao será gravado com valor:', associado.id_divisao);
+      console.log('🔍 Verificando se id_divisao existe no associado:', {
+        temIdDivisao: !!associado.id_divisao,
+        valorIdDivisao: associado.id_divisao,
+        tipoIdDivisao: typeof associado.id_divisao
+      });
 
       // 3. Gravar venda na API
       console.log('💾 Gravando venda na API...');
+      console.log('💾 URL da API:', API_GRAVA_VENDA);
+      console.log('✅ Dados que serão gravados na tabela sind.conta:', dadosVenda);
+      
       const gravarVenda = () => {
         return new Promise((resolve, reject) => {
           const xhr = new XMLHttpRequest();
@@ -426,9 +443,13 @@ export default function NovoLancamentoPage() {
                   const response = JSON.parse(xhr.responseText);
                   console.log('💾 Resposta gravação venda:', response);
                   
-                  if (response.situacao === 1 || response.success) {
+                  if (response.situacao === 1) {
                     console.log('✅ Venda gravada com sucesso na tabela sind.conta');
+                    console.log('📄 Registro gerado:', response.registrolan);
                     resolve(response);
+                  } else if (response.situacao === 2) {
+                    console.log('❌ Senha incorreta');
+                    reject(new Error('Senha incorreta'));
                   } else {
                     console.log('❌ Erro ao gravar venda:', response.erro || response.message);
                     reject(new Error(response.erro || response.message || 'Erro ao gravar venda'));
