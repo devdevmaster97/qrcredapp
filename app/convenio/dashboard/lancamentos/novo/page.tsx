@@ -525,39 +525,41 @@ export default function NovoLancamentoPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <Header title="Novo Lançamento" showBackButton={true} />
       
-      <div className="container mx-auto px-4 py-6">
-        <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="max-w-2xl mx-auto px-4 py-6">
+        <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-200">
           {/* Seção de busca do cartão */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Número do Cartão
             </label>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-3">
               <input
                 type="text"
                 value={cartao}
                 onChange={(e) => setCartao(e.target.value)}
                 placeholder="Digite o número do cartão"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
               />
-              <button
-                onClick={() => buscarAssociado()}
-                disabled={loadingCartao}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
-              >
-                {loadingCartao ? <FaSpinner className="animate-spin" /> : <FaCreditCard />}
-                Buscar
-              </button>
-              <button
-                onClick={handleLerQRCode}
-                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 flex items-center gap-2"
-              >
-                <FaQrcode />
-                QR Code
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => buscarAssociado()}
+                  disabled={loadingCartao}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2 font-medium transition-all"
+                >
+                  {loadingCartao ? <FaSpinner className="animate-spin" /> : <FaCreditCard />}
+                  Buscar
+                </button>
+                <button
+                  onClick={handleLerQRCode}
+                  className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center gap-2 font-medium transition-all"
+                >
+                  <FaQrcode />
+                  QR Code
+                </button>
+              </div>
             </div>
           </div>
 
@@ -581,24 +583,32 @@ export default function NovoLancamentoPage() {
 
           {/* Dados do Associado */}
           {associado && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md">
-              <h3 className="font-semibold text-green-800 mb-2">Dados do Associado</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="font-medium">Nome:</span> {associado.nome}
+            <div className="mb-8 p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl">
+              <h3 className="font-bold text-green-800 mb-4 text-lg flex items-center gap-2">
+                <FaCheckCircle className="text-green-600" />
+                Dados do Associado
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-white p-3 rounded-lg border border-green-100">
+                  <span className="text-xs text-gray-500 uppercase tracking-wide">Nome</span>
+                  <div className="font-semibold text-gray-800">{associado.nome}</div>
                 </div>
-                <div>
-                  <span className="font-medium">Matrícula:</span> {associado.matricula}
+                <div className="bg-white p-3 rounded-lg border border-green-100">
+                  <span className="text-xs text-gray-500 uppercase tracking-wide">Matrícula</span>
+                  <div className="font-semibold text-gray-800">{associado.matricula}</div>
                 </div>
-                <div>
-                  <span className="font-medium">Empregador:</span> {associado.empregador}
+                <div className="bg-white p-3 rounded-lg border border-green-100">
+                  <span className="text-xs text-gray-500 uppercase tracking-wide">Empregador</span>
+                  <div className="font-semibold text-gray-800">{associado.empregador}</div>
                 </div>
-                <div>
-                  <span className="font-medium">Saldo:</span> {associado.saldo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                <div className="bg-white p-3 rounded-lg border border-green-100">
+                  <span className="text-xs text-gray-500 uppercase tracking-wide">Saldo Disponível</span>
+                  <div className="font-bold text-green-600 text-lg">{associado.saldo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
                 </div>
                 {associado.id_divisao && (
-                  <div>
-                    <span className="font-medium">ID Divisão:</span> {associado.id_divisao}
+                  <div className="bg-white p-3 rounded-lg border border-green-100 md:col-span-2">
+                    <span className="text-xs text-gray-500 uppercase tracking-wide">ID Divisão</span>
+                    <div className="font-semibold text-gray-800">{associado.id_divisao}</div>
                   </div>
                 )}
               </div>
@@ -607,66 +617,67 @@ export default function NovoLancamentoPage() {
 
           {/* Formulário de Lançamento */}
           {associado && (
-            <div className="space-y-4">
+            <div className="space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Valor
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Valor do Lançamento
                 </label>
                 <input
                   type="text"
                   value={valor}
                   onChange={handleValorChange}
                   placeholder="R$ 0,00"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-4 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xl font-semibold text-center"
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Parcelas
-                  </label>
-                  <select
-                    value={parcelas}
-                    onChange={(e) => setParcelas(Number(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {Array.from({ length: maxParcelas }, (_, i) => i + 1).map(num => (
-                      <option key={num} value={num}>{num}x</option>
-                    ))}
-                  </select>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Número de Parcelas
+                </label>
+                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                  {Array.from({ length: maxParcelas }, (_, i) => i + 1).map(num => (
+                    <button
+                      key={num}
+                      onClick={() => setParcelas(num)}
+                      className={`min-w-[70px] px-4 py-3 rounded-xl border-2 font-bold transition-all transform hover:scale-105 ${
+                        parcelas === num
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-lg'
+                          : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                      }`}
+                    >
+                      {num}x
+                    </button>
+                  ))}
                 </div>
-
-                {valorParcela > 0 && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Valor por Parcela
-                    </label>
-                    <input
-                      type="text"
-                      value={valorParcela.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                      readOnly
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
-                    />
-                  </div>
-                )}
               </div>
 
+              {valorParcela > 0 && (
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <label className="block text-sm font-medium text-blue-800 mb-2">
+                    Valor por Parcela
+                  </label>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {valorParcela.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                  </div>
+                </div>
+              )}
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Descrição
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Descrição (Opcional)
                 </label>
                 <input
                   type="text"
                   value={descricao}
                   onChange={(e) => setDescricao(e.target.value)}
                   placeholder="Descrição do lançamento"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
                   Senha do Associado
                 </label>
                 <input
@@ -674,16 +685,16 @@ export default function NovoLancamentoPage() {
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
                   placeholder="Digite a senha"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
               <button
                 onClick={autorizarPagamento}
                 disabled={loading || !valor || !senha}
-                className="w-full py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 font-bold text-lg transition-all transform hover:scale-[1.02] disabled:hover:scale-100 shadow-lg"
               >
-                {loading ? <FaSpinner className="animate-spin" /> : <FaCheckCircle />}
+                {loading ? <FaSpinner className="animate-spin text-xl" /> : <FaCheckCircle className="text-xl" />}
                 Autorizar Pagamento
               </button>
             </div>
