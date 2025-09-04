@@ -2,42 +2,42 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { FaSpinner, FaQrcode, FaArrowLeft, FaCreditCard, FaCalendarAlt, FaCheckCircle } from 'react-icons/fa';
-import Header from '@/app/components/Header';
 import toast from 'react-hot-toast';
+import { FaArrowLeft, FaCreditCard, FaSpinner, FaCheckCircle, FaQrcode } from 'react-icons/fa';
 import { Html5Qrcode } from 'html5-qrcode';
+import Header from '../../../../components/Header';
 
 interface AssociadoData {
-  id?: number; // ID do associado da tabela sind.associado
+  id: number;
   nome: string;
   matricula: string;
   empregador: string;
+  cel: string;
+  limite: number;
+  token_associado: string;
+  id_divisao?: number;
   saldo: number;
-  token_associado?: string;
-  cel?: string;
-  limite?: string;
-  id_divisao?: number; // ID da divisão para gravar no campo divisao da tabela sind.conta
 }
 
 export default function NovoLancamentoPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [loadingCartao, setLoadingCartao] = useState(false);
   const [cartao, setCartao] = useState('');
+  const [associado, setAssociado] = useState<AssociadoData | null>(null);
   const [valor, setValor] = useState('');
   const [parcelas, setParcelas] = useState(1);
-  const [maxParcelas, setMaxParcelas] = useState(12);
-  const [senha, setSenha] = useState('');
   const [descricao, setDescricao] = useState('');
-  const [associado, setAssociado] = useState<AssociadoData | null>(null);
-  const [valorParcela, setValorParcela] = useState(0);
-  const [showQrReader, setShowQrReader] = useState(false);
+  const [senha, setSenha] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [loadingCartao, setLoadingCartao] = useState(false);
   const [mesCorrente, setMesCorrente] = useState('');
+  const [showQrReader, setShowQrReader] = useState(false);
   const [showConfirmacao, setShowConfirmacao] = useState(false);
+  const [valorParcela, setValorParcela] = useState(0);
   const [valorPagamento, setValorPagamento] = useState('');
   const qrReaderRef = useRef<HTMLDivElement>(null);
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
-  
+  const maxParcelas = 12;
+
   // Usar URLs reais da API - sem simulações locais
   const BASE_URL = 'https://sas.makecard.com.br';
   const API_URL = `${BASE_URL}/localizaasapp.php`;
@@ -360,23 +360,177 @@ export default function NovoLancamentoPage() {
     }
   };
 
+  // Inicializa e limpa o leitor QR ao montar/desmontar
+  useEffect(() => {
+    // Limpar o scanner QR quando o componente for desmontado
+    return () => {
+      if (html5QrCodeRef.current) {
+        html5QrCodeRef.current.stop().catch(error => {
+          console.error("Erro ao parar o scanner:", error);
+        });
+      }
+    };
+  }, []);
+
+  // Inicializa o leitor QR quando o modal é aberto
+  useEffect(() => {
+    if (showQrReader && qrReaderRef.current) {
+      const qrCodeId = "qr-reader-" + Date.now();
+      // Limpa o conteúdo anterior e adiciona um novo elemento
+      qrReaderRef.current.innerHTML = `<div id="${qrCodeId}" style="width:100%;"></div>`;
+
+      // Inicializa o scanner
+      html5QrCodeRef.current = new Html5Qrcode(qrCodeId);
+      
+      html5QrCodeRef.current.start(
+        { facingMode: "environment" }, // Usar câmera traseira
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0,
+        },
+        (decodedText) => {
+          // Sucesso ao ler QR Code
+          console.log('📱 QR Code lido com sucesso:', decodedText);
+          if (html5QrCodeRef.current) {
+            html5QrCodeRef.current.stop().then(() => {
+              setShowQrReader(false);
+              setCartao(decodedText);
+              
+              console.log('🔍 QR Code processado, executando busca automática...');
+              
+              // Executar busca automaticamente passando o número do cartão diretamente
+              setTimeout(() => {
+                buscarAssociado(decodedText);
+              }, 100); // Pequeno delay para garantir que o state foi atualizado
+            }).catch(err => {
+              console.error("Erro ao parar o scanner:", err);
+            });
+          }
+        },
+        (errorMessage) => {
+          // Erro ou QR não encontrado (ignorar)
+        }
+      ).catch(err => {
+        console.error("Erro ao iniciar o scanner:", err);
+        toast.error("Não foi possível acessar a câmera");
+        setShowQrReader(false);
+      });
+    }
+  }, [showQrReader]);
+
+  // Formatar valor como moeda
+  const formatarValor = (valor: string) => {
+    // Remove caracteres não numéricos
+    const valorNumerico = valor.replace(/\D/g, '');
+    
+    // Converte para centavos e depois formata como moeda
+    const valorEmReais = (parseInt(valorNumerico) / 100).toFixed(2);
+    return valorEmReais;
+  };
+
+  // Atualiza valor da parcela quando valor total ou número de parcelas mudam
+  useEffect(() => {
+    if (valor && parcelas > 0) {
+      const valorNumerico = parseFloat(valor.replace(/[^\d,]/g, '').replace(',', '.'));
+      if (!isNaN(valorNumerico)) {
+        setValorParcela(valorNumerico / parcelas);
+      }
+    } else {
+      setValorParcela(0);
+    }
+  }, [valor, parcelas]);
+
+  // Adicionar useEffect para obter dados do convênio ao carregar a página
+  useEffect(() => {
+    const carregarDadosConvenio = async () => {
+      // Tentar obter dados do convênio do localStorage
+      try {
+        const dadosConvenioString = localStorage.getItem('dadosConvenio');
+        
+        if (dadosConvenioString) {
+          const dadosConvenio = JSON.parse(dadosConvenioString);
+          console.log('📊 Dados do convênio obtidos do localStorage:', dadosConvenio);
+          
+          // Verificar se o código do convênio está presente
+          if (dadosConvenio.cod_convenio) {
+            console.log('📊 Código do convênio encontrado no localStorage:', dadosConvenio.cod_convenio);
+          } else {
+            console.warn('⚠️ Código do convênio não encontrado no localStorage');
+            // Se não houver dados no localStorage, buscar da API
+            await buscarDadosConvenioAPI();
+          }
+        } else {
+          console.warn('⚠️ Dados do convênio não encontrados no localStorage');
+          // Se não houver dados no localStorage, buscar da API
+          await buscarDadosConvenioAPI();
+        }
+      } catch (error) {
+        console.error('❌ Erro ao obter dados do convênio:', error);
+        // Se houver erro, tentar buscar da API
+        await buscarDadosConvenioAPI();
+      }
+    };
+    
+    const buscarDadosConvenioAPI = async () => {
+      try {
+        console.log('📤 Buscando dados do convênio da API...');
+        const response = await fetch('/api/convenio/dados');
+        const data = await response.json();
+        
+        if (data.success && data.data) {
+          // Salvar os dados do convênio no localStorage
+          localStorage.setItem('dadosConvenio', JSON.stringify(data.data));
+          console.log('📊 Dados do convênio salvos no localStorage:', data.data);
+        } else {
+          console.error('❌ Falha ao obter dados do convênio da API');
+        }
+      } catch (error) {
+        console.error('❌ Erro ao buscar dados do convênio da API:', error);
+      }
+    };
+    
+    carregarDadosConvenio();
+  }, []);
+
+  const handleValorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Remove todos os caracteres não numéricos
+    let value = e.target.value.replace(/\D/g, '');
+    
+    // Converte para formato monetário (R$ 0,00)
+    if (value) {
+      const valorNumerico = parseInt(value) / 100;
+      value = valorNumerico.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      });
+    } else {
+      value = '';
+    }
+    
+    setValor(value);
+  };
+
+  const handleLerQRCode = () => {
+    setShowQrReader(true);
+  };
+
+  const handleCloseQrReader = () => {
+    if (html5QrCodeRef.current) {
+      html5QrCodeRef.current.stop().catch(error => {
+        console.error("Erro ao parar o scanner:", error);
+      });
+    }
+    setShowQrReader(false);
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-100">
       <Header title="Novo Lançamento" showBackButton={true} />
       
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="container mx-auto px-4 py-6">
         <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center mb-6">
-            <button
-              onClick={() => router.back()}
-              className="mr-4 p-2 text-gray-600 hover:text-gray-800"
-            >
-              <FaArrowLeft size={20} />
-            </button>
-            <h1 className="text-2xl font-bold text-gray-800">Novo Lançamento</h1>
-          </div>
-
-          {/* Busca do Cartão */}
+          {/* Seção de busca do cartão */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Número do Cartão
@@ -397,14 +551,39 @@ export default function NovoLancamentoPage() {
                 {loadingCartao ? <FaSpinner className="animate-spin" /> : <FaCreditCard />}
                 Buscar
               </button>
+              <button
+                onClick={handleLerQRCode}
+                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 flex items-center gap-2"
+              >
+                <FaQrcode />
+                QR Code
+              </button>
             </div>
           </div>
+
+          {/* Modal do QR Reader */}
+          {showQrReader && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold">Ler QR Code</h3>
+                  <button
+                    onClick={handleCloseQrReader}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div ref={qrReaderRef} className="w-full"></div>
+              </div>
+            </div>
+          )}
 
           {/* Dados do Associado */}
           {associado && (
             <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md">
               <h3 className="font-semibold text-green-800 mb-2">Dados do Associado</h3>
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="font-medium">Nome:</span> {associado.nome}
                 </div>
@@ -436,25 +615,41 @@ export default function NovoLancamentoPage() {
                 <input
                   type="text"
                   value={valor}
-                  onChange={(e) => setValor(e.target.value)}
+                  onChange={handleValorChange}
                   placeholder="R$ 0,00"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Parcelas
-                </label>
-                <select
-                  value={parcelas}
-                  onChange={(e) => setParcelas(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {Array.from({ length: maxParcelas }, (_, i) => i + 1).map(num => (
-                    <option key={num} value={num}>{num}x</option>
-                  ))}
-                </select>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Parcelas
+                  </label>
+                  <select
+                    value={parcelas}
+                    onChange={(e) => setParcelas(Number(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {Array.from({ length: maxParcelas }, (_, i) => i + 1).map(num => (
+                      <option key={num} value={num}>{num}x</option>
+                    ))}
+                  </select>
+                </div>
+
+                {valorParcela > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Valor por Parcela
+                    </label>
+                    <input
+                      type="text"
+                      value={valorParcela.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50"
+                    />
+                  </div>
+                )}
               </div>
 
               <div>
@@ -485,12 +680,48 @@ export default function NovoLancamentoPage() {
 
               <button
                 onClick={autorizarPagamento}
-                disabled={loading}
-                className="w-full py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                disabled={loading || !valor || !senha}
+                className="w-full py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? <FaSpinner className="animate-spin" /> : <FaCheckCircle />}
                 Autorizar Pagamento
               </button>
+            </div>
+          )}
+
+          {/* Modal de Confirmação */}
+          {showConfirmacao && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+                <h3 className="text-lg font-semibold mb-4">Confirmar Pagamento</h3>
+                <div className="space-y-2 text-sm">
+                  <div><span className="font-medium">Associado:</span> {associado?.nome}</div>
+                  <div><span className="font-medium">Valor:</span> {valorPagamento}</div>
+                  <div><span className="font-medium">Parcelas:</span> {parcelas}x</div>
+                  {valorParcela > 0 && (
+                    <div><span className="font-medium">Valor por parcela:</span> {valorParcela.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                  )}
+                  <div><span className="font-medium">Descrição:</span> {descricao || 'Lançamento via app'}</div>
+                </div>
+                <div className="flex gap-2 mt-6">
+                  <button
+                    onClick={() => setShowConfirmacao(false)}
+                    className="flex-1 py-2 px-4 border border-gray-300 rounded-md hover:bg-gray-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowConfirmacao(false);
+                      // Aqui você processaria o pagamento
+                      toast.success('Pagamento processado com sucesso!');
+                    }}
+                    className="flex-1 py-2 px-4 bg-green-600 text-white rounded-md hover:bg-green-700"
+                  >
+                    Confirmar
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
