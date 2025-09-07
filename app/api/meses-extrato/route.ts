@@ -31,6 +31,8 @@ export async function POST(request: NextRequest) {
 
     console.log('Enviando requisição para buscar meses de extrato para cartão:', cartaoLimpo);
     console.log('Payload enviado:', payload.toString());
+    console.log('Parâmetros enviados: cartao =', cartaoLimpo, ', divisao =', divisao);
+    console.log('ATENÇÃO: Verificar se o PHP está usando $_POST[\'divisao\'] ao invés de $_GET[\'divisao\']');
 
     // Enviar a requisição para o backend
     const response = await axios.post(
@@ -48,6 +50,12 @@ export async function POST(request: NextRequest) {
     console.log('Resposta da API de meses de extrato:', response.data);
     console.log('Tipo da resposta:', typeof response.data);
     console.log('É array?', Array.isArray(response.data));
+    console.log('Quantidade de meses retornados:', Array.isArray(response.data) ? response.data.length : 0);
+    
+    if (Array.isArray(response.data) && response.data.length > 0) {
+      console.log('Primeiro mês retornado:', response.data[0]);
+      console.log('Todos os meses:', response.data.map(m => m.abreviacao || m));
+    }
 
     // Verificar e processar a resposta
     if (!response.data) {

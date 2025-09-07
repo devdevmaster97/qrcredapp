@@ -194,13 +194,16 @@ export default function ExtratoTabContent({ cartao }: ExtratoTabContentProps) {
         throw new Error('Dados do associado não encontrados');
       }
 
-      const { matricula, empregador } = associadoResponse.data;
+      const { matricula, empregador, id_divisao } = associadoResponse.data;
 
       // Agora buscar o extrato com os dados do associado
       const formDataConta = new FormData();
       formDataConta.append('matricula', matricula);
       formDataConta.append('empregador', empregador.toString());
       formDataConta.append('mes', mes);
+      if (id_divisao) {
+        formDataConta.append('divisao', id_divisao.toString());
+      }
       
       const extratoResponse = await axios.post<ContaResponse[]>('/api/conta', formDataConta, {
         headers: {
