@@ -31,6 +31,13 @@ export async function POST(request: NextRequest) {
     
     // Debug dos parâmetros recebidos
     console.log('Parâmetros recebidos para conta:', { matricula, empregador, mes, divisao, id });
+    console.log('Tipos dos parâmetros:', { 
+      matricula: typeof matricula, 
+      empregador: typeof empregador, 
+      mes: typeof mes, 
+      divisao: typeof divisao, 
+      id: typeof id 
+    });
 
     // Verificar dados necessários
     if (!matricula || !empregador || !mes) {
@@ -66,6 +73,12 @@ export async function POST(request: NextRequest) {
       divisao,
       id
     });
+    console.log('Payload completo (URLSearchParams):', payload.toString());
+    console.log('Parâmetros individuais do payload:');
+    const entries = Array.from(payload.entries());
+    entries.forEach(([key, value]) => {
+      console.log(`  ${key}: "${value}" (tipo: ${typeof value})`);
+    });
     
     // Enviar a requisição para o backend
     const response = await axios.post(
@@ -80,6 +93,17 @@ export async function POST(request: NextRequest) {
     );
 
     console.log('Resposta do endpoint conta:', response.data);
+    console.log('Status da resposta:', response.status);
+    console.log('Headers da resposta:', response.headers);
+    console.log('Tipo da resposta:', typeof response.data);
+    console.log('É array?', Array.isArray(response.data));
+    console.log('Quantidade de registros:', Array.isArray(response.data) ? response.data.length : 'N/A');
+    
+    if (Array.isArray(response.data) && response.data.length > 0) {
+      console.log('Primeiro registro:', response.data[0]);
+    } else if (response.data && typeof response.data === 'object') {
+      console.log('Resposta como objeto:', response.data);
+    }
 
     // Verificar e retornar a resposta
     return NextResponse.json(response.data);
