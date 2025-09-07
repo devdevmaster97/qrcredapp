@@ -615,7 +615,7 @@ export default function EstabPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header title="Login do Convênio" showBackButton onBackClick={handleVoltar} />
+      <Header title="Login do Convênio" />
       
       <div className="flex-1 flex flex-col justify-center py-6 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
