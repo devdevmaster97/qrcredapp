@@ -209,13 +209,28 @@ export default function ExtratoTabContent({ cartao }: ExtratoTabContentProps) {
         formDataConta.append('id', id.toString());
       }
       
+      console.log('🔥 FRONTEND: Enviando dados para /api/conta');
+      console.log('🔥 FRONTEND: Parâmetros enviados:', {
+        matricula,
+        empregador: empregador.toString(),
+        mes,
+        id_divisao,
+        id
+      });
+      console.log('🔥 FRONTEND: FormData completo:');
+      const entries = Array.from(formDataConta.entries());
+      entries.forEach(([key, value]) => {
+        console.log(`  ${key}: "${value}"`);
+      });
+
       const extratoResponse = await axios.post<ContaResponse[]>('/api/conta', formDataConta, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
 
-      console.log('Resposta do endpoint conta:', extratoResponse.data);
+      console.log('🔥 FRONTEND: Resposta do endpoint conta:', extratoResponse.data);
+      console.log('🔥 FRONTEND: Status da resposta:', extratoResponse.status);
 
       if (Array.isArray(extratoResponse.data)) {
         const formattedData = extratoResponse.data.map((item) => {
