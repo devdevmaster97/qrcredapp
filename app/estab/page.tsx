@@ -9,6 +9,7 @@ import Logo from '@/app/components/Logo';
 import PWAInstallPrompt from '@/app/components/PWAInstallPrompt';
 import { Dialog, Transition } from '@headlessui/react';
 import { X, Loader2 } from 'lucide-react';
+import Head from 'next/head';
 
 interface UsuarioSalvo {
   usuario: string;
@@ -49,6 +50,17 @@ export default function EstabPage() {
     if (usuariosSalvosJson) {
       const usuarios = JSON.parse(usuariosSalvosJson);
       setUsuariosSalvos(usuarios);
+    }
+
+    // Configurar manifesto específico para esta página
+    const manifestLink = document.querySelector('link[rel="manifest"]');
+    if (manifestLink) {
+      manifestLink.setAttribute('href', '/manifest-estab.json');
+    } else {
+      const newManifestLink = document.createElement('link');
+      newManifestLink.rel = 'manifest';
+      newManifestLink.href = '/manifest-estab.json';
+      document.head.appendChild(newManifestLink);
     }
   }, []);
 
