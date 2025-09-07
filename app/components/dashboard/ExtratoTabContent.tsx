@@ -33,6 +33,7 @@ interface MesExtrato {
 }
 
 interface AssociadoResponse {
+  id?: number;
   matricula: string;
   empregador: number;
   nome: string;
@@ -194,7 +195,7 @@ export default function ExtratoTabContent({ cartao }: ExtratoTabContentProps) {
         throw new Error('Dados do associado não encontrados');
       }
 
-      const { matricula, empregador, id_divisao } = associadoResponse.data;
+      const { matricula, empregador, id_divisao, id } = associadoResponse.data;
 
       // Agora buscar o extrato com os dados do associado
       const formDataConta = new FormData();
@@ -203,6 +204,9 @@ export default function ExtratoTabContent({ cartao }: ExtratoTabContentProps) {
       formDataConta.append('mes', mes);
       if (id_divisao) {
         formDataConta.append('divisao', id_divisao.toString());
+      }
+      if (id) {
+        formDataConta.append('id', id.toString());
       }
       
       const extratoResponse = await axios.post<ContaResponse[]>('/api/conta', formDataConta, {

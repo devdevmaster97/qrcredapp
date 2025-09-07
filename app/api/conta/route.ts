@@ -7,6 +7,7 @@ export async function POST(request: NextRequest) {
     let empregador: string | number;
     let mes: string;
     let divisao: string | number;
+    let id: string | number;
     
     // Verificar o Content-Type e processar a request apropriadamente
     const contentType = request.headers.get('Content-Type') || '';
@@ -17,6 +18,7 @@ export async function POST(request: NextRequest) {
       empregador = formData.get('empregador') as string;
       mes = formData.get('mes') as string;
       divisao = formData.get('divisao') as string;
+      id = formData.get('id') as string;
     } else {
       // Assume JSON
       const body = await request.json();
@@ -24,10 +26,11 @@ export async function POST(request: NextRequest) {
       empregador = body.empregador;
       mes = body.mes;
       divisao = body.divisao;
+      id = body.id;
     }
     
     // Debug dos parâmetros recebidos
-    console.log('Parâmetros recebidos para conta:', { matricula, empregador, mes, divisao });
+    console.log('Parâmetros recebidos para conta:', { matricula, empregador, mes, divisao, id });
 
     // Verificar dados necessários
     if (!matricula || !empregador || !mes) {
@@ -49,12 +52,19 @@ export async function POST(request: NextRequest) {
         payload.append('divisao', divisaoInt.toString());
       }
     }
+    if (id) {
+      const idInt = parseInt(String(id), 10);
+      if (!isNaN(idInt)) {
+        payload.append('id', idInt.toString());
+      }
+    }
     
     console.log('Dados sendo enviados para conta_app.php:', {
       matricula,
       empregador: empregador.toString(),
       mes,
-      divisao
+      divisao,
+      id
     });
     
     // Enviar a requisição para o backend
