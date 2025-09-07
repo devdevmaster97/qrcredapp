@@ -45,14 +45,55 @@ export default function RelatoriosPage() {
   useEffect(() => {
     const buscarLancamentos = async () => {
       try {
-        const response = await fetch('/api/convenio/lancamentos');
+        // Detectar dispositivo móvel
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        // Adicionar headers anti-cache para dispositivos móveis
+        const headers: HeadersInit = {
+          'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        };
+
+        if (isMobile) {
+          console.log('📱 RELATÓRIOS - Dispositivo móvel detectado, usando headers anti-cache');
+        }
+
+        const response = await fetch(`/api/convenio/lancamentos?t=${Date.now()}`, {
+          method: 'GET',
+          headers,
+          cache: 'no-store'
+        });
+        
         const data = await response.json();
 
         if (data.success) {
           // Debug: verificar estrutura dos dados recebidos
-          console.log('🔍 Dados dos lançamentos recebidos:', data.data);
+          console.log('🔍 RELATÓRIOS - Dados dos lançamentos recebidos:', {
+            quantidade: data.data.length,
+            debug_info: data.debug_info
+          });
+          
+          if (data.debug_info) {
+            console.log('🔍 RELATÓRIOS - Info de debug da API:', data.debug_info);
+            
+            // Validação extra para dispositivos móveis
+            if (isMobile && data.debug_info.usuario_token === 'emp' && data.debug_info.cod_convenio_usado !== 243) {
+              console.log('❌ RELATÓRIOS - ERRO CRÍTICO: Dados incorretos no mobile!');
+              console.log('❌ RELATÓRIOS - Usuário "emp" deveria ter cod_convenio 243, mas API retornou:', data.debug_info.cod_convenio_usado);
+              
+              toast.error('Dados inconsistentes detectados. Redirecionando para novo login...');
+              
+              // Forçar logout e novo login
+              setTimeout(() => {
+                window.location.href = '/convenio/login';
+              }, 2000);
+              return;
+            }
+          }
+          
           if (data.data.length > 0) {
-            console.log('🔍 Exemplo de lançamento:', data.data[0]);
+            console.log('🔍 RELATÓRIOS - Exemplo de lançamento:', data.data[0]);
           }
           
           setLancamentos(data.data);
@@ -66,10 +107,21 @@ export default function RelatoriosPage() {
           const mesCorrente = gerarMesCorrente();
           setMesSelecionado(mesCorrente);
         } else {
+          console.log('❌ RELATÓRIOS - Erro da API:', data.message);
+          
+          // Se for erro de sessão inválida, redirecionar para login
+          if (data.message && data.message.includes('Sessão inválida')) {
+            toast.error('Sessão expirada. Redirecionando para login...');
+            setTimeout(() => {
+              window.location.href = '/convenio/login';
+            }, 2000);
+            return;
+          }
+          
           toast.error(data.message || 'Erro ao buscar lançamentos');
         }
       } catch (error) {
-        console.error('Erro ao buscar lançamentos:', error);
+        console.error('❌ RELATÓRIOS - Erro ao buscar lançamentos:', error);
         toast.error('Erro ao conectar com o servidor');
       } finally {
         setLoadingLancamentos(false);

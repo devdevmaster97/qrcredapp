@@ -122,12 +122,44 @@ export default function LoginConvenio() {
         if (isMobile) {
           console.log('📱 Login - Dispositivo móvel detectado, forçando limpeza adicional');
           
-          // Aguardar um pouco para garantir que tudo foi salvo
+          // Limpeza agressiva para dispositivos móveis
+          try {
+            // Limpar todos os dados relacionados a convênio
+            const keys = Object.keys(localStorage);
+            keys.forEach(key => {
+              if (key.includes('convenio') || key.includes('Convenio') || key.includes('lancamento')) {
+                localStorage.removeItem(key);
+                console.log(`🧹 Login Mobile - Removido localStorage: ${key}`);
+              }
+            });
+            
+            const sessionKeys = Object.keys(sessionStorage);
+            sessionKeys.forEach(key => {
+              if (key.includes('convenio') || key.includes('Convenio') || key.includes('lancamento')) {
+                sessionStorage.removeItem(key);
+                console.log(`🧹 Login Mobile - Removido sessionStorage: ${key}`);
+              }
+            });
+            
+            // Forçar limpeza do cache do navegador
+            if ('caches' in window) {
+              caches.keys().then(names => {
+                names.forEach(name => {
+                  caches.delete(name);
+                });
+              });
+            }
+          } catch (error) {
+            console.warn('⚠️ Login Mobile - Erro na limpeza agressiva:', error);
+          }
+          
+          // Aguardar um pouco para garantir que tudo foi salvo e limpo
           setTimeout(() => {
             // Forçar recarregamento da página no mobile para limpar qualquer cache residual
             console.log('📱 Login - Forçando recarregamento no mobile');
-            window.location.href = '/convenio/dashboard';
-          }, 500);
+            // Adicionar timestamp para evitar cache
+            window.location.href = `/convenio/dashboard?t=${Date.now()}`;
+          }, 800);
         } else {
           router.push('/convenio/dashboard');
         }
