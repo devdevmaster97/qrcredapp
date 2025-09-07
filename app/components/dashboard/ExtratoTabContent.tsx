@@ -54,6 +54,7 @@ interface AssociadoResponse {
   nome_divisao: string;
   situacao: number;
   senha: string;
+  id_divisao?: number;
 }
 
 interface ContaResponse {
@@ -133,9 +134,29 @@ export default function ExtratoTabContent({ cartao }: ExtratoTabContentProps) {
   // Função para buscar os meses disponíveis
   const fetchMesesExtrato = async () => {
     try {
+      // Primeiro, buscar dados do associado para obter id_divisao
+      const associadoResponse = await axios.post<AssociadoResponse>('/api/localiza-associado', 
+        { cartao: cartao.trim() },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!associadoResponse.data) {
+        throw new Error('Dados do associado não encontrados');
+      }
+
       console.log('Enviando requisição para buscar meses de extrato para cartão:', cartao);
       const formData = new FormData();
       formData.append('cartao', cartao.trim());
+      
+      // Adicionar divisao se disponível nos dados do associado
+      if (associadoResponse.data.id_divisao) {
+        formData.append('divisao', associadoResponse.data.id_divisao.toString());
+        console.log('Incluindo divisao na requisição:', associadoResponse.data.id_divisao);
+      }
       
       const response = await axios.post('/api/meses-extrato', formData, {
         headers: {

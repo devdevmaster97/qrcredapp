@@ -6,6 +6,7 @@ export async function POST(request: NextRequest) {
     // Ler os dados do corpo da requisição
     const formData = await request.formData();
     const cartao = formData.get('cartao');
+    const divisao = formData.get('divisao');
 
     // Verificar se os dados estão presentes
     if (!cartao) {
@@ -21,6 +22,12 @@ export async function POST(request: NextRequest) {
     // Preparar os dados para enviar ao backend
     const payload = new URLSearchParams();
     payload.append('cartao', cartaoLimpo);
+    if (divisao) {
+      const divisaoInt = parseInt(String(divisao), 10);
+      if (!isNaN(divisaoInt)) {
+        payload.append('divisao', divisaoInt.toString());
+      }
+    }
 
     console.log('Enviando requisição para buscar meses de extrato para cartão:', cartaoLimpo);
 

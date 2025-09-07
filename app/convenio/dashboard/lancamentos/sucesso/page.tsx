@@ -86,9 +86,6 @@ export default function SucessoPage() {
           <h1 className="text-3xl font-bold text-green-800 mb-2">
             Transação Efetuada com Sucesso!
           </h1>
-          <p className="text-green-600 text-lg">
-            O lançamento foi processado e gravado na tabela sind.conta
-          </p>
         </div>
 
         {/* Detalhes da Transação */}
