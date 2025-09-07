@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('Enviando requisição para buscar meses de extrato para cartão:', cartaoLimpo);
+    console.log('Payload enviado:', payload.toString());
 
     // Enviar a requisição para o backend
     const response = await axios.post(
@@ -45,13 +46,29 @@ export async function POST(request: NextRequest) {
 
     // Log da resposta
     console.log('Resposta da API de meses de extrato:', response.data);
+    console.log('Tipo da resposta:', typeof response.data);
+    console.log('É array?', Array.isArray(response.data));
 
     // Verificar e processar a resposta
-    if (!response.data || !Array.isArray(response.data)) {
-      return NextResponse.json(
-        { error: 'Formato de resposta inesperado' },
-        { status: 500 }
-      );
+    if (!response.data) {
+      console.log('Resposta vazia da API');
+      return NextResponse.json([]);
+    }
+
+    // Se não for array, tentar converter ou retornar array vazio
+    if (!Array.isArray(response.data)) {
+      console.log('Resposta não é array, tentando processar:', response.data);
+      
+      // Se for um objeto com erro, retornar o erro
+      if (response.data && typeof response.data === 'object' && response.data.error) {
+        return NextResponse.json(
+          { error: response.data.error },
+          { status: 400 }
+        );
+      }
+      
+      // Se for outro tipo de dados, retornar array vazio
+      return NextResponse.json([]);
     }
 
     // Retornar a resposta para o cliente
