@@ -174,6 +174,9 @@ export default function ExtratoTabContent({ cartao }: ExtratoTabContentProps) {
 
   // Função para buscar o extrato
   const fetchExtractByMonth = async (mes: string) => {
+    console.log('🔥 FRONTEND: fetchExtractByMonth chamada com mês:', mes);
+    console.log('🔥 FRONTEND: mesSelecionado atual:', mesSelecionado);
+    
     setLoading(true);
     setError(null);
 
