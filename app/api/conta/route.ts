@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 
 export async function POST(request: NextRequest) {
+  console.log('🔥 API /api/conta INICIADA - Recebendo requisição');
+  console.log('🔥 URL da requisição:', request.url);
+  console.log('🔥 Method:', request.method);
+  
   try {
     let matricula: string;
     let empregador: string | number;
@@ -108,7 +112,8 @@ export async function POST(request: NextRequest) {
     // Verificar e retornar a resposta
     return NextResponse.json(response.data);
   } catch (error) {
-    console.error('Erro na API de conta:', error);
+    console.error('🔥 ERRO na API de conta:', error);
+    console.error('🔥 Stack trace:', error instanceof Error ? error.stack : 'N/A');
     
     let errorMessage = 'Erro ao processar a requisição';
     let statusCode = 500;
