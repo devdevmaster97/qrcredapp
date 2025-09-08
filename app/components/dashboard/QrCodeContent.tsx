@@ -62,11 +62,21 @@ const QRCodeContent = () => {
     <div className="flex flex-col items-center justify-center p-4 space-y-6">
       <div className="bg-white p-6 rounded-lg shadow-lg">
         <QRCodeSVG value={cartao} size={256} level="H" includeMargin={true} />
-        <p className="mt-4 text-center text-gray-600">Seu número de cartão: {cartao}</p>
       </div>
+      
       <p className="text-sm text-gray-500 text-center">
-        Apresente este QR Code no estabelecimento para realizar pagamentos
+        Apresente este QR Code no estabelecimento ou o número do cartão para realizar pagamentos
       </p>
+      
+      {/* Card separado para o número do cartão */}
+      <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 rounded-lg shadow-lg w-full max-w-sm">
+        <p className="text-white text-sm font-medium text-center mb-2">
+          Seu número de cartão:
+        </p>
+        <p className="text-white text-3xl font-bold text-center tracking-wider">
+          {cartao}
+        </p>
+      </div>
     </div>
   )
 }
