@@ -39,7 +39,7 @@ export default function NovoLancamentoPage() {
   const [valorPagamento, setValorPagamento] = useState('');
   const qrReaderRef = useRef<HTMLDivElement>(null);
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
-  const maxParcelas = 12;
+  const [maxParcelas, setMaxParcelas] = useState(12);
 
   // Usar URLs reais da API - sem simulações locais
   const BASE_URL = 'https://sas.makecard.com.br';
@@ -784,6 +784,14 @@ export default function NovoLancamentoPage() {
           // Verificar se o código do convênio está presente
           if (dadosConvenio.cod_convenio) {
             console.log('📊 Código do convênio encontrado no localStorage:', dadosConvenio.cod_convenio);
+            
+            // Configurar número máximo de parcelas baseado nos dados do convênio
+            if (dadosConvenio.parcelas && dadosConvenio.parcelas > 0) {
+              setMaxParcelas(dadosConvenio.parcelas);
+              console.log('📊 Número máximo de parcelas definido pelo convênio:', dadosConvenio.parcelas);
+            } else {
+              console.log('📊 Usando número padrão de parcelas (12)');
+            }
           } else {
             console.warn('⚠️ Código do convênio não encontrado no localStorage');
             // Se não houver dados no localStorage, buscar da API
@@ -811,6 +819,14 @@ export default function NovoLancamentoPage() {
           // Salvar os dados do convênio no localStorage
           localStorage.setItem('dadosConvenio', JSON.stringify(data.data));
           console.log('📊 Dados do convênio salvos no localStorage:', data.data);
+          
+          // Configurar número máximo de parcelas baseado nos dados do convênio
+          if (data.data.parcelas && data.data.parcelas > 0) {
+            setMaxParcelas(data.data.parcelas);
+            console.log('📊 Número máximo de parcelas definido pelo convênio (API):', data.data.parcelas);
+          } else {
+            console.log('📊 Usando número padrão de parcelas (12) - API');
+          }
         } else {
           console.error('❌ Falha ao obter dados do convênio da API');
         }
