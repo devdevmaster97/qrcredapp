@@ -238,11 +238,45 @@ export default function NovoLancamentoPage() {
       let mesAtual = '';
       let tentativaApiSucesso = false;
       
+      // Tentar obter da API primeiro
+      try {
+        console.log('📅 Consultando API de mês corrente...');
+        const associadoAtual = associadoCompleto || associado;
+        
+        if (associadoAtual && associadoAtual.id_divisao) {
+          const formDataMes = new URLSearchParams();
+          formDataMes.append('divisao', associadoAtual.id_divisao.toString());
+          
+          console.log('📅 Enviando divisão para API:', associadoAtual.id_divisao);
+          
+          const mesResponse = await fetch(API_MESES, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: formDataMes.toString()
+          });
+          
+          if (mesResponse.ok) {
+            const mesData = await mesResponse.json();
+            console.log('📅 Resposta da API de mês:', mesData);
+            
+            if (mesData.abreviacao) {
+              mesAtual = mesData.abreviacao;
+              tentativaApiSucesso = true;
+              console.log('✅ Mês corrente obtido da API:', mesAtual);
+            }
+          }
+        }
+      } catch (errorApi) {
+        console.error('❌ Erro ao consultar API de mês:', errorApi);
+      }
+      
       // Se não conseguiu obter da API, gerar localmente
       if (!tentativaApiSucesso) {
         mesAtual = gerarMesCorrenteLocal();
         console.log('⚠️ Usando mês corrente gerado localmente:', mesAtual);
-        toast.success('API indisponível. Usando mês atual do sistema.');
+        toast.error('Usando mês atual do sistema como fallback');
       }
       
       // Atualizar o estado com o mês obtido (seja da API ou gerado localmente)
