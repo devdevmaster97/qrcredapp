@@ -78,11 +78,21 @@ export async function POST(request: NextRequest) {
     );
 
     console.log('🔍 Resposta da API do associado:', associadoResponse.data);
+    console.log('🔍 Estrutura completa da resposta:', JSON.stringify(associadoResponse.data, null, 2));
+    console.log('🔍 Campos disponíveis:', Object.keys(associadoResponse.data || {}));
 
     if (!associadoResponse.data || !associadoResponse.data.id) {
       console.error('❌ ID do associado não encontrado');
+      console.error('❌ Dados recebidos da API:', associadoResponse.data);
       return NextResponse.json(
-        { error: 'ID do associado não encontrado' },
+        { 
+          error: 'ID do associado não encontrado',
+          debug: {
+            received_data: associadoResponse.data,
+            available_fields: Object.keys(associadoResponse.data || {}),
+            timestamp: new Date().toISOString()
+          }
+        },
         { status: 400 }
       );
     }
