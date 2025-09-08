@@ -112,6 +112,8 @@ export default function SaldoCard() {
       formDataConta.append('matricula', matriculaAssociado);
       formDataConta.append('empregador', empregadorAssociado.toString());
       formDataConta.append('mes', mes);
+      formDataConta.append('id', associadoResponse.data.id.toString());
+      formDataConta.append('divisao', associadoResponse.data.id_divisao.toString());
       
       const response = await axios.post('/api/conta', formDataConta, {
         headers: {
