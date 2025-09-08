@@ -5,6 +5,7 @@ export async function POST(request: NextRequest) {
   console.log('🔥 API /api/conta INICIADA - Recebendo requisição');
   console.log('🔥 URL da requisição:', request.url);
   console.log('🔥 Method:', request.method);
+  console.log('🔥 Headers:', Object.fromEntries(request.headers.entries()));
   
   try {
     let matricula: string;
