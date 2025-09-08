@@ -171,7 +171,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { 
         error: errorMessage, 
-        details: error instanceof Error ? error.message : String(error)
+        details: error instanceof Error ? error.message : String(error),
+        timestamp: new Date().toISOString(),
+        debug: {
+          url: request.url,
+          method: request.method,
+          headers: Object.fromEntries(request.headers.entries())
+        }
       },
       { status: statusCode }
     );
