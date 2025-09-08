@@ -417,7 +417,71 @@ export default function NovoLancamentoPage() {
         tipoIdDivisao: typeof associado.id_divisao
       });
 
-      // 3. Gravar venda na API
+      // 3. Buscar mês corrente da API antes de gravar
+      console.log('📅 Buscando mês corrente da API...');
+      console.log('📅 URL da API de meses:', API_MESES);
+      console.log('📅 Divisão do associado:', associado.id_divisao);
+      
+      const buscarMesCorrente = () => {
+        return new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('POST', API_MESES, true);
+          xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+          
+          xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+              if (xhr.status === 200) {
+                try {
+                  console.log('📅 Resposta bruta da API de meses:', xhr.responseText);
+                  
+                  if (!xhr.responseText || xhr.responseText.trim() === '') {
+                    console.error('❌ Resposta vazia da API de meses');
+                    reject(new Error('API de meses retornou resposta vazia'));
+                    return;
+                  }
+                  
+                  const response = JSON.parse(xhr.responseText);
+                  console.log('📅 Resposta API de meses:', response);
+                  
+                  if (response.error) {
+                    console.log('❌ Erro na API de meses:', response.error);
+                    reject(new Error(response.error));
+                  } else if (response.abreviacao) {
+                    console.log('✅ Mês corrente obtido:', response.abreviacao);
+                    resolve(response.abreviacao);
+                  } else {
+                    console.log('❌ Campo abreviacao não encontrado na resposta');
+                    reject(new Error('Campo abreviacao não encontrado'));
+                  }
+                } catch (error) {
+                  console.error('❌ Erro ao processar resposta da API de meses:', error);
+                  console.error('❌ Resposta recebida:', xhr.responseText);
+                  reject(new Error('Erro ao processar resposta da API de meses'));
+                }
+              } else {
+                console.error('❌ Erro HTTP na API de meses:', xhr.status);
+                reject(new Error('Erro na consulta do mês corrente'));
+              }
+            }
+          };
+
+          // Preparar parâmetros para envio (divisão é obrigatória)
+          const params = `divisao=${encodeURIComponent(associado.id_divisao || '')}`;
+          
+          console.log('📤 Parâmetros enviados para API de meses:', params);
+          xhr.send(params);
+        });
+      };
+
+      const abreviacaoMes = await buscarMesCorrente() as string;
+      
+      // Atualizar dadosVenda com a abreviação obtida da API
+      dadosVenda.mes_corrente = abreviacaoMes;
+      dadosVenda.primeiro_mes = abreviacaoMes;
+      
+      console.log('📅 Mês corrente atualizado nos dados de venda:', abreviacaoMes);
+
+      // 4. Gravar venda na API
       console.log('💾 Gravando venda na API...');
       console.log('💾 URL da API:', API_GRAVA_VENDA);
       console.log('✅ Dados que serão gravados na tabela sind.conta:', dadosVenda);
