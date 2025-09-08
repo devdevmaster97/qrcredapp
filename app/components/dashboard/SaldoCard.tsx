@@ -35,42 +35,55 @@ export default function SaldoCard() {
         return null;
       }
 
+      console.log('📅 Buscando mês corrente para cartão:', cartao);
+      
+      // Primeiro, buscar dados do associado para obter id_divisao
+      const associadoResponse = await axios.post('/api/localiza-associado', 
+        { cartao: cartao.trim() },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!associadoResponse.data || !associadoResponse.data.id_divisao) {
+        throw new Error('Dados do associado ou divisão não encontrados');
+      }
+
+      const divisao = associadoResponse.data.id_divisao;
+      console.log('📅 Divisão do associado:', divisao);
+      
+      // Chamar API meses_corrente_app.php diretamente
       const formData = new FormData();
-      formData.append('cartao', cartao.trim());
+      formData.append('divisao', divisao.toString());
       
-      console.log('Buscando mês corrente para cartão:', cartao);
-      
-      const response = await axios.post('/api/mes-corrente', formData, {
+      const response = await axios.post('https://sas.makecard.com.br/meses_corrente_app.php', formData, {
         headers: {
-          'Content-Type': 'multipart/form-data'
+          'Content-Type': 'application/x-www-form-urlencoded'
         }
       });
-      console.log('Resposta da API de mês corrente:', response.data);
       
-      // A API agora sempre retorna um array com pelo menos um item
-      if (Array.isArray(response.data) && response.data.length > 0 && response.data[0].abreviacao) {
-        const mesAtual = response.data[0].abreviacao;
-        console.log('Mês corrente obtido:', mesAtual);
-        return mesAtual;
+      console.log('📅 Resposta da API meses_corrente_app.php:', response.data);
+      
+      if (response.data && response.data.abreviacao) {
+        console.log('✅ Mês corrente obtido:', response.data.abreviacao);
+        return response.data.abreviacao;
+      } else if (response.data && response.data.error) {
+        console.log('❌ Erro na API de meses:', response.data.error);
+        throw new Error(response.data.error);
       } else {
-        // Em caso de problemas, usamos o mês atual
-        const dataAtual = new Date();
-        const mes = dataAtual.getMonth();
-        const ano = dataAtual.getFullYear();
-        const meses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-        const mesAtual = `${meses[mes]}/${ano}`;
-        console.log('Usando mês atual como fallback:', mesAtual);
-        return mesAtual;
+        throw new Error('Campo abreviacao não encontrado na resposta');
       }
     } catch (err) {
-      console.error('Erro ao buscar mês corrente:', err);
+      console.error('❌ Erro ao buscar mês corrente:', err);
       // Em caso de erro, retornar o mês atual
       const dataAtual = new Date();
       const mes = dataAtual.getMonth();
       const ano = dataAtual.getFullYear();
       const meses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
       const mesAtual = `${meses[mes]}/${ano}`;
-      console.log('Usando mês atual como fallback após erro:', mesAtual);
+      console.log('⚠️ Usando mês atual como fallback após erro:', mesAtual);
       return mesAtual;
     }
   }, [cartao]);
