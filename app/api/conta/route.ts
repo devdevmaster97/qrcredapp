@@ -16,16 +16,27 @@ export async function POST(request: NextRequest) {
     
     // Verificar o Content-Type e processar a request apropriadamente
     const contentType = request.headers.get('Content-Type') || '';
+    console.log('🔥 Content-Type:', contentType);
     
     if (contentType.includes('multipart/form-data')) {
+      console.log('🔥 Processando como FormData');
       const formData = await request.formData();
       matricula = formData.get('matricula') as string;
       empregador = formData.get('empregador') as string;
       mes = formData.get('mes') as string;
       divisao = formData.get('divisao') as string;
       id = formData.get('id') as string;
+    } else if (contentType.includes('application/x-www-form-urlencoded')) {
+      console.log('🔥 Processando como URL encoded');
+      const text = await request.text();
+      const params = new URLSearchParams(text);
+      matricula = params.get('matricula') as string;
+      empregador = params.get('empregador') as string;
+      mes = params.get('mes') as string;
+      divisao = params.get('divisao') as string;
+      id = params.get('id') as string;
     } else {
-      // Assume JSON
+      console.log('🔥 Processando como JSON');
       const body = await request.json();
       matricula = body.matricula;
       empregador = body.empregador;
