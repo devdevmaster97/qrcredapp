@@ -11,7 +11,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Sistema de Assistência Social por Convênios',
-  description: 'Sistema de Assistência Social por Convênios - QRCred',
+  description: 'Sistema de Assistência Social por Convênios - SASCred',
   manifest: '/manifest.json',
   themeColor: '#1e40af',
   viewport: 'width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover',

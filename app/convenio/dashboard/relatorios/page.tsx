@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FaSpinner, FaFilter, FaUndo, FaExclamationTriangle, FaTimes, FaCheck, FaReceipt, FaFileAlt, FaPrint } from 'react-icons/fa';
+import { FaSpinner, FaFilter, FaUndo, FaExclamationTriangle, FaTimes, FaCheck, FaReceipt, FaFileAlt, FaShare } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
 
@@ -248,6 +248,144 @@ export default function RelatoriosPage() {
   const formatarValor = (valor: string) => {
     if (!valor) return 'R$ 0,00';
     return `R$ ${valor}`;
+  };
+
+  // Função para compartilhar comprovante como imagem
+  const compartilharComprovante = async () => {
+    if (!lancamentoSelecionado) return;
+
+    try {
+      // Criar um canvas para gerar a imagem do comprovante
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // Configurar dimensões do canvas
+      canvas.width = 400;
+      canvas.height = 600;
+
+      // Fundo branco
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Configurar fonte e cores
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 16px Arial';
+      ctx.textAlign = 'center';
+
+      // Título
+      ctx.fillText('SASCRED - SISTEMA DE CRÉDITO', canvas.width / 2, 40);
+      ctx.font = '12px Arial';
+      ctx.fillText('Comprovante de Transação', canvas.width / 2, 60);
+
+      // Linha separadora
+      ctx.strokeStyle = '#cccccc';
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(20, 80);
+      ctx.lineTo(canvas.width - 20, 80);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Dados da transação
+      ctx.font = '12px Arial';
+      ctx.textAlign = 'left';
+      ctx.fillStyle = '#333333';
+
+      let yPosition = 110;
+      const lineHeight = 25;
+
+      const dados = [
+        [`Transação: #${lancamentoSelecionado.id}`, ''],
+        [`Data/Hora: ${formatarData(lancamentoSelecionado.data)} ${lancamentoSelecionado.hora}`, ''],
+        [`Associado: ${lancamentoSelecionado.nome_associado || lancamentoSelecionado.associado}`, ''],
+        [`Empregador: ${lancamentoSelecionado.empregador}`, ''],
+        [`Lançamento: ${lancamentoSelecionado.lancamento || '-'}`, ''],
+        [`Mês Referência: ${lancamentoSelecionado.mes}`, ''],
+        [`Parcela: ${lancamentoSelecionado.parcela}`, ''],
+        ['', ''], // Espaço
+        [`VALOR TOTAL: ${formatarValor(lancamentoSelecionado.valor)}`, '']
+      ];
+
+      dados.forEach(([texto], index) => {
+        if (texto) {
+          if (texto.includes('VALOR TOTAL')) {
+            ctx.font = 'bold 14px Arial';
+            ctx.fillStyle = '#000000';
+          } else {
+            ctx.font = '12px Arial';
+            ctx.fillStyle = '#333333';
+          }
+          ctx.fillText(texto, 30, yPosition + (index * lineHeight));
+        }
+      });
+
+      // Linha separadora inferior
+      ctx.strokeStyle = '#cccccc';
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(20, yPosition + (dados.length * lineHeight) + 20);
+      ctx.lineTo(canvas.width - 20, yPosition + (dados.length * lineHeight) + 20);
+      ctx.stroke();
+
+      // Texto final
+      ctx.font = '10px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#666666';
+      ctx.fillText('TRANSAÇÃO AUTORIZADA - CRÉDITO NO CONVÊNIO', canvas.width / 2, yPosition + (dados.length * lineHeight) + 45);
+      ctx.fillText('DOCUMENTO DIGITAL VÁLIDO', canvas.width / 2, yPosition + (dados.length * lineHeight) + 60);
+
+      // Converter canvas para blob
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+
+        // Verificar se o navegador suporta Web Share API
+        if (navigator.share && navigator.canShare) {
+          const file = new File([blob], `comprovante_${lancamentoSelecionado.id}.png`, {
+            type: 'image/png'
+          });
+
+          if (navigator.canShare({ files: [file] })) {
+            try {
+              await navigator.share({
+                title: 'Comprovante de Transação',
+                text: `Comprovante da transação #${lancamentoSelecionado.id}`,
+                files: [file]
+              });
+              toast.success('Comprovante compartilhado com sucesso!');
+            } catch (error) {
+              if ((error as Error).name !== 'AbortError') {
+                console.error('Erro ao compartilhar:', error);
+                toast.error('Erro ao compartilhar comprovante');
+              }
+            }
+          } else {
+            // Fallback: download da imagem
+            baixarImagem(blob);
+          }
+        } else {
+          // Fallback: download da imagem
+          baixarImagem(blob);
+        }
+      }, 'image/png');
+
+    } catch (error) {
+      console.error('Erro ao gerar comprovante:', error);
+      toast.error('Erro ao gerar comprovante');
+    }
+  };
+
+  // Função fallback para baixar a imagem
+  const baixarImagem = (blob: Blob) => {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `comprovante_${lancamentoSelecionado?.id}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success('Comprovante baixado com sucesso!');
   };
 
   return (
@@ -592,11 +730,11 @@ export default function RelatoriosPage() {
                 
                 <div className="mt-4 flex justify-center">
                   <button
-                    onClick={() => window.print()}
+                    onClick={compartilharComprovante}
                     className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
-                    <FaPrint className="mr-2 -ml-1 h-4 w-4" />
-                    Imprimir
+                    <FaShare className="mr-2 -ml-1 h-4 w-4" />
+                    Compartilhar
                   </button>
                 </div>
               </div>

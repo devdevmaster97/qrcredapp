@@ -667,7 +667,7 @@ export default function NovoLancamentoPage() {
       // Salvar dados da transação para a página de sucesso
       const dadosTransacao = {
         associado: associado.nome,
-        matricula: associado.matricula,
+        cpf: associado.cpf,
         valor: valor,
         parcelas: parcelas,
         valorParcela: valorParcela,

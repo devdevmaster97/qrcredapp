@@ -7,7 +7,7 @@ import Header from '../../../../components/Header';
 
 interface DadosTransacao {
   associado: string;
-  matricula: string;
+  cpf: string;
   valor: string;
   parcelas: number;
   valorParcela: number;
@@ -103,8 +103,8 @@ export default function SucessoPage() {
               </div>
               
               <div className="bg-gray-50 p-4 rounded-lg">
-                <span className="text-xs text-gray-500 uppercase tracking-wide block">Matrícula</span>
-                <div className="font-semibold text-gray-800">{dadosTransacao.matricula}</div>
+                <span className="text-xs text-gray-500 uppercase tracking-wide block">CPF</span>
+                <div className="font-semibold text-gray-800">{dadosTransacao.cpf || 'Não informado'}</div>
               </div>
             </div>
 
