@@ -992,13 +992,38 @@ export default function NovoLancamentoPage() {
               </div>
 
               {valorParcela > 0 && (
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                  <label className="block text-sm font-medium text-blue-800 mb-2">
+                <div className={`p-4 rounded-lg border ${
+                  valorParcela > associado.saldo 
+                    ? 'bg-red-50 border-red-200' 
+                    : 'bg-blue-50 border-blue-200'
+                }`}>
+                  <label className={`block text-sm font-medium mb-2 ${
+                    valorParcela > associado.saldo 
+                      ? 'text-red-800' 
+                      : 'text-blue-800'
+                  }`}>
                     Valor por Parcela
                   </label>
-                  <div className="text-2xl font-bold text-blue-600">
+                  <div className={`text-2xl font-bold ${
+                    valorParcela > associado.saldo 
+                      ? 'text-red-600' 
+                      : 'text-blue-600'
+                  }`}>
                     {valorParcela.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                   </div>
+                  {valorParcela > associado.saldo && (
+                    <div className="mt-3 p-3 bg-red-100 border border-red-300 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <span className="text-red-600 font-bold">⚠️</span>
+                        <span className="text-red-800 font-semibold text-sm">
+                          Valor da parcela excede o saldo disponível!
+                        </span>
+                      </div>
+                      <div className="text-red-700 text-xs mt-1">
+                        Saldo disponível: {associado.saldo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
