@@ -29,20 +29,97 @@ export default function MeusDadosPage() {
   const [convenioData, setConvenioData] = useState<ConvenioData | null>(null);
   const [formData, setFormData] = useState<ConvenioData | null>(null);
 
+  // Limpeza de cache ao montar o componente
+  useEffect(() => {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      // Limpeza de cache específica para dispositivos móveis
+      if ('caches' in window) {
+        caches.keys().then(names => {
+          names.forEach(name => {
+            caches.delete(name);
+          });
+        });
+      }
+      
+      console.log('🧹 Cache limpo para dispositivo móvel - Meus Dados');
+    }
+  }, []);
+
   useEffect(() => {
     const fetchConvenioData = async () => {
       try {
-        // Aqui você faria a chamada real para a API
-        const response = await fetch('/api/convenio/dados');
+        // Detectar se é dispositivo móvel
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        // Headers anti-cache para dispositivos móveis
+        const headers: HeadersInit = {
+          'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        };
+        
+        // Timestamp para evitar cache
+        const timestamp = Date.now();
+        const response = await fetch(`/api/convenio/dados?t=${timestamp}`, {
+          method: 'GET',
+          headers,
+          cache: 'no-store'
+        });
         
         if (!response.ok) {
+          if (response.status === 401) {
+            // Sessão expirada - redirecionar para login
+            window.location.href = '/convenio/login';
+            return;
+          }
           throw new Error('Falha ao buscar dados do convênio');
         }
         
         const data = await response.json();
+        
         if (data.success) {
+          // Obter dados do token para validação cruzada
+          const tokenData = localStorage.getItem('convenioToken');
+          if (tokenData) {
+            try {
+              const decodedToken = JSON.parse(atob(tokenData));
+              
+              console.log('🔍 VALIDAÇÃO CRUZADA MEUS DADOS:', {
+                usuario_token: decodedToken.user,
+                cod_convenio_api: data.data.cod_convenio,
+                razaosocial_api: data.data.razaosocial,
+                timestamp: new Date().toISOString()
+              });
+              
+              // Para dispositivos móveis, validação extra de consistência
+              if (isMobile && decodedToken.user === 'emp' && data.data.cod_convenio !== '243') {
+                console.error('❌ INCONSISTÊNCIA DETECTADA - Usuário emp deveria ter cod_convenio 243, mas retornou:', data.data.cod_convenio);
+                toast.error('Dados inconsistentes detectados. Fazendo logout...');
+                
+                // Limpeza agressiva e logout
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                setTimeout(() => {
+                  window.location.href = '/convenio/login';
+                }, 2000);
+                return;
+              }
+            } catch (tokenError) {
+              console.error('Erro ao decodificar token:', tokenError);
+            }
+          }
+          
           setConvenioData(data.data);
           setFormData(data.data);
+          
+          console.log('✅ Dados carregados com sucesso:', {
+            cod_convenio: data.data.cod_convenio,
+            razaosocial: data.data.razaosocial,
+            timestamp: new Date().toISOString()
+          });
         } else {
           toast.error('Erro ao buscar dados do convênio');
         }
