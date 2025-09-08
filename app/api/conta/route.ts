@@ -64,125 +64,54 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Buscar dados do associado usando o cartão da sessão
-    console.log('🔍 Buscando dados do associado para obter ID...');
-    
-    // Primeiro, obter dados da sessão para pegar o cartão
-    const sessionResponse = await axios.get('/api/auth/session', {
-      headers: {
-        cookie: request.headers.get('cookie') || ''
-      }
-    });
-    
-    if (!sessionResponse.data?.user?.cartao) {
-      console.error('❌ Cartão não encontrado na sessão');
+    // Se temos ID e divisão nos parâmetros, usar diretamente
+    if (id && divisao) {
+      console.log('✅ Usando ID e divisão dos parâmetros:', { id, divisao });
+    } else {
+      console.error('❌ ID ou divisão não fornecidos nos parâmetros');
       return NextResponse.json(
-        { error: 'Sessão inválida - cartão não encontrado' },
-        { status: 401 }
-      );
-    }
-    
-    const cartao = sessionResponse.data.user.cartao;
-    console.log('🔍 Cartão da sessão obtido:', cartao);
-    
-    const associadoResponse = await axios.post(
-      'https://sas.makecard.com.br/localizaasapp.php',
-      `cartaodigitado=${encodeURIComponent(cartao)}`,
-      {
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        }
-      }
-    );
-
-    console.log('🔍 Resposta da API do associado:', associadoResponse.data);
-    console.log('🔍 Estrutura completa da resposta:', JSON.stringify(associadoResponse.data, null, 2));
-    console.log('🔍 Campos disponíveis:', Object.keys(associadoResponse.data || {}));
-
-    if (!associadoResponse.data || !associadoResponse.data.id) {
-      console.error('❌ ID do associado não encontrado');
-      console.error('❌ Dados recebidos da API:', associadoResponse.data);
-      return NextResponse.json(
-        { 
-          error: 'ID do associado não encontrado',
-          debug: {
-            received_data: associadoResponse.data,
-            available_fields: Object.keys(associadoResponse.data || {}),
-            timestamp: new Date().toISOString()
-          }
-        },
+        { error: 'ID e divisão do associado são obrigatórios' },
         { status: 400 }
       );
     }
-
-    if (!associadoResponse.data.id_divisao) {
-      console.error('❌ Divisão do associado não encontrada');
-      return NextResponse.json(
-        { error: 'Divisão do associado não encontrada' },
-        { status: 400 }
-      );
-    }
-
-    // Validar se divisão é um número válido
-    const divisaoNum = parseInt(associadoResponse.data.id_divisao.toString(), 10);
-    if (isNaN(divisaoNum)) {
-      console.error('❌ Divisão do associado não é um número válido:', associadoResponse.data.id_divisao);
-      return NextResponse.json(
-        { error: 'Divisão do associado inválida' },
-        { status: 400 }
-      );
-    }
-
-    const idAssociado = associadoResponse.data.id;
-    const divisaoAssociado = associadoResponse.data.id_divisao;
-    console.log('✅ ID do associado obtido:', idAssociado);
-    console.log('✅ Divisão do associado obtida:', divisaoAssociado);
 
     // Preparar os dados para enviar ao backend
     const payload = new URLSearchParams();
     payload.append('matricula', matricula);
     payload.append('empregador', empregador.toString());
     payload.append('mes', mes);
-    payload.append('id', idAssociado.toString()); // ID obrigatório do associado
-    payload.append('divisao', divisaoAssociado.toString()); // Divisão obrigatória do associado
-    
-    console.log('Dados sendo enviados para conta_app.php:', {
+    payload.append('id', id.toString());
+    payload.append('divisao', divisao.toString());
+
+    console.log('📤 Enviando dados para conta_app.php:', {
       matricula,
-      empregador: empregador.toString(),
+      empregador,
       mes,
-      divisao: divisaoAssociado,
-      id: idAssociado
+      id,
+      divisao
     });
-    console.log('Payload completo (URLSearchParams):', payload.toString());
-    console.log('Parâmetros individuais do payload:');
-    const entries = Array.from(payload.entries());
-    entries.forEach(([key, value]) => {
-      console.log(`  ${key}: "${value}" (tipo: ${typeof value})`);
-    });
-    
-    // Enviar a requisição para o backend
+
+    // Chamar a API conta_app.php
     const response = await axios.post(
       'https://sas.makecard.com.br/conta_app.php',
-      payload,
+      payload.toString(),
       {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/x-www-form-urlencoded'
         },
-        timeout: 10000, // 10 segundos de timeout
+        timeout: 10000
       }
     );
 
-    console.log('Resposta do endpoint conta:', response.data);
-    console.log('Status da resposta:', response.status);
-    console.log('Headers da resposta:', response.headers);
-    console.log('Tipo da resposta:', typeof response.data);
-    console.log('É array?', Array.isArray(response.data));
-    console.log('Quantidade de registros:', Array.isArray(response.data) ? response.data.length : 'N/A');
+    console.log('📋 Resposta da API conta_app.php:', response.data);
+    console.log('📋 Status da resposta:', response.status);
+    console.log('📋 Tipo da resposta:', typeof response.data);
+    console.log('📋 É array?', Array.isArray(response.data));
     
     if (Array.isArray(response.data) && response.data.length > 0) {
-      console.log('Primeiro registro:', response.data[0]);
+      console.log('📋 Primeiro registro:', response.data[0]);
     } else if (response.data && typeof response.data === 'object') {
-      console.log('Resposta como objeto:', response.data);
+      console.log('📋 Resposta como objeto:', response.data);
     }
 
     // Verificar e retornar a resposta
