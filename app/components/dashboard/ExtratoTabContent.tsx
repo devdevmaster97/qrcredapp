@@ -110,24 +110,48 @@ export default function ExtratoTabContent({ cartao }: ExtratoTabContentProps) {
   // Função para buscar o mês corrente
   const fetchMesCorrente = async () => {
     try {
-      console.log('API mes-corrente: Buscando mês corrente para cartão', cartao);
-      const formData = new FormData();
-      formData.append('cartao', cartao.trim());
+      console.log('📅 Buscando mês corrente para cartão:', cartao);
       
-      const response = await axios.post('/api/mes-corrente', formData, {
+      // Primeiro, buscar dados do associado para obter id_divisao
+      const associadoResponse = await axios.post<AssociadoResponse>('/api/localiza-associado', 
+        { cartao: cartao.trim() },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!associadoResponse.data || !associadoResponse.data.id_divisao) {
+        throw new Error('Dados do associado ou divisão não encontrados');
+      }
+
+      const divisao = associadoResponse.data.id_divisao;
+      console.log('📅 Divisão do associado:', divisao);
+      
+      // Chamar API meses_corrente_app.php diretamente
+      const formData = new FormData();
+      formData.append('divisao', divisao.toString());
+      
+      const response = await axios.post('https://sas.makecard.com.br/meses_corrente_app.php', formData, {
         headers: {
-          'Content-Type': 'multipart/form-data'
+          'Content-Type': 'application/x-www-form-urlencoded'
         }
       });
-      console.log('Resposta do endpoint mês corrente:', response.data);
       
-      if (response.data && response.data[0]?.abreviacao) {
-        setMesSelecionado(response.data[0].abreviacao);
+      console.log('📅 Resposta da API meses_corrente_app.php:', response.data);
+      
+      if (response.data && response.data.abreviacao) {
+        console.log('✅ Mês corrente obtido:', response.data.abreviacao);
+        setMesSelecionado(response.data.abreviacao);
+      } else if (response.data && response.data.error) {
+        console.log('❌ Erro na API de meses:', response.data.error);
+        throw new Error(response.data.error);
       } else {
-        throw new Error('Resposta inválida do servidor');
+        throw new Error('Campo abreviacao não encontrado na resposta');
       }
     } catch (error) {
-      console.error('Erro ao buscar mês corrente:', error);
+      console.error('❌ Erro ao buscar mês corrente:', error);
       setError('Erro ao carregar o mês corrente');
     }
   };

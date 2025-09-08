@@ -24,11 +24,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Preparar requisição para o backend
-    const formData = new FormData();
-    formData.append('cartao', cartao);
+    // Primeiro, buscar dados do associado para obter id_divisao
+    console.log(' Buscando dados do associado para obter divisão...');
+    
+    const associadoResponse = await axios.post(
+      'https://sas.makecard.com.br/localizaasapp.php',
+      `cartao=${encodeURIComponent(cartao)}`,
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }
+    );
 
-    console.log('Enviando requisição para o backend com cartao:', cartao);
+    console.log(' Resposta da API do associado:', associadoResponse.data);
+
+    if (!associadoResponse.data || !associadoResponse.data.id_divisao) {
+      console.error(' Dados do associado ou divisão não encontrados');
+      throw new Error('Dados do associado ou divisão não encontrados');
+    }
+
+    const divisao = associadoResponse.data.id_divisao;
+    console.log(' Divisão do associado:', divisao);
+
+    // Preparar requisição para o backend com divisão
+    const formData = new FormData();
+    formData.append('divisao', divisao.toString());
+
+    console.log(' Enviando requisição para meses_corrente_app.php com divisão:', divisao);
 
     // Fazer requisição para o backend
     const response = await axios.post(
