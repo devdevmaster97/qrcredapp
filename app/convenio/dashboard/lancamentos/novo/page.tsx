@@ -17,6 +17,9 @@ interface AssociadoData {
   token_associado: string;
   id_divisao?: number;
   saldo: number;
+  cpf?: string;
+  nome_empregador?: string;
+  nome_divisao?: string;
 }
 
 export default function NovoLancamentoPage() {
@@ -61,7 +64,10 @@ export default function NovoLancamentoPage() {
       limite: data.limite,
       token_associado: data.token_associado,
       id_divisao: data.id_divisao, // ID da divisão para gravar no campo divisao da tabela sind.conta
-      saldo: 0 // Será preenchido após capturar o mês corrente
+      saldo: 0, // Será preenchido após capturar o mês corrente
+      cpf: data.cpf, // CPF do associado
+      nome_empregador: data.nome_empregador || `Empregador ${data.empregador}`, // Nome do empregador ou fallback
+      nome_divisao: data.nome_divisao || `Divisão ${data.id_divisao}` // Nome da divisão ou fallback
     };
     
     console.log('📝 DADOS PROCESSADOS DO ASSOCIADO (incluindo id_divisao):', associadoData);
@@ -871,21 +877,27 @@ export default function NovoLancamentoPage() {
                   <div className="font-semibold text-gray-800">{associado.nome}</div>
                 </div>
                 <div className="bg-white p-3 rounded-lg border border-green-100">
-                  <span className="text-xs text-gray-500 uppercase tracking-wide">Matrícula</span>
-                  <div className="font-semibold text-gray-800">{associado.matricula}</div>
+                  <span className="text-xs text-gray-500 uppercase tracking-wide">CPF</span>
+                  <div className="font-semibold text-gray-800">{associado.cpf || 'Não informado'}</div>
                 </div>
                 <div className="bg-white p-3 rounded-lg border border-green-100">
                   <span className="text-xs text-gray-500 uppercase tracking-wide">Empregador</span>
-                  <div className="font-semibold text-gray-800">{associado.empregador}</div>
+                  <div className="font-semibold text-gray-800">{associado.nome_empregador || associado.empregador}</div>
                 </div>
                 <div className="bg-white p-3 rounded-lg border border-green-100">
                   <span className="text-xs text-gray-500 uppercase tracking-wide">Saldo Disponível</span>
                   <div className="font-bold text-green-600 text-lg">{associado.saldo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
                 </div>
-                {associado.id_divisao && (
-                  <div className="bg-white p-3 rounded-lg border border-green-100 md:col-span-2">
-                    <span className="text-xs text-gray-500 uppercase tracking-wide">ID Divisão</span>
-                    <div className="font-semibold text-gray-800">{associado.id_divisao}</div>
+                {(associado.nome_divisao || associado.id_divisao) && (
+                  <div className="bg-white p-3 rounded-lg border border-green-100">
+                    <span className="text-xs text-gray-500 uppercase tracking-wide">Divisão</span>
+                    <div className="font-semibold text-gray-800">{associado.nome_divisao || `Divisão ${associado.id_divisao}`}</div>
+                  </div>
+                )}
+                {mesCorrente && (
+                  <div className="bg-white p-3 rounded-lg border border-green-100">
+                    <span className="text-xs text-gray-500 uppercase tracking-wide">Mês Corrente</span>
+                    <div className="font-semibold text-blue-600">{mesCorrente}</div>
                   </div>
                 )}
               </div>
