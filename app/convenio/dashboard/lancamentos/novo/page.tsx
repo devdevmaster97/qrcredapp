@@ -66,8 +66,8 @@ export default function NovoLancamentoPage() {
       id_divisao: data.id_divisao, // ID da divisão para gravar no campo divisao da tabela sind.conta
       saldo: 0, // Será preenchido após capturar o mês corrente
       cpf: data.cpf, // CPF do associado
-      nome_empregador: data.nome_empregador || `Empregador ${data.empregador}`, // Nome do empregador ou fallback
-      nome_divisao: data.nome_divisao || `Divisão ${data.id_divisao}` // Nome da divisão ou fallback
+      nome_empregador: data.nome_empregador || null, // Nome do empregador da API
+      nome_divisao: data.nome_divisao || null // Nome da divisão da API
     };
     
     console.log('📝 DADOS PROCESSADOS DO ASSOCIADO (incluindo id_divisao):', associadoData);
@@ -916,7 +916,7 @@ export default function NovoLancamentoPage() {
                 </div>
                 <div className="bg-white p-3 rounded-lg border border-green-100">
                   <span className="text-xs text-gray-500 uppercase tracking-wide">Empregador</span>
-                  <div className="font-semibold text-gray-800">{associado.nome_empregador || associado.empregador}</div>
+                  <div className="font-semibold text-gray-800">{associado.nome_empregador || `ID: ${associado.empregador}`}</div>
                 </div>
                 <div className="bg-white p-3 rounded-lg border border-green-100">
                   <span className="text-xs text-gray-500 uppercase tracking-wide">Saldo Disponível</span>
