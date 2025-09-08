@@ -932,10 +932,6 @@ export default function NovoLancamentoPage() {
                   <span className="text-xs text-gray-500 uppercase tracking-wide">Empregador</span>
                   <div className="font-semibold text-gray-800">{associado.nome_empregador || `ID: ${associado.empregador}`}</div>
                 </div>
-                <div className="bg-white p-3 rounded-lg border border-green-100">
-                  <span className="text-xs text-gray-500 uppercase tracking-wide">Saldo Disponível</span>
-                  <div className="font-bold text-green-600 text-lg">{associado.saldo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
-                </div>
                 {(associado.nome_divisao || associado.id_divisao) && (
                   <div className="bg-white p-3 rounded-lg border border-green-100">
                     <span className="text-xs text-gray-500 uppercase tracking-wide">Divisão</span>
@@ -944,10 +940,14 @@ export default function NovoLancamentoPage() {
                 )}
                 {mesCorrente && (
                   <div className="bg-white p-3 rounded-lg border border-green-100">
-                    <span className="text-xs text-gray-500 uppercase tracking-wide">Mês Corrente</span>
+                    <span className="text-xs text-gray-500 uppercase tracking-wide">Mês Desconto</span>
                     <div className="font-semibold text-blue-600">{mesCorrente}</div>
                   </div>
                 )}
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl border-2 border-green-200 shadow-md">
+                  <span className="text-sm text-green-700 uppercase tracking-wide font-bold">Saldo Disponível</span>
+                  <div className="font-bold text-green-600 text-2xl mt-1">{associado.saldo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
+                </div>
               </div>
             </div>
           )}
