@@ -52,30 +52,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Buscar dados do associado para obter o ID (campo integer da tabela sind.associado)
+    console.log('🔍 Buscando dados do associado para obter ID...');
+    
+    const associadoResponse = await axios.post(
+      'https://sas.makecard.com.br/localizaasapp.php',
+      `matricula=${encodeURIComponent(matricula)}&empregador=${encodeURIComponent(empregador.toString())}`,
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }
+    );
+
+    console.log('🔍 Resposta da API do associado:', associadoResponse.data);
+
+    if (!associadoResponse.data || !associadoResponse.data.id) {
+      console.error('❌ ID do associado não encontrado');
+      return NextResponse.json(
+        { error: 'ID do associado não encontrado' },
+        { status: 400 }
+      );
+    }
+
+    const idAssociado = associadoResponse.data.id;
+    const divisaoAssociado = associadoResponse.data.id_divisao;
+    console.log('✅ ID do associado obtido:', idAssociado);
+    console.log('✅ Divisão do associado obtida:', divisaoAssociado);
+
     // Preparar os dados para enviar ao backend
     const payload = new URLSearchParams();
     payload.append('matricula', matricula);
     payload.append('empregador', empregador.toString());
     payload.append('mes', mes);
-    if (divisao) {
-      const divisaoInt = parseInt(String(divisao), 10);
-      if (!isNaN(divisaoInt)) {
-        payload.append('divisao', divisaoInt.toString());
-      }
-    }
-    if (id) {
-      const idInt = parseInt(String(id), 10);
-      if (!isNaN(idInt)) {
-        payload.append('id', idInt.toString());
-      }
-    }
+    payload.append('id', idAssociado.toString()); // ID obrigatório do associado
+    payload.append('divisao', divisaoAssociado.toString()); // Divisão obrigatória do associado
     
     console.log('Dados sendo enviados para conta_app.php:', {
       matricula,
       empregador: empregador.toString(),
       mes,
-      divisao,
-      id
+      divisao: divisaoAssociado,
+      id: idAssociado
     });
     console.log('Payload completo (URLSearchParams):', payload.toString());
     console.log('Parâmetros individuais do payload:');
