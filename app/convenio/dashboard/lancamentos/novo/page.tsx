@@ -258,22 +258,87 @@ export default function NovoLancamentoPage() {
             console.log('💰 Limite do associado:', limiteNumerico);
             
             if (!isNaN(limiteNumerico)) {
-              // Para simplificar, vamos usar o limite como saldo disponível
-              const saldoDisponivel = limiteNumerico;
-              
-              console.log('💰 Saldo calculado:', saldoDisponivel);
-              
-              // Atualizar associado com saldo calculado
-              const associadoFinal = associadoCompleto || associado;
-              if (associadoFinal) {
-                const novoAssociado = { ...associadoFinal, saldo: Math.max(0, saldoDisponivel) };
-                console.log('💰 Associado atualizado com saldo calculado:', novoAssociado);
-                setAssociado(novoAssociado);
+              // Buscar gastos do mês corrente para calcular saldo real
+              try {
+                console.log('📊 Consultando gastos do mês corrente...');
                 
-                // Toast de sucesso com o saldo calculado
-                toast.success(`Cartão encontrado! Saldo: ${saldoDisponivel.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, { 
-                  id: 'busca-cartao'
+                const formData = new URLSearchParams();
+                formData.append('matricula', associadoAtual.matricula);
+                formData.append('empregador', associadoAtual.empregador.toString());
+                formData.append('mes', mesAtual);
+                formData.append('id', associadoAtual.id.toString());
+                formData.append('divisao', associadoAtual.id_divisao?.toString() || '');
+                
+                const contaResponse = await fetch(API_CONTA, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                  },
+                  body: formData.toString()
                 });
+                
+                if (contaResponse.ok) {
+                  const contaData = await contaResponse.json();
+                  console.log('📊 Dados da conta recebidos:', contaData);
+                  
+                  let totalGastos = 0;
+                  
+                  if (Array.isArray(contaData)) {
+                    // Somar todos os valores das contas do mês
+                    totalGastos = contaData.reduce((total, conta) => {
+                      const valor = parseFloat(conta.valor || 0);
+                      return total + valor;
+                    }, 0);
+                  }
+                  
+                  console.log('💰 Total de gastos no mês:', totalGastos);
+                  
+                  // Calcular saldo real: Limite - Gastos
+                  const saldoDisponivel = limiteNumerico - totalGastos;
+                  
+                  console.log('💰 Saldo disponível calculado:', saldoDisponivel);
+                  
+                  // Atualizar associado com saldo calculado
+                  const associadoFinal = associadoCompleto || associado;
+                  if (associadoFinal) {
+                    const novoAssociado = { ...associadoFinal, saldo: Math.max(0, saldoDisponivel) };
+                    console.log('💰 Associado atualizado com saldo real:', novoAssociado);
+                    setAssociado(novoAssociado);
+                    
+                    // Toast de sucesso com o saldo real
+                    toast.success(`Cartão encontrado! Saldo: ${Math.max(0, saldoDisponivel).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, { 
+                      id: 'busca-cartao'
+                    });
+                  }
+                } else {
+                  console.warn('⚠️ Erro ao consultar conta, usando limite como saldo');
+                  // Em caso de erro na consulta, usar limite como fallback
+                  const saldoDisponivel = limiteNumerico;
+                  
+                  const associadoFinal = associadoCompleto || associado;
+                  if (associadoFinal) {
+                    const novoAssociado = { ...associadoFinal, saldo: Math.max(0, saldoDisponivel) };
+                    setAssociado(novoAssociado);
+                    
+                    toast.success(`Cartão encontrado! Saldo: ${saldoDisponivel.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, { 
+                      id: 'busca-cartao'
+                    });
+                  }
+                }
+              } catch (errorConsulta) {
+                console.error('❌ Erro ao consultar gastos:', errorConsulta);
+                // Em caso de erro, usar limite como fallback
+                const saldoDisponivel = limiteNumerico;
+                
+                const associadoFinal = associadoCompleto || associado;
+                if (associadoFinal) {
+                  const novoAssociado = { ...associadoFinal, saldo: Math.max(0, saldoDisponivel) };
+                  setAssociado(novoAssociado);
+                  
+                  toast.success(`Cartão encontrado! Saldo: ${saldoDisponivel.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, { 
+                    id: 'busca-cartao'
+                  });
+                }
               }
             }
           }
