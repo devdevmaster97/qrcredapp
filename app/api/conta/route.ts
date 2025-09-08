@@ -75,6 +75,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (!associadoResponse.data.id_divisao) {
+      console.error('❌ Divisão do associado não encontrada');
+      return NextResponse.json(
+        { error: 'Divisão do associado não encontrada' },
+        { status: 400 }
+      );
+    }
+
     const idAssociado = associadoResponse.data.id;
     const divisaoAssociado = associadoResponse.data.id_divisao;
     console.log('✅ ID do associado obtido:', idAssociado);
