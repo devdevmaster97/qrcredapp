@@ -953,7 +953,7 @@ export default function NovoLancamentoPage() {
           )}
 
           {/* Formulário de Lançamento */}
-          {associado && (
+          {associado && associado.saldo > 0 && (
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-3">
