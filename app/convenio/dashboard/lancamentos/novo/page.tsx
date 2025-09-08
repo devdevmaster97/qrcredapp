@@ -417,6 +417,20 @@ export default function NovoLancamentoPage() {
       return;
     }
 
+    // Validar saldo disponível
+    if (associado.saldo <= 0) {
+      toast.error('Saldo insuficiente. O saldo disponível deve ser maior que zero para realizar lançamentos.');
+      return;
+    }
+
+    // Converter valor para número para comparação
+    const valorNumerico = parseFloat(valor.replace(/[^\d,]/g, '').replace(',', '.'));
+    
+    if (valorNumerico > associado.saldo) {
+      toast.error(`Valor da parcela (${valorNumerico.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}) não pode ser maior que o saldo disponível (${associado.saldo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})`);
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -1016,7 +1030,7 @@ export default function NovoLancamentoPage() {
 
               <button
                 onClick={autorizarPagamento}
-                disabled={loading || !valor || !senha}
+                disabled={loading || !valor || !senha || !associado || associado.saldo <= 0 || (valor ? parseFloat(valor.replace(/[^\d,]/g, '').replace(',', '.')) > associado.saldo : false)}
                 className="w-full py-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 font-bold text-lg transition-all transform hover:scale-[1.02] disabled:hover:scale-100 shadow-lg"
               >
                 {loading ? <FaSpinner className="animate-spin text-xl" /> : <FaCheckCircle className="text-xl" />}
