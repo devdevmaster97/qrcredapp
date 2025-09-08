@@ -95,6 +95,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validar se divisão é um número válido
+    const divisaoNum = parseInt(associadoResponse.data.id_divisao.toString(), 10);
+    if (isNaN(divisaoNum)) {
+      console.error('❌ Divisão do associado não é um número válido:', associadoResponse.data.id_divisao);
+      return NextResponse.json(
+        { error: 'Divisão do associado inválida' },
+        { status: 400 }
+      );
+    }
+
     const idAssociado = associadoResponse.data.id;
     const divisaoAssociado = associadoResponse.data.id_divisao;
     console.log('✅ ID do associado obtido:', idAssociado);
