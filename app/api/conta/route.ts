@@ -64,12 +64,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Buscar dados do associado para obter o ID (campo integer da tabela sind.associado)
+    // Buscar dados do associado usando o cartão da sessão
     console.log('🔍 Buscando dados do associado para obter ID...');
+    
+    // Primeiro, obter dados da sessão para pegar o cartão
+    const sessionResponse = await axios.get('/api/auth/session', {
+      headers: {
+        cookie: request.headers.get('cookie') || ''
+      }
+    });
+    
+    if (!sessionResponse.data?.user?.cartao) {
+      console.error('❌ Cartão não encontrado na sessão');
+      return NextResponse.json(
+        { error: 'Sessão inválida - cartão não encontrado' },
+        { status: 401 }
+      );
+    }
+    
+    const cartao = sessionResponse.data.user.cartao;
+    console.log('🔍 Cartão da sessão obtido:', cartao);
     
     const associadoResponse = await axios.post(
       'https://sas.makecard.com.br/localizaasapp.php',
-      `matricula=${encodeURIComponent(matricula)}&empregador=${encodeURIComponent(empregador.toString())}`,
+      `cartaodigitado=${encodeURIComponent(cartao)}`,
       {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
