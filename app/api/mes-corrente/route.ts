@@ -61,46 +61,28 @@ export async function POST(request: NextRequest) {
 
     console.log('Resposta do backend:', response.data);
 
-    // Verificar se a resposta é um array ou objeto vazio
+    // Verificar se a API PHP retornou erro
+    if (response.data && response.data.error) {
+      console.error('❌ Erro retornado pela API PHP:', response.data.error);
+      throw new Error(`Erro da API PHP: ${response.data.error}`);
+    }
+
+    // Verificar se a resposta contém os dados necessários
     let responseData;
-    if (Array.isArray(response.data)) {
-      // Se já é um array, usar diretamente
-      responseData = response.data;
-    } else if (response.data && typeof response.data === 'object') {
-      // Se é um objeto e não está vazio
-      if (Object.keys(response.data).length === 0) {
-        // Objeto vazio, criar um objeto de mês padrão
-        const dataAtual = new Date();
-        const mes = dataAtual.getMonth();
-        const ano = dataAtual.getFullYear();
-        const meses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-        
-        responseData = [{
-          id: '1',
-          abreviacao: `${meses[mes]}/${ano}`,
-          descricao: `${meses[mes]}/${ano}`,
-          atual: 'S'
-        }];
-        console.log('Criando objeto de mês padrão:', responseData);
-      } else {
-        // Objeto não vazio, converter para array
-        responseData = [response.data];
-        console.log('Convertendo objeto para array:', responseData);
-      }
-    } else {
-      // Resposta inválida, criar um objeto de mês padrão
-      const dataAtual = new Date();
-      const mes = dataAtual.getMonth();
-      const ano = dataAtual.getFullYear();
-      const meses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-      
+    if (response.data && response.data.abreviacao && response.data.id) {
+      // Resposta válida da API PHP - converter objeto para array
       responseData = [{
-        id: '1',
-        abreviacao: `${meses[mes]}/${ano}`,
-        descricao: `${meses[mes]}/${ano}`,
-        atual: 'S'
+        id: response.data.id,
+        abreviacao: response.data.abreviacao,
+        id_divisao: response.data.id_divisao,
+        status: response.data.status,
+        porcentagem: response.data.porcentagem || '0',
+        email: response.data.email || ''
       }];
-      console.log('Criando objeto de mês padrão para resposta inválida:', responseData);
+      console.log('✅ Dados válidos recebidos da API PHP:', responseData);
+    } else {
+      console.error('❌ Resposta inválida da API PHP - dados necessários não encontrados');
+      throw new Error('Resposta inválida da API PHP - dados necessários não encontrados');
     }
 
     return NextResponse.json(responseData);
