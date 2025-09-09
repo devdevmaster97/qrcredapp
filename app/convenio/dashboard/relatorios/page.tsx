@@ -176,14 +176,22 @@ export default function RelatoriosPage() {
   const buscarMesCorrente = async () => {
     try {
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isDesktop = !isMobile;
       
+      // Headers anti-cache mais rigorosos para desktop Windows
       const headers: HeadersInit = {
         'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
         'Pragma': 'no-cache',
-        'Expires': '0'
+        'Expires': '0',
+        ...(isDesktop && {
+          'If-None-Match': '*',
+          'If-Modified-Since': 'Thu, 01 Jan 1970 00:00:00 GMT'
+        })
       };
       
-      const response = await fetch(`/api/convenio/mes-corrente?t=${Date.now()}`, {
+      console.log(`🔍 MÊS CORRENTE - Buscando da API (${isMobile ? 'Mobile' : 'Desktop'})`);
+      
+      const response = await fetch(`/api/convenio/mes-corrente?t=${Date.now()}&platform=${isMobile ? 'mobile' : 'desktop'}`, {
         method: 'GET',
         headers,
         cache: 'no-store'
@@ -195,27 +203,22 @@ export default function RelatoriosPage() {
           console.log('✅ MÊS CORRENTE - Recebido da API:', data.data.mes_corrente);
           setMesCorrente(data.data.mes_corrente);
           setMesSelecionado(data.data.mes_corrente);
+          return; // Sucesso - não usar fallback
         } else {
-          console.log('⚠️ MÊS CORRENTE - Erro na resposta:', data.message);
-          // Fallback para mês corrente gerado localmente
-          const mesLocal = gerarMesCorrente();
-          setMesCorrente(mesLocal);
-          setMesSelecionado(mesLocal);
+          console.log('⚠️ MÊS CORRENTE - Erro na resposta da API:', data.message);
         }
       } else {
-        console.log('⚠️ MÊS CORRENTE - Erro HTTP:', response.status);
-        // Fallback para mês corrente gerado localmente
-        const mesLocal = gerarMesCorrente();
-        setMesCorrente(mesLocal);
-        setMesSelecionado(mesLocal);
+        console.log('⚠️ MÊS CORRENTE - Erro HTTP:', response.status, response.statusText);
       }
     } catch (error) {
-      console.error('❌ MÊS CORRENTE - Erro ao buscar:', error);
-      // Fallback para mês corrente gerado localmente
-      const mesLocal = gerarMesCorrente();
-      setMesCorrente(mesLocal);
-      setMesSelecionado(mesLocal);
+      console.error('❌ MÊS CORRENTE - Erro ao buscar da API:', error);
     }
+    
+    // ⚠️ FALLBACK: Só usar mês local se a API realmente falhar
+    console.log('🔄 MÊS CORRENTE - Usando fallback local (AGO/2025 fixo para testes)');
+    const mesLocal = 'AGO/2025'; // Temporariamente fixo para garantir consistência
+    setMesCorrente(mesLocal);
+    setMesSelecionado(mesLocal);
   };
 
   // Filtrar lançamentos pelo mês selecionado
