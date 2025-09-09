@@ -91,7 +91,9 @@ export async function GET(request: NextRequest) {
             mes: lancamento.mes,
             data: lancamento.data,
             empregador: lancamento.empregador,
-            nome_empregador: lancamento.nome_empregador
+            nome_empregador: lancamento.nome_empregador,
+            cpf_associado: lancamento.cpf_associado,
+            parcela: lancamento.parcela
           });
         });
       }

@@ -21,7 +21,8 @@ interface Lancamento {
   descricao: string;
   data_fatura: string;
   hora_fatura?: string; // hora da fatura
-  cpf?: string; // CPF do associado
+  cpf?: string; // CPF do associado (campo antigo)
+  cpf_associado?: string; // CPF do associado (novo campo da API)
   matricula?: string;
   codigoempregador?: number;
 }
@@ -102,6 +103,14 @@ export default function RelatoriosPage() {
               empregador: data.data[0].empregador,
               nome_empregador: data.data[0].nome_empregador,
               codigoempregador: data.data[0].codigoempregador
+            });
+            console.log('🔍 RELATÓRIOS - Campo CPF associado:', {
+              cpf: data.data[0].cpf,
+              cpf_associado: data.data[0].cpf_associado
+            });
+            console.log('🔍 RELATÓRIOS - Campo Parcela:', {
+              parcela: data.data[0].parcela,
+              tipo_parcela: typeof data.data[0].parcela
             });
           }
           
@@ -741,10 +750,10 @@ export default function RelatoriosPage() {
                       <span className="text-sm font-semibold">{lancamentoSelecionado.nome_associado || lancamentoSelecionado.associado}</span>
                     </div>
                     
-                    {lancamentoSelecionado.cpf && (
+                    {(lancamentoSelecionado.cpf_associado || lancamentoSelecionado.cpf) && (
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">CPF:</span>
-                        <span className="text-sm font-semibold">{lancamentoSelecionado.cpf}</span>
+                        <span className="text-sm font-semibold">{lancamentoSelecionado.cpf_associado || lancamentoSelecionado.cpf}</span>
                       </div>
                     )}
                     
