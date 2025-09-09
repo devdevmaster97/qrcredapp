@@ -8,6 +8,7 @@ import Header from '@/app/components/Header';
 import Logo from '@/app/components/Logo';
 import { Dialog, Transition } from '@headlessui/react';
 import { X, Loader2 } from 'lucide-react';
+import { chromeErrorHandler, initializeErrorHandler } from '@/app/utils/errorHandler';
 
 interface UsuarioSalvo {
   usuario: string;
@@ -43,12 +44,42 @@ export default function LoginConvenio() {
 
   // Carregar usuários salvos quando o componente é montado
   useEffect(() => {
-    setIsMounted(true);
-    const usuariosSalvosJson = localStorage.getItem('convenioUsuariosSalvos');
-    if (usuariosSalvosJson) {
-      const usuarios = JSON.parse(usuariosSalvosJson);
-      setUsuariosSalvos(usuarios);
-    }
+    // Inicializar sistema de tratamento de erros
+    initializeErrorHandler();
+    
+    // Usar wrapper seguro para carregar usuários
+    chromeErrorHandler.safeExecute(() => {
+      console.log('🔧 [DEBUG] Iniciando carregamento de usuários salvos...');
+      setIsMounted(true);
+      
+      // Verificar se localStorage está disponível
+      if (typeof Storage === "undefined") {
+        console.warn('⚠️ [DEBUG] localStorage não está disponível neste navegador');
+        return;
+      }
+      
+      const usuariosSalvosJson = chromeErrorHandler.safeExecute(
+        () => localStorage.getItem('convenioUsuariosSalvos'),
+        null,
+        'obter usuários salvos do localStorage'
+      );
+      
+      console.log('🔧 [DEBUG] Dados brutos do localStorage:', usuariosSalvosJson);
+      
+      if (usuariosSalvosJson) {
+        const usuarios = chromeErrorHandler.safeExecute(
+          () => JSON.parse(usuariosSalvosJson),
+          [],
+          'fazer parse dos usuários salvos'
+        );
+        
+        console.log('🔧 [DEBUG] Usuários parseados com sucesso:', usuarios);
+        setUsuariosSalvos(usuarios);
+      } else {
+        console.log('🔧 [DEBUG] Nenhum usuário salvo encontrado');
+        setUsuariosSalvos([]);
+      }
+    }, undefined, 'carregamento inicial de usuários');
   }, []);
 
   const handleVoltar = () => {
@@ -60,6 +91,16 @@ export default function LoginConvenio() {
     setLoading(true);
 
     try {
+      console.log('🔧 [DEBUG] Iniciando processo de login...');
+      console.log('🔧 [DEBUG] Dados do formulário:', { usuario: formData.usuario, senha: '***' });
+      console.log('🔧 [DEBUG] User Agent:', navigator.userAgent);
+      console.log('🔧 [DEBUG] Informações do navegador:', {
+        cookieEnabled: navigator.cookieEnabled,
+        onLine: navigator.onLine,
+        language: navigator.language,
+        platform: navigator.platform
+      });
+
       const response = await fetch('/api/convenio/login', {
         method: 'POST',
         headers: {
@@ -68,20 +109,52 @@ export default function LoginConvenio() {
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
+      console.log('🔧 [DEBUG] Resposta da API recebida:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro HTTP: ${response.status} - ${response.statusText}`);
+      }
+
+      const responseText = await response.text();
+      console.log('🔧 [DEBUG] Texto bruto da resposta:', responseText.substring(0, 500));
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+        console.log('🔧 [DEBUG] Dados parseados com sucesso:', data);
+      } catch (parseError) {
+        console.error('❌ [DEBUG] Erro ao fazer parse da resposta JSON:', parseError);
+        console.error('❌ [DEBUG] Resposta que causou erro:', responseText);
+        throw new Error('Resposta inválida do servidor. Tente novamente.');
+      }
 
       if (data.success) {
         // LIMPEZA COMPLETA usando utilitário
-        console.log('🧹 Login - Limpando TODOS os dados anteriores usando utilitário...');
-        const { clearConvenioCache, saveConvenioCache } = await import('@/app/utils/convenioCache');
-        clearConvenioCache();
+        console.log('🧹 [DEBUG] Login bem-sucedido - Iniciando limpeza de dados...');
         
-        // Salvar os dados do convênio usando utilitário seguro
-        if (data.data) {
-          saveConvenioCache(data.data);
-          console.log('✅ Login - Dados do convênio salvos via utilitário (após limpeza completa):', data.data);
-          console.log('🔍 Login - Código do convênio salvo:', data.data.cod_convenio);
-          console.log('🔍 Login - Razão social salva:', data.data.razaosocial);
+        try {
+          console.log('🔧 [DEBUG] Tentando importar utilitário de cache...');
+          const cacheModule = await import('@/app/utils/convenioCache');
+          console.log('🔧 [DEBUG] Utilitário de cache importado com sucesso');
+          
+          const { clearConvenioCache, saveConvenioCache } = cacheModule;
+          
+          console.log('🔧 [DEBUG] Executando limpeza de cache...');
+          clearConvenioCache();
+          console.log('🔧 [DEBUG] Cache limpo com sucesso');
+          
+          // Salvar os dados do convênio usando utilitário seguro
+          if (data.data) {
+            console.log('🔧 [DEBUG] Salvando dados do convênio:', data.data);
+            saveConvenioCache(data.data);
+            console.log('✅ Login - Dados do convênio salvos via utilitário (após limpeza completa):', data.data);
+            console.log('🔍 Login - Código do convênio salvo:', data.data.cod_convenio);
+            console.log('🔍 Login - Razão social salva:', data.data.razaosocial);
           
           // Salvar usuário na lista de usuários recentes
           if (formData.usuario) {
@@ -162,6 +235,20 @@ export default function LoginConvenio() {
           }, 800);
         } else {
           router.push('/convenio/dashboard');
+        }
+        
+        } catch (cacheError) {
+          console.error('❌ [DEBUG] Erro ao usar utilitário de cache:', cacheError);
+          // Fallback: usar localStorage diretamente
+          try {
+            localStorage.setItem('dadosConvenio', JSON.stringify(data.data));
+            console.log('🔧 [DEBUG] Dados salvos usando localStorage como fallback');
+            toast.success('Login efetuado com sucesso!');
+            router.push('/convenio/dashboard');
+          } catch (fallbackError) {
+            console.error('❌ [DEBUG] Erro crítico no fallback:', fallbackError);
+            toast.error('Erro ao salvar dados do login. Tente novamente.');
+          }
         }
       } else {
         // Tratamento detalhado de erros específicos para debugging em dispositivos Xiaomi
