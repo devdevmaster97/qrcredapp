@@ -267,7 +267,7 @@ export default function SucessoPage() {
                 </div>
                 
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Hora Fatura:</span>
+                  <span className="text-gray-600">Hora:</span>
                   <span className="font-medium text-gray-900">{new Date(dadosTransacao.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
                 
@@ -381,7 +381,7 @@ export default function SucessoPage() {
         ['Parcelas:', `${dadosTransacao.parcelas}x`],
         ['Valor por Parcela:', dadosTransacao.valorParcela.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })],
         ['Data Emissão:', new Date(dadosTransacao.timestamp).toLocaleDateString('pt-BR')],
-        ['Hora Fatura:', new Date(dadosTransacao.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })],
+        ['Hora:', new Date(dadosTransacao.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })],
         ['Descrição:', dadosTransacao.descricao || 'Lançamento via app']
       ];
 
@@ -644,7 +644,7 @@ export default function SucessoPage() {
               </div>
               
               <div class="flex-justify-between">
-                <span class="text-gray-600">Hora Fatura:</span>
+                <span class="text-gray-600">Hora:</span>
                 <span class="font-medium text-gray-900">${new Date(dadosTransacao.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
               
