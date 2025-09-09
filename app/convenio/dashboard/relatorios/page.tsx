@@ -640,7 +640,7 @@ export default function RelatoriosPage() {
                         {lancamento.data}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {lancamento.hora} - Parcela {String(lancamento.parcela)}
+                        {lancamento.hora} - Parcela {lancamento.parcela || '01/01'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <div className="flex space-x-3">
@@ -689,7 +689,7 @@ export default function RelatoriosPage() {
                       <span className="font-medium">Data:</span> {lancamento.data}
                     </div>
                     <div className="text-sm text-gray-700">
-                      <span className="font-medium">Hora:</span> {lancamento.hora} - <span className="font-medium">Parcela:</span> {String(lancamento.parcela)}
+                      <span className="font-medium">Hora:</span> {lancamento.hora} - <span className="font-medium">Parcela:</span> {lancamento.parcela || '01/01'}
                     </div>
                   </div>
                   

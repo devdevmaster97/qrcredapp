@@ -67,11 +67,23 @@ export async function GET(request: NextRequest) {
       }
     );
 
-    console.log(' LANÇAMENTOS - Resposta API PHP:', {
+    console.log('📤 LANÇAMENTOS - Resposta API PHP:', {
       success: response.data.success,
       quantidade_lancamentos: response.data.lancamentos ? response.data.lancamentos.length : 0,
       primeiros_dados: response.data.lancamentos ? response.data.lancamentos.slice(0, 2) : []
     });
+
+    // Log específico das parcelas para debug
+    if (response.data.lancamentos && response.data.lancamentos.length > 0) {
+      response.data.lancamentos.slice(0, 3).forEach((lancamento: any, index: number) => {
+        console.log(`🔍 API PARCELA ${index + 1}:`, {
+          id: lancamento.id,
+          parcela_raw: lancamento.parcela,
+          parcela_type: typeof lancamento.parcela,
+          parcela_length: String(lancamento.parcela).length
+        });
+      });
+    }
 
     if (response.data.success) {
       // Validação adicional: verificar se os lançamentos pertencem ao convênio correto
