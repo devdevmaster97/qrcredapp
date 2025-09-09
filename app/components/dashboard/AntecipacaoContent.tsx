@@ -125,32 +125,25 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       });
       console.log('Resposta da API de mês corrente:', response.data);
       
-      // A API agora sempre retorna um array com pelo menos um item
+      // Verificar se a API retornou erro
+      if (response.data && response.data.error) {
+        console.error('❌ Erro da API de mês corrente:', response.data.error);
+        throw new Error(response.data.error);
+      }
+
+      // Verificar se a resposta contém dados válidos
       if (Array.isArray(response.data) && response.data.length > 0 && response.data[0].abreviacao) {
         const mesAtual = response.data[0].abreviacao;
         const porcentagem = parseFloat(response.data[0].porcentagem || '0');
-        console.log('Mês corrente obtido:', mesAtual, 'porcentagem:', porcentagem);
+        console.log('✅ Mês corrente obtido da API:', mesAtual, 'porcentagem:', porcentagem);
         return { mesAtual, porcentagem };
       } else {
-        // Em caso de problemas, usamos o mês atual
-        const dataAtual = new Date();
-        const mes = dataAtual.getMonth();
-        const ano = dataAtual.getFullYear();
-        const meses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-        const mesAtual = `${meses[mes]}/${ano}`;
-        console.log('Usando mês atual como fallback:', mesAtual);
-        return { mesAtual, porcentagem: 0 };
+        console.error('❌ Resposta inválida da API de mês corrente');
+        throw new Error('Não foi possível obter o mês corrente da API');
       }
     } catch (err) {
-      console.error('Erro ao buscar mês corrente:', err);
-      // Em caso de erro, retornar o mês atual
-      const dataAtual = new Date();
-      const mes = dataAtual.getMonth();
-      const ano = dataAtual.getFullYear();
-      const meses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-      const mesAtual = `${meses[mes]}/${ano}`;
-      console.log('Usando mês atual como fallback após erro:', mesAtual);
-      return { mesAtual, porcentagem: 0 };
+      console.error('❌ Erro ao buscar mês corrente:', err);
+      throw err;
     }
   }, []);
 
