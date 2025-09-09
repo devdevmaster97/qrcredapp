@@ -430,6 +430,8 @@ export default function SucessoPage() {
 
   // Função para imprimir comprovante
   function imprimirComprovante() {
+    if (!dadosTransacao) return;
+    
     const printContent = document.getElementById('comprovante-content');
     if (!printContent) return;
 
@@ -441,17 +443,178 @@ export default function SucessoPage() {
         <head>
           <title>Comprovante de Transação</title>
           <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            .print-content { max-width: 400px; margin: 0 auto; }
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 20px;
+              background: white;
+              color: #000;
+              line-height: 1.4;
+            }
+            
+            .print-content { 
+              max-width: 400px; 
+              margin: 0 auto;
+              padding: 24px;
+              background: white;
+              border: 1px solid #e5e7eb;
+              border-radius: 8px;
+            }
+            
+            .text-center { text-align: center; }
+            .mb-6 { margin-bottom: 24px; }
+            .mb-3 { margin-bottom: 12px; }
+            .my-4 { margin: 16px 0; }
+            .space-y-3 > * + * { margin-top: 12px; }
+            .space-y-1 > * + * { margin-top: 4px; }
+            
+            .w-16 { width: 64px; }
+            .h-16 { height: 64px; }
+            .mx-auto { margin-left: auto; margin-right: auto; }
+            .bg-blue-600 { background-color: #2563eb; }
+            .rounded-full { border-radius: 50%; }
+            .flex { display: flex; }
+            .items-center { align-items: center; }
+            .justify-center { justify-content: center; }
+            
+            .logo-container {
+              width: 64px;
+              height: 64px;
+              margin: 0 auto 12px auto;
+              background-color: #2563eb;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              position: relative;
+            }
+            
+            .logo-image {
+              width: 40px;
+              height: 40px;
+              border-radius: 50%;
+              background: url('/icons/icon-192x192.png') center/cover;
+            }
+            
+            .text-lg { font-size: 18px; }
+            .text-sm { font-size: 14px; }
+            .text-xs { font-size: 12px; }
+            .font-bold { font-weight: bold; }
+            .font-semibold { font-weight: 600; }
+            .font-medium { font-weight: 500; }
+            
+            .text-gray-900 { color: #111827; }
+            .text-gray-600 { color: #4b5563; }
+            .text-gray-500 { color: #6b7280; }
+            .text-green-600 { color: #059669; }
+            
+            .border-t { border-top: 1px solid #d1d5db; }
+            .border-dashed { border-style: dashed; }
+            .border-gray-300 { border-color: #d1d5db; }
+            
+            .flex-justify-between {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+            }
+            
             @media print {
-              body { margin: 0; }
-              .print-content { max-width: none; }
+              body { 
+                margin: 0; 
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+              }
+              .print-content { 
+                max-width: none;
+                border: none;
+                box-shadow: none;
+              }
+              .logo-container {
+                background-color: #2563eb !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+              }
             }
           </style>
         </head>
         <body>
           <div class="print-content">
-            ${printContent.innerHTML}
+            <!-- Logo -->
+            <div class="text-center mb-6">
+              <div class="logo-container">
+                <div class="logo-image"></div>
+              </div>
+              <h2 class="text-lg font-bold text-gray-900">SASCRED - SISTEMA DE CRÉDITO</h2>
+              <p class="text-sm text-gray-600">Comprovante de Transação</p>
+            </div>
+
+            <!-- Linha separadora -->
+            <div class="border-t border-dashed border-gray-300 my-4"></div>
+
+            <!-- Dados da transação -->
+            <div class="space-y-3 text-sm">
+              <div class="flex-justify-between">
+                <span class="text-gray-600">Associado:</span>
+                <span class="font-medium text-gray-900">${dadosTransacao.associado}</span>
+              </div>
+              
+              ${dadosTransacao.cpf ? `
+              <div class="flex-justify-between">
+                <span class="text-gray-600">CPF:</span>
+                <span class="font-medium text-gray-900">${dadosTransacao.cpf}</span>
+              </div>
+              ` : ''}
+              
+              <div class="flex-justify-between">
+                <span class="text-gray-600">Valor Total:</span>
+                <span class="font-bold text-green-600">${dadosTransacao.valor}</span>
+              </div>
+              
+              <div class="flex-justify-between">
+                <span class="text-gray-600">Parcelas:</span>
+                <span class="font-medium text-gray-900">${dadosTransacao.parcelas}x</span>
+              </div>
+              
+              ${dadosTransacao.valorParcela > 0 ? `
+              <div class="flex-justify-between">
+                <span class="text-gray-600">Valor por Parcela:</span>
+                <span class="font-medium text-gray-900">
+                  ${dadosTransacao.valorParcela.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </span>
+              </div>
+              ` : ''}
+              
+              <div class="flex-justify-between">
+                <span class="text-gray-600">Data Fatura:</span>
+                <span class="font-medium text-gray-900">${new Date(dadosTransacao.timestamp).toLocaleDateString('pt-BR')}</span>
+              </div>
+              
+              <div class="flex-justify-between">
+                <span class="text-gray-600">Hora Fatura:</span>
+                <span class="font-medium text-gray-900">${new Date(dadosTransacao.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+              
+              ${dadosTransacao.descricao ? `
+              <div class="flex-justify-between">
+                <span class="text-gray-600">Descrição:</span>
+                <span class="font-medium text-gray-900">${dadosTransacao.descricao}</span>
+              </div>
+              ` : ''}
+            </div>
+
+            <!-- Linha separadora -->
+            <div class="border-t border-dashed border-gray-300 my-4"></div>
+
+            <!-- Texto final -->
+            <div class="text-center text-xs text-gray-500 space-y-1">
+              <p>TRANSAÇÃO AUTORIZADA - CRÉDITO NO CONVÊNIO</p>
+              <p>DOCUMENTO DIGITAL VÁLIDO</p>
+            </div>
           </div>
         </body>
       </html>
