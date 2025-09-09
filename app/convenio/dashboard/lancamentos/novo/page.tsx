@@ -41,6 +41,29 @@ export default function NovoLancamentoPage() {
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
   const [maxParcelas, setMaxParcelas] = useState(12);
 
+  // Função para detectar se é um dispositivo desktop/computador
+  const isDesktop = () => {
+    // Verifica se não é um dispositivo móvel baseado no user agent
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+    
+    // Também verifica se tem touch screen (dispositivos móveis geralmente têm)
+    const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    
+    // É desktop se não for mobile E não tiver touch, OU se a tela for grande
+    return (!isMobile && !hasTouch) || window.innerWidth >= 1024;
+  };
+
+  // Função para lidar com teclas pressionadas no campo do cartão
+  const handleCartaoKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Só executa no Enter e apenas em dispositivos desktop
+    if (e.key === 'Enter' && isDesktop()) {
+      e.preventDefault(); // Previne comportamento padrão
+      console.log('🖥️ Enter pressionado em dispositivo desktop, executando busca...');
+      buscarAssociado();
+    }
+  };
+
   // Usar URLs reais da API - sem simulações locais
   const BASE_URL = 'https://sas.makecard.com.br';
   const API_URL = `${BASE_URL}/localizaasapp.php`;
@@ -888,6 +911,7 @@ export default function NovoLancamentoPage() {
                 pattern="[0-9]*"
                 value={cartao}
                 onChange={(e) => setCartao(e.target.value)}
+                onKeyDown={handleCartaoKeyDown}
                 placeholder="Digite o número do cartão"
                 className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
               />
