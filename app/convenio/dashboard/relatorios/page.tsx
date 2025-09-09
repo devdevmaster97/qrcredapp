@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FaSpinner, FaFilter, FaUndo, FaExclamationTriangle, FaTimes, FaCheck, FaReceipt, FaFileAlt, FaShare } from 'react-icons/fa';
+import { FaSpinner, FaFilter, FaUndo, FaExclamationTriangle, FaTimes, FaCheck, FaReceipt, FaFileAlt, FaShare, FaPrint } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
+import Image from 'next/image';
 
 interface Lancamento {
   id: number;
@@ -13,11 +14,14 @@ interface Lancamento {
   associado: string; // código do associado
   nome_associado?: string; // nome do associado (quando disponível)
   empregador: string;
+  nome_empregador?: string; // nome do empregador
   mes: string;
   parcela: number;
   lancamento?: string; // campo lancamento da tabela conta
   descricao: string;
   data_fatura: string;
+  hora_fatura?: string; // hora da fatura
+  cpf?: string; // CPF do associado
   matricula?: string;
   codigoempregador?: number;
 }
@@ -238,16 +242,64 @@ export default function RelatoriosPage() {
     setShowComprovanteModal(true);
   };
 
-  // Função para formatar a data
+  // Função para formatar data no padrão brasileiro
   const formatarData = (data: string) => {
-    if (!data) return '-';
-    return data; // Manter o formato atual
+    if (!data) return '';
+    
+    // Se a data já está no formato correto (dd/mm/yyyy), retorna como está
+    if (data.includes('/')) {
+      return data;
+    }
+    
+    // Se está no formato yyyy-mm-dd, converte para dd/mm/yyyy
+    if (data.includes('-')) {
+      const [ano, mes, dia] = data.split('-');
+      return `${dia}/${mes}/${ano}`;
+    }
+    
+    return data;
   };
 
-  // Função para formatar o valor monetário
+  // Função para formatar data da fatura no padrão dd/mm/yyyy
+  const formatarDataFatura = (data: string) => {
+    if (!data) return '';
+    
+    // Se a data já está no formato correto (dd/mm/yyyy), retorna como está
+    if (data.includes('/') && data.length === 10) {
+      return data;
+    }
+    
+    // Se está no formato yyyy-mm-dd, converte para dd/mm/yyyy
+    if (data.includes('-')) {
+      const [ano, mes, dia] = data.split('-');
+      return `${dia.padStart(2, '0')}/${mes.padStart(2, '0')}/${ano}`;
+    }
+    
+    // Se está no formato yyyymmdd, converte para dd/mm/yyyy
+    if (data.length === 8 && !data.includes('-') && !data.includes('/')) {
+      const ano = data.substring(0, 4);
+      const mes = data.substring(4, 6);
+      const dia = data.substring(6, 8);
+      return `${dia}/${mes}/${ano}`;
+    }
+    
+    return data;
+  };
+
+  // Função para formatar valor monetário
   const formatarValor = (valor: string) => {
     if (!valor) return 'R$ 0,00';
-    return `R$ ${valor}`;
+    
+    // Se já está formatado, retorna como está
+    if (valor.includes('R$')) {
+      return valor;
+    }
+    
+    // Converte string para número e formata
+    const numero = parseFloat(valor.replace(',', '.'));
+    if (isNaN(numero)) return 'R$ 0,00';
+    
+    return `R$ ${numero.toFixed(2).replace('.', ',')}`;
   };
 
   // Função para compartilhar comprovante como imagem
@@ -650,7 +702,13 @@ export default function RelatoriosPage() {
               
               <div className="mt-2 text-center">
                 <div className="flex justify-center mb-4">
-                  <FaFileAlt className="h-12 w-12 text-blue-600" />
+                  <Image 
+                    src="/icons/logo-32x32.png" 
+                    alt="Logo" 
+                    width={48} 
+                    height={48} 
+                    className="object-contain"
+                  />
                 </div>
                 <h3 className="text-lg leading-6 font-bold text-gray-900 mb-4">
                   Comprovante Digital
@@ -678,24 +736,19 @@ export default function RelatoriosPage() {
                       <span className="text-sm font-semibold">{lancamentoSelecionado.nome_associado || lancamentoSelecionado.associado}</span>
                     </div>
                     
-                    {lancamentoSelecionado.matricula && (
+                    {lancamentoSelecionado.cpf && (
                       <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Matrícula:</span>
-                        <span className="text-sm font-semibold">{lancamentoSelecionado.matricula}</span>
+                        <span className="text-sm text-gray-600">CPF:</span>
+                        <span className="text-sm font-semibold">{lancamentoSelecionado.cpf}</span>
                       </div>
                     )}
                     
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Empregador:</span>
-                      <span className="text-sm font-semibold">{lancamentoSelecionado.empregador}</span>
+                      <span className="text-sm font-semibold">{lancamentoSelecionado.nome_empregador || lancamentoSelecionado.empregador}</span>
                     </div>
                     
                     <div className="border-t border-gray-200 my-2 pt-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Lançamento:</span>
-                        <span className="text-sm font-semibold">{lancamentoSelecionado.lancamento || '-'}</span>
-                      </div>
-                      
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Mês Referência:</span>
                         <span className="text-sm font-semibold">{lancamentoSelecionado.mes}</span>
@@ -709,7 +762,14 @@ export default function RelatoriosPage() {
                       {lancamentoSelecionado.data_fatura && (
                         <div className="flex justify-between">
                           <span className="text-sm text-gray-600">Data Fatura:</span>
-                          <span className="text-sm font-semibold">{lancamentoSelecionado.data_fatura}</span>
+                          <span className="text-sm font-semibold">{formatarDataFatura(lancamentoSelecionado.data_fatura)}</span>
+                        </div>
+                      )}
+                      
+                      {lancamentoSelecionado.hora_fatura && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Hora Fatura:</span>
+                          <span className="text-sm font-semibold">{lancamentoSelecionado.hora_fatura}</span>
                         </div>
                       )}
                     </div>
@@ -728,13 +788,21 @@ export default function RelatoriosPage() {
                   </div>
                 </div>
                 
-                <div className="mt-4 flex justify-center">
+                <div className="mt-4 flex justify-center space-x-3">
                   <button
                     onClick={compartilharComprovante}
                     className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
                     <FaShare className="mr-2 -ml-1 h-4 w-4" />
                     Compartilhar
+                  </button>
+                  
+                  <button
+                    onClick={() => window.print()}
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <FaPrint className="mr-2 -ml-1 h-4 w-4" />
+                    Imprimir
                   </button>
                 </div>
               </div>
