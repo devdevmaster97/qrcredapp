@@ -38,11 +38,14 @@ export default function SaldoCard() {
       console.log('📅 Buscando mês corrente para cartão:', cartao);
       
       // Primeiro, buscar dados do associado para obter id_divisao
+      const formDataAssociado = new FormData();
+      formDataAssociado.append('cartao', cartao.trim());
+      
       const associadoResponse = await axios.post('/api/localiza-associado', 
-        { cartao: cartao.trim() },
+        formDataAssociado,
         {
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'multipart/form-data'
           }
         }
       );
@@ -77,14 +80,7 @@ export default function SaldoCard() {
       }
     } catch (err) {
       console.error('❌ Erro ao buscar mês corrente:', err);
-      // Em caso de erro, retornar o mês atual
-      const dataAtual = new Date();
-      const mes = dataAtual.getMonth();
-      const ano = dataAtual.getFullYear();
-      const meses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-      const mesAtual = `${meses[mes]}/${ano}`;
-      console.log('⚠️ Usando mês atual como fallback após erro:', mesAtual);
-      return mesAtual;
+      throw err;
     }
   }, [cartao]);
 
