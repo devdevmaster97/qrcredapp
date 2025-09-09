@@ -16,7 +16,7 @@ interface Lancamento {
   empregador: string;
   nome_empregador?: string; // nome do empregador
   mes: string;
-  parcela: number;
+  parcela: string;
   lancamento?: string; // campo lancamento da tabela conta
   descricao: string;
   data_fatura: string;
