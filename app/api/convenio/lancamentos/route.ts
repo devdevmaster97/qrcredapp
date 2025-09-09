@@ -89,7 +89,9 @@ export async function GET(request: NextRequest) {
             associado: lancamento.associado,
             valor: lancamento.valor,
             mes: lancamento.mes,
-            data: lancamento.data
+            data: lancamento.data,
+            empregador: lancamento.empregador,
+            nome_empregador: lancamento.nome_empregador
           });
         });
       }

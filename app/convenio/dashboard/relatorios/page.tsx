@@ -97,7 +97,12 @@ export default function RelatoriosPage() {
           }
           
           if (data.data.length > 0) {
-            console.log('🔍 RELATÓRIOS - Exemplo de lançamento:', data.data[0]);
+            console.log('🔍 RELATÓRIOS - Exemplo de lançamento completo:', data.data[0]);
+            console.log('🔍 RELATÓRIOS - Campos do empregador:', {
+              empregador: data.data[0].empregador,
+              nome_empregador: data.data[0].nome_empregador,
+              codigoempregador: data.data[0].codigoempregador
+            });
           }
           
           setLancamentos(data.data);
@@ -745,7 +750,7 @@ export default function RelatoriosPage() {
                     
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Empregador:</span>
-                      <span className="text-sm font-semibold">{lancamentoSelecionado.nome_empregador || lancamentoSelecionado.empregador}</span>
+                      <span className="text-sm font-semibold">{lancamentoSelecionado.nome_empregador}</span>
                     </div>
                     
                     <div className="border-t border-gray-200 my-2 pt-2">
@@ -756,7 +761,7 @@ export default function RelatoriosPage() {
                       
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Parcela:</span>
-                        <span className="text-sm font-semibold">{lancamentoSelecionado.parcela} de {lancamentoSelecionado.parcela}</span>
+                        <span className="text-sm font-semibold">{lancamentoSelecionado.parcela}</span>
                       </div>
                       
                       {lancamentoSelecionado.data_fatura && (
@@ -766,12 +771,7 @@ export default function RelatoriosPage() {
                         </div>
                       )}
                       
-                      {lancamentoSelecionado.hora_fatura && (
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">Hora Fatura:</span>
-                          <span className="text-sm font-semibold">{lancamentoSelecionado.hora_fatura}</span>
-                        </div>
-                      )}
+                     
                     </div>
                     
                     <div className="border-t border-gray-200 my-2 pt-2">
@@ -788,7 +788,7 @@ export default function RelatoriosPage() {
                   </div>
                 </div>
                 
-                <div className="mt-4 flex justify-center space-x-3">
+                <div className="mt-4 flex justify-center space-x-3 print:hidden">
                   <button
                     onClick={compartilharComprovante}
                     className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
