@@ -372,6 +372,20 @@ export default function RelatoriosPage() {
     return `R$ ${numero.toFixed(2).replace('.', ',')}`;
   };
 
+  // Função para formatar valor na lista (sem R$)
+  const formatarValorLista = (valor: string) => {
+    if (!valor) return '0,00';
+    
+    // Remove R$ se existir
+    const valorLimpo = valor.replace('R$', '').trim();
+    
+    // Converte string para número e formata
+    const numero = parseFloat(valorLimpo.replace(',', '.'));
+    if (isNaN(numero)) return '0,00';
+    
+    return numero.toFixed(2).replace('.', ',');
+  };
+
   // Função para compartilhar comprovante como imagem
   const compartilharComprovante = async () => {
     if (!lancamentoSelecionado) return;
@@ -605,10 +619,10 @@ export default function RelatoriosPage() {
                         {lancamento.nome_associado || lancamento.associado}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
-                        R$ {lancamento.valor}
+                        R$ {formatarValorLista(lancamento.valor)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {lancamento.lancamento || '-'}
+                        #{lancamento.id}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {lancamento.data}
@@ -654,10 +668,10 @@ export default function RelatoriosPage() {
                       {lancamento.nome_associado || lancamento.associado}
                     </h3>
                     <div className="font-semibold text-lg text-gray-900 mb-2">
-                      R$ {lancamento.valor}
+                      R$ {formatarValorLista(lancamento.valor)}
                     </div>
                     <div className="text-sm text-gray-700 mb-2">
-                      <span className="font-medium">Lançamento:</span> {lancamento.lancamento || '-'}
+                      <span className="font-medium">Lançamento:</span> #{lancamento.id}
                     </div>
                     <div className="text-sm text-gray-700 mb-1">
                       <span className="font-medium">Data:</span> {lancamento.data}
