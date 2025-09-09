@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { FaCheckCircle, FaHome, FaPlus, FaReceipt } from 'react-icons/fa';
+import { FaCheckCircle, FaHome, FaPlus, FaReceipt, FaPrint, FaShare, FaTimes } from 'react-icons/fa';
+import { toast } from 'react-hot-toast';
+import Image from 'next/image';
 import Header from '../../../../components/Header';
 
 interface DadosTransacao {
@@ -18,6 +20,7 @@ interface DadosTransacao {
 export default function SucessoPage() {
   const router = useRouter();
   const [dadosTransacao, setDadosTransacao] = useState<DadosTransacao | null>(null);
+  const [showComprovanteModal, setShowComprovanteModal] = useState(false);
 
   useEffect(() => {
     // Recuperar dados da transação do localStorage
@@ -162,9 +165,301 @@ export default function SucessoPage() {
             <FaHome className="text-xl" />
             Voltar à Página Principal
           </button>
+          
+          <button
+            onClick={() => setShowComprovanteModal(true)}
+            className="w-full py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 flex items-center justify-center gap-3 font-bold text-lg transition-all transform hover:scale-[1.02] shadow-lg"
+          >
+            <FaPrint className="text-xl" />
+            Imprimir Comprovante
+          </button>
         </div>
 
       </div>
+      
+      {/* Modal do Comprovante */}
+      {showComprovanteModal && dadosTransacao && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+            {/* Header do Modal */}
+            <div className="flex justify-between items-center p-4 border-b">
+              <h3 className="text-lg font-semibold text-gray-900">Comprovante Digital</h3>
+              <button
+                onClick={() => setShowComprovanteModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <FaTimes className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Conteúdo do Comprovante */}
+            <div id="comprovante-content" className="p-6 bg-white">
+              {/* Logo */}
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 mx-auto mb-3 bg-blue-600 rounded-full flex items-center justify-center">
+                  <Image
+                    src="/icons/icon-192x192.png"
+                    alt="Logo"
+                    width={40}
+                    height={40}
+                    className="rounded-full"
+                  />
+                </div>
+                <h2 className="text-lg font-bold text-gray-900">SASCRED - SISTEMA DE CRÉDITO</h2>
+                <p className="text-sm text-gray-600">Comprovante de Transação</p>
+              </div>
+
+              {/* Linha separadora */}
+              <div className="border-t border-dashed border-gray-300 my-4"></div>
+
+              {/* Dados da transação */}
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Associado:</span>
+                  <span className="font-medium text-gray-900">{dadosTransacao.associado}</span>
+                </div>
+                
+                {dadosTransacao.cpf && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">CPF:</span>
+                    <span className="font-medium text-gray-900">{dadosTransacao.cpf}</span>
+                  </div>
+                )}
+                
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Valor Total:</span>
+                  <span className="font-bold text-green-600">{dadosTransacao.valor}</span>
+                </div>
+                
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Parcelas:</span>
+                  <span className="font-medium text-gray-900">{dadosTransacao.parcelas}x</span>
+                </div>
+                
+                {dadosTransacao.valorParcela > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Valor por Parcela:</span>
+                    <span className="font-medium text-gray-900">
+                      {dadosTransacao.valorParcela.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </span>
+                  </div>
+                )}
+                
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Data Fatura:</span>
+                  <span className="font-medium text-gray-900">{new Date(dadosTransacao.timestamp).toLocaleDateString('pt-BR')}</span>
+                </div>
+                
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Hora Fatura:</span>
+                  <span className="font-medium text-gray-900">{new Date(dadosTransacao.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+                
+                {dadosTransacao.descricao && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Descrição:</span>
+                    <span className="font-medium text-gray-900">{dadosTransacao.descricao}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Linha separadora */}
+              <div className="border-t border-dashed border-gray-300 my-4"></div>
+
+              {/* Texto final */}
+              <div className="text-center text-xs text-gray-500 space-y-1">
+                <p>TRANSAÇÃO AUTORIZADA - CRÉDITO NO CONVÊNIO</p>
+                <p>DOCUMENTO DIGITAL VÁLIDO</p>
+              </div>
+            </div>
+
+            {/* Botões de ação */}
+            <div className="flex gap-3 p-4 border-t print:hidden">
+              <button
+                onClick={compartilharComprovante}
+                className="flex-1 py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center justify-center gap-2"
+              >
+                <FaShare className="h-4 w-4" />
+                Compartilhar
+              </button>
+              <button
+                onClick={imprimirComprovante}
+                className="flex-1 py-2 px-4 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center justify-center gap-2"
+              >
+                <FaPrint className="h-4 w-4" />
+                Imprimir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
+  
+  // Função para compartilhar comprovante como imagem
+  async function compartilharComprovante() {
+    if (!dadosTransacao) return;
+
+    try {
+      // Criar um canvas para gerar a imagem do comprovante
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // Configurar dimensões do canvas
+      canvas.width = 400;
+      canvas.height = 600;
+
+      // Fundo branco
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Configurar fonte e cores
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 16px Arial';
+      ctx.textAlign = 'center';
+
+      // Título
+      ctx.fillText('SASCRED - SISTEMA DE CRÉDITO', canvas.width / 2, 40);
+      ctx.font = '12px Arial';
+      ctx.fillText('Comprovante de Transação', canvas.width / 2, 60);
+
+      // Linha separadora
+      ctx.strokeStyle = '#cccccc';
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(20, 80);
+      ctx.lineTo(canvas.width - 20, 80);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Dados da transação
+      const dados = [
+        ['Associado:', dadosTransacao.associado],
+        ['CPF:', dadosTransacao.cpf || 'Não informado'],
+        ['Valor Total:', dadosTransacao.valor],
+        ['Parcelas:', `${dadosTransacao.parcelas}x`],
+        ['Valor por Parcela:', dadosTransacao.valorParcela.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })],
+        ['Data Fatura:', new Date(dadosTransacao.timestamp).toLocaleDateString('pt-BR')],
+        ['Hora Fatura:', new Date(dadosTransacao.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })],
+        ['Descrição:', dadosTransacao.descricao || 'Lançamento via app']
+      ];
+
+      ctx.font = '11px Arial';
+      ctx.textAlign = 'left';
+      let yPosition = 100;
+      const lineHeight = 25;
+
+      dados.forEach(([label, value]) => {
+        ctx.fillStyle = '#666666';
+        ctx.fillText(label, 30, yPosition);
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 11px Arial';
+        ctx.fillText(String(value), 150, yPosition);
+        ctx.font = '11px Arial';
+        yPosition += lineHeight;
+      });
+
+      // Linha separadora final
+      ctx.strokeStyle = '#cccccc';
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(20, yPosition + 10);
+      ctx.lineTo(canvas.width - 20, yPosition + 10);
+      ctx.stroke();
+
+      // Texto final
+      ctx.font = '10px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#666666';
+      ctx.fillText('TRANSAÇÃO AUTORIZADA - CRÉDITO NO CONVÊNIO', canvas.width / 2, yPosition + 35);
+      ctx.fillText('DOCUMENTO DIGITAL VÁLIDO', canvas.width / 2, yPosition + 50);
+
+      // Converter canvas para blob
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+
+        // Verificar se o navegador suporta Web Share API
+        if (navigator.share && navigator.canShare) {
+          const file = new File([blob], `comprovante_transacao.png`, {
+            type: 'image/png'
+          });
+
+          if (navigator.canShare({ files: [file] })) {
+            try {
+              await navigator.share({
+                title: 'Comprovante de Transação',
+                text: `Comprovante da transação - ${dadosTransacao.associado}`,
+                files: [file]
+              });
+              toast.success('Comprovante compartilhado com sucesso!');
+            } catch (error) {
+              if ((error as Error).name !== 'AbortError') {
+                console.error('Erro ao compartilhar:', error);
+                toast.error('Erro ao compartilhar comprovante');
+              }
+            }
+          } else {
+            // Fallback: download da imagem
+            baixarImagem(blob);
+          }
+        } else {
+          // Fallback: download da imagem
+          baixarImagem(blob);
+        }
+      }, 'image/png');
+
+    } catch (error) {
+      console.error('Erro ao gerar comprovante:', error);
+      toast.error('Erro ao gerar comprovante');
+    }
+  }
+
+  // Função auxiliar para baixar imagem
+  function baixarImagem(blob: Blob) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `comprovante_transacao.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success('Comprovante baixado com sucesso!');
+  }
+
+  // Função para imprimir comprovante
+  function imprimirComprovante() {
+    const printContent = document.getElementById('comprovante-content');
+    if (!printContent) return;
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Comprovante de Transação</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .print-content { max-width: 400px; margin: 0 auto; }
+            @media print {
+              body { margin: 0; }
+              .print-content { max-width: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="print-content">
+            ${printContent.innerHTML}
+          </div>
+        </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+  }
 }
