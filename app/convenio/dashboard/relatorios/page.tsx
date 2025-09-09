@@ -716,13 +716,13 @@ export default function RelatoriosPage() {
                 
                 <div className="border-t border-b border-dashed border-gray-300 py-6 px-2">
                   <div className="text-center mb-4">
-                    <p className="font-bold text-gray-900">QRCRED - SISTEMA DE CRÉDITO</p>
+                    <p className="font-bold text-gray-900">SASACRED - SISTEMA DE CRÉDITO</p>
                     <p className="text-sm text-gray-600">Comprovante de Transação</p>
                   </div>
                   
                   <div className="space-y-2 text-left">
                     <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Transação:</span>
+                      <span className="text-sm text-gray-600">Lançamento:</span>
                       <span className="text-sm font-semibold">#{lancamentoSelecionado.id}</span>
                     </div>
                     
