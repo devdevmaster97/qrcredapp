@@ -47,16 +47,22 @@ export async function POST(request: NextRequest) {
     const divisao = associadoResponse.data.id_divisao;
     console.log(' Divisão do associado:', divisao);
 
-    // Preparar requisição para o backend com divisão
-    const formData = new FormData();
-    formData.append('divisao', divisao.toString());
+    // Preparar requisição para o backend com divisão usando URLSearchParams
+    const payload = new URLSearchParams();
+    payload.append('divisao', divisao.toString());
 
     console.log(' Enviando requisição para meses_corrente_app.php com divisão:', divisao);
+    console.log(' Payload sendo enviado:', payload.toString());
 
     // Fazer requisição para o backend
     const response = await axios.post(
       'https://sas.makecard.com.br/meses_corrente_app.php',
-      formData
+      payload,
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }
     );
 
     console.log('Resposta do backend:', response.data);
@@ -89,20 +95,12 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Erro na requisição:', error);
     
-    // Em caso de erro, retornar um objeto de mês padrão
-    const dataAtual = new Date();
-    const mes = dataAtual.getMonth();
-    const ano = dataAtual.getFullYear();
-    const meses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-    
-    const responseData = [{
-      id: '1',
-      abreviacao: `${meses[mes]}/${ano}`,
-      descricao: `${meses[mes]}/${ano}`,
-      atual: 'S'
-    }];
-    
-    console.log('Retornando objeto de mês padrão após erro:', responseData);
-    return NextResponse.json(responseData);
+    return NextResponse.json(
+      { 
+        error: 'Não foi possível obter o mês corrente. Tente novamente.',
+        details: error instanceof Error ? error.message : String(error)
+      },
+      { status: 500 }
+    );
   }
 } 
