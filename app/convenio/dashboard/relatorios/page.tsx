@@ -446,6 +446,7 @@ export default function RelatoriosPage() {
       const dados = [
         [`Transação: #${lancamentoSelecionado.id}`, ''],
         [`Data/Hora: ${formatarData(lancamentoSelecionado.data)} ${lancamentoSelecionado.hora}`, ''],
+        [`Estabelecimento: ${lancamentoSelecionado.nome_empregador || lancamentoSelecionado.empregador}`, ''],
         [`Associado: ${lancamentoSelecionado.nome_associado || lancamentoSelecionado.associado}`, ''],
         [`Empregador: ${lancamentoSelecionado.empregador}`, ''],
         [`Lançamento: ${lancamentoSelecionado.lancamento || '-'}`, ''],
@@ -824,6 +825,11 @@ export default function RelatoriosPage() {
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Data/Hora:</span>
                       <span className="text-sm font-semibold">{formatarData(lancamentoSelecionado.data)} {lancamentoSelecionado.hora}</span>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Estabelecimento:</span>
+                      <span className="text-sm font-semibold">{lancamentoSelecionado.nome_empregador || lancamentoSelecionado.empregador}</span>
                     </div>
 
                     <div className="flex justify-between">

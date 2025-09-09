@@ -15,6 +15,7 @@ interface DadosTransacao {
   valorParcela: number;
   descricao: string;
   timestamp: string;
+  nomeConvenio?: string;
 }
 
 export default function SucessoPage() {
@@ -214,6 +215,13 @@ export default function SucessoPage() {
 
               {/* Dados da transação */}
               <div className="space-y-3 text-sm">
+                {dadosTransacao.nomeConvenio && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Estabelecimento:</span>
+                    <span className="font-medium text-gray-900">{dadosTransacao.nomeConvenio}</span>
+                  </div>
+                )}
+                
                 <div className="flex justify-between">
                   <span className="text-gray-600">Associado:</span>
                   <span className="font-medium text-gray-900">{dadosTransacao.associado}</span>
@@ -335,6 +343,7 @@ export default function SucessoPage() {
 
       // Dados da transação
       const dados = [
+        ...(dadosTransacao.nomeConvenio ? [['Estabelecimento:', dadosTransacao.nomeConvenio]] : []),
         ['Associado:', dadosTransacao.associado],
         ['CPF:', dadosTransacao.cpf || 'Não informado'],
         ['Valor Total:', dadosTransacao.valor],

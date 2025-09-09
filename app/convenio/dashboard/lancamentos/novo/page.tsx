@@ -672,7 +672,8 @@ export default function NovoLancamentoPage() {
         parcelas: parcelas,
         valorParcela: valorParcela,
         descricao: descricao || 'Lançamento via app',
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        nomeConvenio: dadosConvenio.razaosocial || dadosConvenio.nome || 'Convênio'
       };
       
       localStorage.setItem('ultimaTransacao', JSON.stringify(dadosTransacao));
