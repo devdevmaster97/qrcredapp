@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     
     const associadoResponse = await axios.post(
       'https://sas.makecard.com.br/localizaasapp.php',
-      `cartao=${encodeURIComponent(cartao)}`,
+      `cartaodigitado=${encodeURIComponent(cartao)}`,
       {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
