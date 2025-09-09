@@ -280,7 +280,7 @@ export default function RelatoriosPage() {
       
       // Preparando os dados para enviar para a API
       const dadosEstorno = {
-        lancamento: id.toString(),
+        lancamento: lancamentoSelecionado.lancamento || id.toString(),
         data: dataFormatada,
         hora: lancamentoSelecionado.hora, // Formato HH:MM:SS
         empregador: codigoEmpregador, // Enviando como número
@@ -467,19 +467,22 @@ export default function RelatoriosPage() {
       const lineHeight = 25;
 
       const dados = [
-        [`Lançamento: #${lancamentoSelecionado.id}`, ''],
-        [`Data/Hora: ${formatarData(lancamentoSelecionado.data)} ${lancamentoSelecionado.hora}`, ''],
-        [`Estabelecimento: ${lancamentoSelecionado.razaosocial}`, ''],
-        [`Associado: ${lancamentoSelecionado.nome_associado}`, ''],
-        [`Empregador: ${lancamentoSelecionado.empregador}`, ''],
-        [`Mês Referência: ${lancamentoSelecionado.mes}`, ''],
-        [`Parcela: ${lancamentoSelecionado.parcela}`, ''],
-        ['', ''], // Espaço
-        [`VALOR TOTAL: ${formatarValor(lancamentoSelecionado.valor)}`, '']
+        `Lançamento: ${lancamentoSelecionado.lancamento || '#' + lancamentoSelecionado.id}`,
+        `Data/Hora: ${formatarData(lancamentoSelecionado.data)} ${lancamentoSelecionado.hora}`,
+        `Estabelecimento: ${lancamentoSelecionado.razaosocial || lancamentoSelecionado.nome_empregador || lancamentoSelecionado.empregador}`,
+        `Associado: ${lancamentoSelecionado.nome_associado || lancamentoSelecionado.associado}`,
+        `Empregador: ${lancamentoSelecionado.empregador}`,
+        `Mês Referência: ${lancamentoSelecionado.mes}`,
+        `Parcela: ${lancamentoSelecionado.parcela}`,
+        '', // Espaço
+        `VALOR TOTAL: ${formatarValor(lancamentoSelecionado.valor)}`
       ];
 
-      dados.forEach(([texto], index) => {
-        if (texto) {
+      // Debug: verificar dados antes de renderizar
+      console.log('🖼️ COMPROVANTE - Dados para renderizar:', dados);
+
+      dados.forEach((texto, index) => {
+        if (texto && texto.trim() !== '') {
           if (texto.includes('VALOR TOTAL')) {
             ctx.font = 'bold 14px Arial';
             ctx.fillStyle = '#000000';
@@ -487,6 +490,7 @@ export default function RelatoriosPage() {
             ctx.font = '12px Arial';
             ctx.fillStyle = '#333333';
           }
+          console.log(`🖼️ COMPROVANTE - Renderizando linha ${index}: "${texto}"`);
           ctx.fillText(texto, 30, yPosition + (index * lineHeight));
         }
       });
@@ -512,7 +516,7 @@ export default function RelatoriosPage() {
 
         // Verificar se o navegador suporta Web Share API
         if (navigator.share && navigator.canShare) {
-          const file = new File([blob], `comprovante_${lancamentoSelecionado.id}.png`, {
+          const file = new File([blob], `comprovante_${lancamentoSelecionado.lancamento || lancamentoSelecionado.id}.png`, {
             type: 'image/png'
           });
 
@@ -520,7 +524,7 @@ export default function RelatoriosPage() {
             try {
               await navigator.share({
                 title: 'Comprovante de Transação',
-                text: `Comprovante da transação #${lancamentoSelecionado.id}`,
+                text: `Comprovante da transação ${lancamentoSelecionado.lancamento || '#' + lancamentoSelecionado.id}`,
                 files: [file]
               });
               toast.success('Comprovante compartilhado com sucesso!');
@@ -551,7 +555,7 @@ export default function RelatoriosPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `comprovante_${lancamentoSelecionado?.id}.png`;
+    link.download = `comprovante_${lancamentoSelecionado?.lancamento || lancamentoSelecionado?.id}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -656,7 +660,7 @@ export default function RelatoriosPage() {
                         R$ {formatarValorLista(lancamento.valor)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        #{lancamento.id}
+                        {lancamento.lancamento || '#' + lancamento.id}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {lancamento.data}
@@ -705,7 +709,7 @@ export default function RelatoriosPage() {
                       R$ {formatarValorLista(lancamento.valor)}
                     </div>
                     <div className="text-sm text-gray-700 mb-2">
-                      <span className="font-medium">Lançamento:</span> #{lancamento.id}
+                      <span className="font-medium">Lançamento:</span> {lancamento.lancamento || '#' + lancamento.id}
                     </div>
                     <div className="text-sm text-gray-700 mb-1">
                       <span className="font-medium">Data:</span> {lancamento.data}
@@ -841,7 +845,7 @@ export default function RelatoriosPage() {
                   <div className="space-y-2 text-left">
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Lançamento:</span>
-                      <span className="text-sm font-semibold">#{lancamentoSelecionado.id}</span>
+                      <span className="text-sm font-semibold">{lancamentoSelecionado.lancamento || '#' + lancamentoSelecionado.id}</span>
                     </div>
                     
                     <div className="flex justify-between">
