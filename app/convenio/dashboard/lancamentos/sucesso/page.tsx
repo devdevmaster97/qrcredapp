@@ -24,6 +24,22 @@ export default function SucessoPage() {
   const [dadosTransacao, setDadosTransacao] = useState<DadosTransacao | null>(null);
   const [showComprovanteModal, setShowComprovanteModal] = useState(false);
 
+  // Função para detectar se é dispositivo móvel ou computador
+  const detectarDispositivo = () => {
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+    const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    
+    // É mobile se detectar mobile no user agent OU se tiver touch e tela pequena
+    return (isMobile || (hasTouch && window.innerWidth < 1024)) ? 'celular' : 'computador';
+  };
+
+  // Função para obter descrição baseada no dispositivo
+  const obterDescricaoDispositivo = () => {
+    const dispositivo = detectarDispositivo();
+    return dispositivo === 'celular' ? 'Lançamento via celular' : 'Lançamento via computador';
+  };
+
   useEffect(() => {
     // Recuperar dados da transação do localStorage
     const dadosString = localStorage.getItem('ultimaTransacao');
@@ -271,12 +287,10 @@ export default function SucessoPage() {
                   <span className="font-medium text-gray-900">{new Date(dadosTransacao.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
                 
-                {dadosTransacao.descricao && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Descrição:</span>
-                    <span className="font-medium text-gray-900">{dadosTransacao.descricao}</span>
-                  </div>
-                )}
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Descrição:</span>
+                  <span className="font-medium text-gray-900">{obterDescricaoDispositivo()}</span>
+                </div>
               </div>
 
               {/* Linha separadora */}
@@ -382,7 +396,7 @@ export default function SucessoPage() {
         ['Valor por Parcela:', dadosTransacao.valorParcela.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })],
         ['Data Emissão:', new Date(dadosTransacao.timestamp).toLocaleDateString('pt-BR')],
         ['Hora:', new Date(dadosTransacao.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })],
-        ['Descrição:', dadosTransacao.descricao || 'Lançamento via app']
+        ['Descrição:', obterDescricaoDispositivo()]
       ];
 
       ctx.font = '12px Arial';
@@ -648,12 +662,10 @@ export default function SucessoPage() {
                 <span class="font-medium text-gray-900">${new Date(dadosTransacao.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
               
-              ${dadosTransacao.descricao ? `
               <div class="flex-justify-between">
                 <span class="text-gray-600">Descrição:</span>
-                <span class="font-medium text-gray-900">${dadosTransacao.descricao}</span>
+                <span class="font-medium text-gray-900">${obterDescricaoDispositivo()}</span>
               </div>
-              ` : ''}
             </div>
 
             <!-- Linha separadora -->

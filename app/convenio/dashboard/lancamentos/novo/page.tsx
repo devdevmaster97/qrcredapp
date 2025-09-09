@@ -696,7 +696,8 @@ export default function NovoLancamentoPage() {
         valorParcela: valorParcela,
         descricao: descricao || 'Lançamento via app',
         timestamp: new Date().toISOString(),
-        nomeConvenio: dadosConvenio.razaosocial || dadosConvenio.nome || 'Convênio'
+        nomeConvenio: dadosConvenio.razaosocial || dadosConvenio.nome || 'Convênio',
+        lancamento: `${new Date().toLocaleDateString('pt-BR')} - ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
       };
       
       localStorage.setItem('ultimaTransacao', JSON.stringify(dadosTransacao));
