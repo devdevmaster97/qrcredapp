@@ -27,6 +27,8 @@ interface AssociadoData {
   bairro: string;
   cidade: string;
   uf: string;
+  id?: number;
+  id_divisao?: number;
 }
 
 interface SaldoData {
@@ -93,7 +95,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       solicitacao.mes_corrente === saldoData.mesCorrente
     );
 
-    console.log('🔍 Verificando solicitação no mês:', {
+    console.log(' Verificando solicitação no mês:', {
       mesCorrente: saldoData.mesCorrente,
       totalSolicitacoes: ultimasSolicitacoes.length,
       temSolicitacaoNoMes: temSolicitacao,
@@ -153,18 +155,22 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
   }, []);
 
   // Função para buscar os dados da conta e calcular o saldo
-  const fetchConta = useCallback(async (matricula: string, empregador: string, mes: string) => {
+  const fetchConta = useCallback(async (matricula: string, empregador: string, mes: string, id?: number, divisao?: number) => {
     try {
-      // Não buscar dados do associado novamente, usar os que já temos
-      if (!matricula || !empregador) {
-        throw new Error('Matrícula ou empregador não fornecidos');
+      // Validar todos os parâmetros obrigatórios
+      if (!matricula || !empregador || !mes || !id || !divisao) {
+        throw new Error('Todos os parâmetros são obrigatórios: matricula, empregador, mes, id, divisao');
       }
 
-      // Agora buscar os dados da conta com os dados do associado
+      console.log('Enviando parâmetros para /api/conta:', { matricula, empregador, mes, id, divisao });
+
+      // Buscar os dados da conta com todos os parâmetros obrigatórios
       const formDataConta = new FormData();
       formDataConta.append('matricula', matricula);
       formDataConta.append('empregador', empregador.toString());
       formDataConta.append('mes', mes);
+      formDataConta.append('id', id.toString());
+      formDataConta.append('divisao', divisao.toString());
       
       const response = await axios.post('/api/conta', formDataConta, {
         headers: {
@@ -233,7 +239,9 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       const total = await fetchConta(
         associadoData.matricula, 
         associadoData.empregador, 
-        mesAtual
+        mesAtual,
+        associadoData.id,
+        associadoData.id_divisao
       );
       
       // 3. Calcular saldo
