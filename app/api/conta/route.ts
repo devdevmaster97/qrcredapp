@@ -2,10 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 
 export async function POST(request: NextRequest) {
-  console.log('🔥 API /api/conta INICIADA - Recebendo requisição');
+  console.log('🔥🔥🔥 API /api/conta INICIADA - Recebendo requisição');
   console.log('🔥 URL da requisição:', request.url);
   console.log('🔥 Method:', request.method);
   console.log('🔥 Headers:', Object.fromEntries(request.headers.entries()));
+  
+  // Log adicional para debug
+  console.log('🔥 Timestamp:', new Date().toISOString());
+  console.log('🔥 User-Agent:', request.headers.get('user-agent'));
+  console.log('🔥 Content-Length:', request.headers.get('content-length'));
   
   try {
     let matricula: string;
@@ -55,49 +60,27 @@ export async function POST(request: NextRequest) {
       id: typeof id 
     });
 
-    // Verificar dados necessários
-    if (!matricula || !empregador || !mes) {
-      console.error('❌ Faltam parâmetros obrigatórios:', {
-        matricula: !!matricula,
-        empregador: !!empregador,
-        mes: !!mes,
-        valores: { matricula, empregador, mes }
+    // Validar todos os parâmetros obrigatórios (igual à API PHP)
+    const erros = [];
+    if (!matricula || matricula.trim() === '') erros.push("Parâmetro 'matricula' é obrigatório");
+    if (!empregador || empregador === 0) erros.push("Parâmetro 'empregador' é obrigatório");
+    if (!mes || mes.trim() === '') erros.push("Parâmetro 'mes' é obrigatório");
+    if (!divisao || divisao === 0) erros.push("Parâmetro 'divisao' é obrigatório");
+    if (!id || id === 0) erros.push("Parâmetro 'id' é obrigatório");
+
+    if (erros.length > 0) {
+      console.error('❌ Parâmetros obrigatórios ausentes:', {
+        erros,
+        received_params: { matricula, empregador, mes, divisao, id }
       });
-      return NextResponse.json(
-        { 
-          error: 'Matricula, empregador e mês são obrigatórios',
-          received: { matricula, empregador, mes },
-          missing: {
-            matricula: !matricula,
-            empregador: !empregador,
-            mes: !mes
-          }
-        },
-        { status: 400 }
-      );
+      return NextResponse.json({
+        error: 'Parâmetros obrigatórios ausentes',
+        details: erros,
+        received_params: { matricula, empregador, mes, divisao, id }
+      }, { status: 400 });
     }
 
-    // Se temos ID e divisão nos parâmetros, usar diretamente
-    if (id && divisao) {
-      console.log('✅ Usando ID e divisão dos parâmetros:', { id, divisao });
-    } else {
-      console.error('❌ ID ou divisão não fornecidos nos parâmetros:', {
-        id: !!id,
-        divisao: !!divisao,
-        valores: { id, divisao }
-      });
-      return NextResponse.json(
-        { 
-          error: 'ID e divisão do associado são obrigatórios',
-          received: { id, divisao },
-          missing: {
-            id: !id,
-            divisao: !divisao
-          }
-        },
-        { status: 400 }
-      );
-    }
+    console.log('✅ Todos os parâmetros obrigatórios fornecidos:', { matricula, empregador, mes, divisao, id });
 
     // Preparar os dados para enviar ao backend
     const payload = new URLSearchParams();
