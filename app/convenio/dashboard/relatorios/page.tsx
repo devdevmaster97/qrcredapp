@@ -100,6 +100,18 @@ export default function RelatoriosPage() {
           
           if (data.data.length > 0) {
             console.log('🔍 RELATÓRIOS - Exemplo de lançamento completo:', data.data[0]);
+            
+            // Debug específico da parcela
+            data.data.slice(0, 3).forEach((lancamento: any, index: number) => {
+              console.log(`🔍 PARCELA DEBUG ${index + 1}:`, {
+                id: lancamento.id,
+                parcela_original: lancamento.parcela,
+                parcela_tipo: typeof lancamento.parcela,
+                parcela_string: String(lancamento.parcela),
+                parcela_json: JSON.stringify(lancamento.parcela)
+              });
+            });
+            
             console.log('🔍 RELATÓRIOS - Campos do empregador:', {
               empregador: data.data[0].empregador,
               nome_empregador: data.data[0].nome_empregador,
@@ -628,7 +640,7 @@ export default function RelatoriosPage() {
                         {lancamento.data}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {lancamento.hora} - Parcela {lancamento.parcela}
+                        {lancamento.hora} - Parcela {String(lancamento.parcela)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <div className="flex space-x-3">
@@ -677,7 +689,7 @@ export default function RelatoriosPage() {
                       <span className="font-medium">Data:</span> {lancamento.data}
                     </div>
                     <div className="text-sm text-gray-700">
-                      <span className="font-medium">Hora:</span> {lancamento.hora} - <span className="font-medium">Parcela:</span> {lancamento.parcela}
+                      <span className="font-medium">Hora:</span> {lancamento.hora} - <span className="font-medium">Parcela:</span> {String(lancamento.parcela)}
                     </div>
                   </div>
                   
