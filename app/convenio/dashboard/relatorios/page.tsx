@@ -467,7 +467,7 @@ export default function RelatoriosPage() {
       const lineHeight = 25;
 
       const dados = [
-        `Lançamento: ${lancamentoSelecionado.lancamento || '#' + lancamentoSelecionado.id}`,
+        `Lançamento: ${lancamentoSelecionado.lancamento || 'N/A'}`,
         `Data/Hora: ${formatarData(lancamentoSelecionado.data)} ${lancamentoSelecionado.hora}`,
         `Estabelecimento: ${lancamentoSelecionado.razaosocial || lancamentoSelecionado.nome_empregador || lancamentoSelecionado.empregador}`,
         `Associado: ${lancamentoSelecionado.nome_associado || lancamentoSelecionado.associado}`,
@@ -516,7 +516,7 @@ export default function RelatoriosPage() {
 
         // Verificar se o navegador suporta Web Share API
         if (navigator.share && navigator.canShare) {
-          const file = new File([blob], `comprovante_${lancamentoSelecionado.lancamento || lancamentoSelecionado.id}.png`, {
+          const file = new File([blob], `comprovante_${lancamentoSelecionado.lancamento || 'sem_numero'}.png`, {
             type: 'image/png'
           });
 
@@ -524,7 +524,7 @@ export default function RelatoriosPage() {
             try {
               await navigator.share({
                 title: 'Comprovante de Transação',
-                text: `Comprovante da transação ${lancamentoSelecionado.lancamento || '#' + lancamentoSelecionado.id}`,
+                text: `Comprovante da transação ${lancamentoSelecionado.lancamento || 'N/A'}`,
                 files: [file]
               });
               toast.success('Comprovante compartilhado com sucesso!');
@@ -845,7 +845,7 @@ export default function RelatoriosPage() {
                   <div className="space-y-2 text-left">
                     <div className="flex justify-between">
                       <span className="text-sm text-gray-600">Lançamento:</span>
-                      <span className="text-sm font-semibold">{lancamentoSelecionado.lancamento || '#' + lancamentoSelecionado.id}</span>
+                      <span className="text-sm font-semibold">{lancamentoSelecionado.lancamento || 'N/A'}</span>
                     </div>
                     
                     <div className="flex justify-between">
