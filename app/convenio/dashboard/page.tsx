@@ -24,16 +24,43 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const response = await fetch('/api/convenio/dashboard');
+        // Detectar dispositivo móvel
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        // Headers anti-cache rigorosos
+        const headers: HeadersInit = {
+          'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        };
+
+        if (isMobile) {
+          console.log('📱 DASHBOARD - Dispositivo móvel detectado, usando headers anti-cache');
+        }
+
+        const response = await fetch(`/api/convenio/dashboard?t=${Date.now()}`, {
+          method: 'GET',
+          headers,
+          cache: 'no-store'
+        });
+        
         const data = await response.json();
 
         if (data.success) {
+          console.log('✅ DASHBOARD - Dados carregados:', {
+            totalLancamentos: data.data.totalLancamentos,
+            totalVendas: data.data.totalVendas,
+            totalEstornos: data.data.totalEstornos,
+            totalAssociados: data.data.totalAssociados,
+            timestamp: new Date().toISOString()
+          });
           setDashboardData(data.data);
         } else {
+          console.log('❌ DASHBOARD - Erro da API:', data.message);
           toast.error(data.message || 'Erro ao carregar dados do dashboard');
         }
       } catch (error) {
-        console.error('Erro ao buscar dados do dashboard:', error);
+        console.error('❌ DASHBOARD - Erro ao buscar dados:', error);
         toast.error('Erro ao conectar com o servidor');
       } finally {
         setLoading(false);

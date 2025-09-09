@@ -57,9 +57,22 @@ export async function POST(request: NextRequest) {
 
     // Verificar dados necessários
     if (!matricula || !empregador || !mes) {
-      console.log('Faltam parâmetros obrigatórios');
+      console.error('❌ Faltam parâmetros obrigatórios:', {
+        matricula: !!matricula,
+        empregador: !!empregador,
+        mes: !!mes,
+        valores: { matricula, empregador, mes }
+      });
       return NextResponse.json(
-        { error: 'Matricula, empregador e mês são obrigatórios' },
+        { 
+          error: 'Matricula, empregador e mês são obrigatórios',
+          received: { matricula, empregador, mes },
+          missing: {
+            matricula: !matricula,
+            empregador: !empregador,
+            mes: !mes
+          }
+        },
         { status: 400 }
       );
     }
@@ -68,9 +81,20 @@ export async function POST(request: NextRequest) {
     if (id && divisao) {
       console.log('✅ Usando ID e divisão dos parâmetros:', { id, divisao });
     } else {
-      console.error('❌ ID ou divisão não fornecidos nos parâmetros');
+      console.error('❌ ID ou divisão não fornecidos nos parâmetros:', {
+        id: !!id,
+        divisao: !!divisao,
+        valores: { id, divisao }
+      });
       return NextResponse.json(
-        { error: 'ID e divisão do associado são obrigatórios' },
+        { 
+          error: 'ID e divisão do associado são obrigatórios',
+          received: { id, divisao },
+          missing: {
+            id: !id,
+            divisao: !divisao
+          }
+        },
         { status: 400 }
       );
     }
