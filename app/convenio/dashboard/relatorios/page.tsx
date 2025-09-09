@@ -31,6 +31,7 @@ export default function RelatoriosPage() {
   const [lancamentos, setLancamentos] = useState<Lancamento[]>([]);
   const [mesSelecionado, setMesSelecionado] = useState<string>('');
   const [mesesDisponiveis, setMesesDisponiveis] = useState<string[]>([]);
+  const [mesCorrente, setMesCorrente] = useState<string>('');
   const [loadingLancamentos, setLoadingLancamentos] = useState(true);
   const [estornandoId, setEstornandoId] = useState<number | null>(null);
   const [showModal, setShowModal] = useState(false);
@@ -121,9 +122,14 @@ export default function RelatoriosPage() {
           const mesesOrdenados = meses.sort().reverse();
           setMesesDisponiveis(mesesOrdenados);
           
-          // Definir o mês corrente como padrão
-          const mesCorrente = gerarMesCorrente();
-          setMesSelecionado(mesCorrente);
+          // Definir o mês corrente como padrão (prioriza o da API)
+          if (mesCorrente && mesesOrdenados.includes(mesCorrente)) {
+            setMesSelecionado(mesCorrente);
+            console.log('✅ RELATÓRIOS - Usando mês corrente da API:', mesCorrente);
+          } else if (mesesOrdenados.length > 0) {
+            setMesSelecionado(mesesOrdenados[0]);
+            console.log('⚠️ RELATÓRIOS - Mês da API não encontrado, usando primeiro disponível:', mesesOrdenados[0]);
+          }
         } else {
           console.log('❌ RELATÓRIOS - Erro da API:', data.message);
           
@@ -148,6 +154,56 @@ export default function RelatoriosPage() {
 
     buscarLancamentos();
   }, []);
+
+  useEffect(() => {
+    buscarMesCorrente();
+  }, []);
+
+  // Função para buscar o mês corrente da API
+  const buscarMesCorrente = async () => {
+    try {
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      const headers: HeadersInit = {
+        'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      };
+      
+      const response = await fetch(`/api/convenio/mes-corrente?t=${Date.now()}`, {
+        method: 'GET',
+        headers,
+        cache: 'no-store'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data.mes_corrente) {
+          console.log('✅ MÊS CORRENTE - Recebido da API:', data.data.mes_corrente);
+          setMesCorrente(data.data.mes_corrente);
+          setMesSelecionado(data.data.mes_corrente);
+        } else {
+          console.log('⚠️ MÊS CORRENTE - Erro na resposta:', data.message);
+          // Fallback para mês corrente gerado localmente
+          const mesLocal = gerarMesCorrente();
+          setMesCorrente(mesLocal);
+          setMesSelecionado(mesLocal);
+        }
+      } else {
+        console.log('⚠️ MÊS CORRENTE - Erro HTTP:', response.status);
+        // Fallback para mês corrente gerado localmente
+        const mesLocal = gerarMesCorrente();
+        setMesCorrente(mesLocal);
+        setMesSelecionado(mesLocal);
+      }
+    } catch (error) {
+      console.error('❌ MÊS CORRENTE - Erro ao buscar:', error);
+      // Fallback para mês corrente gerado localmente
+      const mesLocal = gerarMesCorrente();
+      setMesCorrente(mesLocal);
+      setMesSelecionado(mesLocal);
+    }
+  };
 
   // Filtrar lançamentos pelo mês selecionado
   const lancamentosFiltrados = mesSelecionado
