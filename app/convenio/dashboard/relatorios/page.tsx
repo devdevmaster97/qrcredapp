@@ -894,7 +894,7 @@ export default function RelatoriosPage() {
                       
                       {lancamentoSelecionado.data_fatura && (
                         <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">Data Fatura:</span>
+                          <span className="text-sm text-gray-600">Data Emissão:</span>
                           <span className="text-sm font-semibold">{formatarDataFatura(lancamentoSelecionado.data_fatura)}</span>
                         </div>
                       )}
