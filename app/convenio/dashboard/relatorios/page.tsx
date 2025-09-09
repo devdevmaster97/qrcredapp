@@ -833,12 +833,12 @@ export default function RelatoriosPage() {
               
               <div className="mt-2 text-center">
                 <div className="flex justify-center mb-4">
-                  <Image 
-                    src="/icons/logo-32x32.png" 
-                    alt="Logo" 
-                    width={48} 
-                    height={48} 
-                    className="object-contain"
+                  <img 
+                    src="/icons/icon-192x192.png" 
+                    alt="Logo SAS" 
+                    width="48" 
+                    height="48" 
+                    className="object-contain rounded-full"
                   />
                 </div>
                 <h3 className="text-lg leading-6 font-bold text-gray-900 mb-4">

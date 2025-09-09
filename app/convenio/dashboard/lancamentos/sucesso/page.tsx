@@ -554,7 +554,7 @@ export default function SucessoPage() {
               width: 40px;
               height: 40px;
               border-radius: 50%;
-              background: url('/icons/icon-192x192.png') center/cover;
+              object-fit: cover;
             }
             
             .text-lg { font-size: 18px; }
@@ -603,7 +603,7 @@ export default function SucessoPage() {
             <!-- Logo -->
             <div class="text-center mb-6">
               <div class="logo-container">
-                <div class="logo-image"></div>
+                <img src="/icons/icon-192x192.png" alt="Logo SAS" class="logo-image" />
               </div>
               <h2 class="text-lg font-bold text-gray-900">SASCRED - SISTEMA DE CRÉDITO</h2>
               <p class="text-sm text-gray-600">Comprovante de Transação</p>
