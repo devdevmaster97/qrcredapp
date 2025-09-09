@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { FaShare, FaArrowLeft, FaQrcode } from 'react-icons/fa';
+import Image from 'next/image';
 
 interface LancamentoDetalhes {
   descricao: string;
@@ -75,8 +76,8 @@ export default function ComprovantePage() {
         if (navigator.share) {
           try {
             await navigator.share({
-              title: 'Comprovante QRCred',
-              text: 'Comprovante de Lançamento QRCred',
+              title: 'Comprovante SasCred',
+              text: 'Comprovante de Lançamento SasCred',
               files: [file]
             });
           } catch (shareError) {
@@ -188,9 +189,15 @@ export default function ComprovantePage() {
           {/* Cabeçalho */}
           <div className="bg-blue-600 p-5 text-center text-white">
             <div className="flex justify-center mb-2">
-              <FaQrcode className="text-3xl" />
+              <Image 
+                src="/icons/logo-32x32.png" 
+                alt="SasCred Logo" 
+                width={32} 
+                height={32}
+                className="filter brightness-0 invert"
+              />
             </div>
-            <h2 className="text-xl font-bold">QRCred</h2>
+            <h2 className="text-xl font-bold">SasCred</h2>
             <p className="text-sm opacity-80">Comprovante de Transação</p>
           </div>
           
@@ -236,7 +243,7 @@ export default function ComprovantePage() {
                 Este comprovante foi emitido em {format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
               </p>
               <p className="text-xs text-gray-400">
-                QRCred - Sistema de Pagamentos
+                SasCred - Sistema de Pagamentos
               </p>
             </div>
           </div>
