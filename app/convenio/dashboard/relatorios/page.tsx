@@ -467,12 +467,11 @@ export default function RelatoriosPage() {
       const lineHeight = 25;
 
       const dados = [
-        [`Transação: #${lancamentoSelecionado.id}`, ''],
+        [`Lançamento: #${lancamentoSelecionado.id}`, ''],
         [`Data/Hora: ${formatarData(lancamentoSelecionado.data)} ${lancamentoSelecionado.hora}`, ''],
         [`Estabelecimento: ${lancamentoSelecionado.razaosocial}`, ''],
-        [`Associado: ${lancamentoSelecionado.nome_associado || lancamentoSelecionado.associado}`, ''],
+        [`Associado: ${lancamentoSelecionado.nome_associado}`, ''],
         [`Empregador: ${lancamentoSelecionado.empregador}`, ''],
-        [`Lançamento: ${lancamentoSelecionado.lancamento || '-'}`, ''],
         [`Mês Referência: ${lancamentoSelecionado.mes}`, ''],
         [`Parcela: ${lancamentoSelecionado.parcela}`, ''],
         ['', ''], // Espaço
