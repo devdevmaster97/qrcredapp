@@ -322,22 +322,44 @@ export default function SucessoPage() {
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      // Carregar e desenhar a logo
+      const logo = document.createElement('img');
+      logo.crossOrigin = 'anonymous';
+      
+      await new Promise<void>((resolve) => {
+        logo.onload = () => {
+          // Desenhar logo no topo centralizada
+          const logoWidth = 60;
+          const logoHeight = 60;
+          const logoX = (canvas.width - logoWidth) / 2;
+          const logoY = 10;
+          
+          ctx.drawImage(logo, logoX, logoY, logoWidth, logoHeight);
+          resolve();
+        };
+        logo.onerror = () => {
+          // Se não conseguir carregar a logo, continua sem ela
+          resolve();
+        };
+        logo.src = '/icons/logo.png';
+      });
+
       // Configurar fonte e cores
       ctx.fillStyle = '#000000';
       ctx.font = 'bold 16px Arial';
       ctx.textAlign = 'center';
 
-      // Título
-      ctx.fillText('SASCRED - SISTEMA DE CRÉDITO', canvas.width / 2, 40);
+      // Título (ajustado para ficar abaixo da logo)
+      ctx.fillText('SASCRED - SISTEMA DE CRÉDITO', canvas.width / 2, 90);
       ctx.font = '12px Arial';
-      ctx.fillText('Comprovante de Transação', canvas.width / 2, 60);
+      ctx.fillText('Comprovante de Transação', canvas.width / 2, 110);
 
-      // Linha separadora
+      // Linha separadora (ajustada para ficar abaixo da logo e título)
       ctx.strokeStyle = '#cccccc';
       ctx.setLineDash([5, 5]);
       ctx.beginPath();
-      ctx.moveTo(20, 80);
-      ctx.lineTo(canvas.width - 20, 80);
+      ctx.moveTo(20, 130);
+      ctx.lineTo(canvas.width - 20, 130);
       ctx.stroke();
       ctx.setLineDash([]);
 
@@ -354,9 +376,11 @@ export default function SucessoPage() {
         ['Descrição:', dadosTransacao.descricao || 'Lançamento via app']
       ];
 
-      ctx.font = '11px Arial';
+      ctx.font = '12px Arial';
       ctx.textAlign = 'left';
-      let yPosition = 100;
+      ctx.fillStyle = '#333333';
+
+      let yPosition = 160;
       const lineHeight = 25;
 
       dados.forEach(([label, value]) => {
