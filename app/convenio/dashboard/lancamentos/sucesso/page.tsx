@@ -16,6 +16,7 @@ interface DadosTransacao {
   descricao: string;
   timestamp: string;
   nomeConvenio?: string;
+  lancamento?: string;
 }
 
 export default function SucessoPage() {
@@ -215,6 +216,13 @@ export default function SucessoPage() {
 
               {/* Dados da transação */}
               <div className="space-y-3 text-sm">
+                {dadosTransacao.lancamento && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Lançamento:</span>
+                    <span className="font-medium text-gray-900">{dadosTransacao.lancamento}</span>
+                  </div>
+                )}
+                
                 {dadosTransacao.nomeConvenio && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">Estabelecimento:</span>
@@ -365,6 +373,7 @@ export default function SucessoPage() {
 
       // Dados da transação
       const dados = [
+        ...(dadosTransacao.lancamento ? [['Lançamento:', dadosTransacao.lancamento]] : []),
         ...(dadosTransacao.nomeConvenio ? [['Estabelecimento:', dadosTransacao.nomeConvenio]] : []),
         ['Associado:', dadosTransacao.associado],
         ['CPF:', dadosTransacao.cpf || 'Não informado'],
@@ -591,6 +600,13 @@ export default function SucessoPage() {
 
             <!-- Dados da transação -->
             <div class="space-y-3 text-sm">
+              ${dadosTransacao.lancamento ? `
+              <div class="flex-justify-between">
+                <span class="text-gray-600">Lançamento:</span>
+                <span class="font-medium text-gray-900">${dadosTransacao.lancamento}</span>
+              </div>
+              ` : ''}
+              
               <div class="flex-justify-between">
                 <span class="text-gray-600">Associado:</span>
                 <span class="font-medium text-gray-900">${dadosTransacao.associado}</span>

@@ -480,6 +480,12 @@ export default function RelatoriosPage() {
 
       // Debug: verificar dados antes de renderizar
       console.log('🖼️ COMPROVANTE - Dados para renderizar:', dados);
+      console.log('🖼️ COMPROVANTE - Campo lancamento:', {
+        lancamento: lancamentoSelecionado.lancamento,
+        id: lancamentoSelecionado.id,
+        tipo_lancamento: typeof lancamentoSelecionado.lancamento,
+        valor_usado: lancamentoSelecionado.lancamento || 'N/A'
+      });
 
       dados.forEach((texto, index) => {
         if (texto && texto.trim() !== '') {
