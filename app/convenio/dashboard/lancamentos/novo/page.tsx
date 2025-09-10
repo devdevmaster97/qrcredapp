@@ -144,9 +144,9 @@ export default function NovoLancamentoPage() {
       // Aguardar a conclusão da captura do mês corrente antes de finalizar
       try {
         await capturarMesCorrente(associadoData.matricula, associadoData.empregador, associadoData);
-      } catch (error) {
-        console.error('❌ Erro ao capturar mês corrente:', error);
-        toast.error('Erro ao obter dados completos do associado');
+      } catch (err) {
+        console.error('❌ Erro ao capturar mês corrente:', err);
+        error('Erro nos Dados', 'Não foi possível obter dados completos do associado.');
         
         // Em caso de erro, atualizar com saldo 0
         setAssociado(associadoData);
@@ -156,7 +156,7 @@ export default function NovoLancamentoPage() {
         temMatricula: !!associadoData.matricula,
         temEmpregador: !!associadoData.empregador
       });
-      toast.error('Dados do associado incompletos');
+      error('Dados Incompletos', 'Os dados do associado estão incompletos. Tente novamente.');
     }
   };
 
@@ -166,7 +166,7 @@ export default function NovoLancamentoPage() {
     
     // Verificar se há cartão informado
     if (!cartaoParaBuscar || cartaoParaBuscar.trim() === '') {
-      toast.error('Informe o número do cartão');
+      error('Cartão Obrigatório', 'Por favor, informe o número do cartão.');
       return;
     }
 
@@ -176,7 +176,7 @@ export default function NovoLancamentoPage() {
 
     try {
       console.log('🔍 Buscando associado pelo cartão:', cartaoParaBuscar);
-      toast.loading('Buscando cartão...', { id: 'busca-cartao' });
+      info('Buscando Cartão', 'Aguarde enquanto consultamos os dados do cartão...');
       
       // Usando XHR diretamente para melhor controle e diagnóstico
       const xhr = new XMLHttpRequest();
@@ -206,7 +206,7 @@ export default function NovoLancamentoPage() {
           
           if (!responseText || responseText.trim() === '') {
             console.error('❌ Resposta vazia da API');
-            toast.error('Erro na consulta do cartão', { id: 'busca-cartao' });
+            error('Erro na Consulta', 'Não foi possível consultar os dados do cartão.');
             setLoadingCartao(false);
             return;
           }
@@ -226,19 +226,19 @@ export default function NovoLancamentoPage() {
             } else {
               // Se a API responder mas não encontrar o cartão
               console.warn('⚠️ Cartão não encontrado ou login inválido:', data);
-              toast.error('Cartão não encontrado', { id: 'busca-cartao' });
+              error('Cartão Não Encontrado', 'O cartão informado não foi encontrado no sistema.');
               setCartao('');
               setLoadingCartao(false);
             }
           } catch (parseError) {
             console.error('❌ Erro ao fazer parse do JSON:', parseError);
-            toast.error('Formato de resposta inválido', { id: 'busca-cartao' });
+            error('Erro de Formato', 'A resposta do servidor está em formato inválido.');
             setLoadingCartao(false);
             return;
           }
         } else {
           console.error('❌ Erro na resposta:', xhr.status, xhr.statusText);
-          toast.error(`Erro na resposta da API: ${xhr.status}`, { id: 'busca-cartao' });
+          error('Erro na API', `Erro na resposta do servidor: ${xhr.status}`);
           setLoadingCartao(false);
         }
       };
@@ -246,14 +246,14 @@ export default function NovoLancamentoPage() {
       // Configurar handler de erro
       xhr.onerror = function() {
         console.error('❌ Erro de rede na requisição XHR');
-        toast.error('Erro de rede, verifique sua conexão', { id: 'busca-cartao' });
+        error('Erro de Rede', 'Verifique sua conexão com a internet e tente novamente.');
         setLoadingCartao(false);
       };
       
       // Configurar handler de timeout
       xhr.ontimeout = function() {
         console.error('⏱️ Timeout na busca do associado');
-        toast.error('Tempo limite excedido, tente novamente', { id: 'busca-cartao' });
+        error('Tempo Esgotado', 'O tempo limite foi excedido. Tente novamente.');
         setLoadingCartao(false);
       };
       
@@ -267,7 +267,7 @@ export default function NovoLancamentoPage() {
       xhr.send(formData.toString());
     } catch (error) {
       console.error('❌ Erro geral na busca do associado:', error);
-      toast.error('Erro ao buscar dados do cartão', { id: 'busca-cartao' });
+      error('Erro na Busca', 'Não foi possível buscar os dados do cartão.');
       setLoadingCartao(false);
     }
   };
@@ -319,7 +319,7 @@ export default function NovoLancamentoPage() {
       // Se não conseguiu obter da API, falhar o processo
       if (!tentativaApiSucesso) {
         console.error('❌ Falha obrigatória: não foi possível obter mês corrente da API');
-        toast.error('Erro: não foi possível obter o mês corrente. Tente novamente.');
+        error('Erro no Mês Corrente', 'Não foi possível obter o mês corrente. Tente novamente.');
         setLoading(false);
         return; // Parar o processo aqui
       }
@@ -391,22 +391,20 @@ export default function NovoLancamentoPage() {
                     setAssociado(novoAssociado);
                     
                     // Toast de sucesso com o saldo real
-                    toast.success(`Cartão encontrado! Saldo: ${Math.max(0, saldoDisponivel).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, { 
-                      id: 'busca-cartao'
-                    });
+                    success('Cartão Encontrado!', `Saldo disponível: ${Math.max(0, saldoDisponivel).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`);
                   }
                 } else {
                   console.error('❌ Erro ao consultar conta - API retornou erro');
                   const contaText = await contaResponse.text();
                   console.error('❌ Resposta da API conta:', contaText);
                   
-                  toast.error('Erro ao consultar saldo. Verifique os dados e tente novamente.');
+                  error('Erro no Saldo', 'Não foi possível consultar o saldo. Verifique os dados e tente novamente.');
                   setLoadingCartao(false);
                   return; // Parar o processo se não conseguir consultar o saldo
                 }
               } catch (errorConsulta) {
                 console.error('❌ Erro ao consultar gastos:', errorConsulta);
-                toast.error('Erro de conexão ao consultar saldo. Verifique sua internet e tente novamente.');
+                error('Erro de Conexão', 'Problema na conexão ao consultar saldo. Verifique sua internet.');
                 setLoadingCartao(false);
                 return; // Parar o processo se houver erro de conexão
               }
@@ -414,19 +412,19 @@ export default function NovoLancamentoPage() {
           }
         } catch (errorConta) {
           console.error('❌ Erro crítico ao consultar conta:', errorConta);
-          toast.error('Erro crítico ao consultar dados da conta. Operação cancelada.');
+          error('Erro Crítico', 'Não foi possível consultar dados da conta. Operação cancelada.');
           setLoadingCartao(false);
           return; // Parar completamente se houver erro crítico
         }
       }
       
       return;
-    } catch (error) {
-      console.error('❌ Erro geral na captura de mês corrente:', error);
+    } catch (err) {
+      console.error('❌ Erro geral na captura de mês corrente:', err);
       
       // Em caso de erro, falhar o processo - não usar fallback
       console.error('❌ Falha crítica: não foi possível obter mês corrente da API');
-      toast.error('Erro crítico: não foi possível obter o mês corrente. Operação cancelada.');
+      error('Erro Crítico', 'Não foi possível obter o mês corrente. Operação cancelada.');
       setLoading(false);
       return; // Parar completamente o processo
     }
@@ -435,13 +433,13 @@ export default function NovoLancamentoPage() {
   // Função para autorizar pagamento (incluindo o campo divisao)
   const autorizarPagamento = async () => {
     if (!associado || !valor || !senha) {
-      toast.error('Preencha todos os campos obrigatórios');
+      error('Campos Obrigatórios', 'Por favor, preencha todos os campos obrigatórios.');
       return;
     }
 
     // Validar saldo disponível
     if (associado.saldo <= 0) {
-      toast.error('Saldo insuficiente. O saldo disponível deve ser maior que zero para realizar lançamentos.');
+      error('Saldo Insuficiente', 'O saldo disponível deve ser maior que zero para realizar lançamentos.');
       return;
     }
 
@@ -449,7 +447,7 @@ export default function NovoLancamentoPage() {
     const valorNumerico = parseFloat(valor.replace(/[^\d,]/g, '').replace(',', '.'));
     
     if (valorNumerico > associado.saldo) {
-      toast.error(`Valor da parcela (${valorNumerico.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}) não pode ser maior que o saldo disponível (${associado.saldo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})`);
+      error('Valor Inválido', `Valor da parcela (${valorNumerico.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}) não pode ser maior que o saldo disponível (${associado.saldo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})`);
       return;
     }
 
@@ -459,7 +457,7 @@ export default function NovoLancamentoPage() {
       // Obter dados do convênio
       const dadosConvenioString = localStorage.getItem('dadosConvenio');
       if (!dadosConvenioString) {
-        toast.error('Dados do convênio não encontrados');
+        error('Dados Não Encontrados', 'Os dados do convênio não foram encontrados.');
         setLoading(false);
         return;
       }
@@ -741,7 +739,7 @@ export default function NovoLancamentoPage() {
     } catch (error) {
       console.error('❌ Erro ao autorizar pagamento:', error);
       const errorMessage = error instanceof Error ? error.message : 'Erro ao processar pagamento';
-      toast.error(errorMessage);
+      error('Erro no Pagamento', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -800,7 +798,7 @@ export default function NovoLancamentoPage() {
         }
       ).catch(err => {
         console.error("Erro ao iniciar o scanner:", err);
-        toast.error("Não foi possível acessar a câmera");
+        error('Erro na Câmera', 'Não foi possível acessar a câmera do dispositivo.');
         setShowQrReader(false);
       });
     }
@@ -1171,7 +1169,7 @@ export default function NovoLancamentoPage() {
                     onClick={() => {
                       setShowConfirmacao(false);
                       // Aqui você processaria o pagamento
-                      toast.success('Pagamento processado com sucesso!');
+                      success('Pagamento Processado!', 'O pagamento foi processado com sucesso.');
                     }}
                     className="flex-1 py-2 px-4 bg-green-600 text-white rounded-md hover:bg-green-700"
                   >
