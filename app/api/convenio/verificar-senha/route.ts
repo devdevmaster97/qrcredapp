@@ -11,6 +11,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { matricula, senha, id_associado, empregador } = body;
     
+    
     // Validar parâmetros obrigatórios
     if (!matricula || !senha || !id_associado || !empregador) {
       console.error('❌ Parâmetros obrigatórios não fornecidos:', { 
