@@ -220,13 +220,23 @@ export default function RelatoriosPage() {
       
       const dadosConvenio = await dadosResponse.json();
       
-      if (!dadosConvenio.success || !dadosConvenio.data.divsao) {
-        console.log('❌ MÊS CORRENTE - Dados do convênio inválidos:', dadosConvenio);
+      console.log('🔍 MÊS CORRENTE - Resposta completa da API dados:', dadosConvenio);
+      console.log('🔍 MÊS CORRENTE - Campo divisao na resposta:', dadosConvenio.data?.divisao);
+      console.log('🔍 MÊS CORRENTE - Todos os campos data:', Object.keys(dadosConvenio.data || {}));
+      
+      if (!dadosConvenio.success) {
+        console.log('❌ MÊS CORRENTE - API dados retornou erro:', dadosConvenio.message);
         return;
       }
       
-      const divisao = dadosConvenio.data.divisao;
+      // Usar divisao se disponível, senão usar cod_convenio como fallback
+      const divisao = dadosConvenio.data.divisao || dadosConvenio.data.cod_convenio;
       console.log('🔍 MÊS CORRENTE - Divisão obtida:', divisao);
+      
+      if (!divisao) {
+        console.log('❌ MÊS CORRENTE - Nem divisao nem cod_convenio encontrados');
+        return;
+      }
       
       // Agora chamar a API de mês corrente com o parâmetro divisao
       const response = await fetch(`/api/convenio/mes-corrente?t=${Date.now()}&platform=${isMobile ? 'mobile' : 'desktop'}&divisao=${divisao}`, {
