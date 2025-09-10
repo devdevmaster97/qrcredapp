@@ -142,6 +142,7 @@ export default function NovoLancamentoPage() {
         await capturarMesCorrente(associadoData.matricula, associadoData.empregador, associadoData);
       } catch (err) {
         console.error('❌ Erro ao capturar mês corrente:', err);
+        closeAlert();
         error('Erro no Mês Corrente', 'Não foi possível obter dados completos do associado.');
         
         // Em caso de erro, atualizar com saldo 0
@@ -152,6 +153,7 @@ export default function NovoLancamentoPage() {
         temMatricula: !!associadoData.matricula,
         temEmpregador: !!associadoData.empregador
       });
+      closeAlert();
       error('Dados Incompletos', 'Os dados do associado estão incompletos. Tente novamente.');
     }
   };
@@ -162,6 +164,7 @@ export default function NovoLancamentoPage() {
     
     // Verificar se há cartão informado
     if (!cartaoParaBuscar || cartaoParaBuscar.trim() === '') {
+      closeAlert();
       error('Cartão Obrigatório', 'Por favor, informe o número do cartão.');
       return;
     }
@@ -172,6 +175,7 @@ export default function NovoLancamentoPage() {
   
     try {
       console.log('🔍 Buscando associado pelo cartão via API interna:', cartaoParaBuscar);
+      closeAlert();
       info('Buscando Cartão', 'Aguarde enquanto consultamos os dados do cartão...');
       
       const headers = {
@@ -208,12 +212,15 @@ export default function NovoLancamentoPage() {
         
         if (response.status === 404) {
           console.warn('⚠️ Cartão não encontrado:', errorMessage);
+          closeAlert();
           error('Cartão Não Encontrado', 'O cartão informado não foi encontrado no sistema.');
         } else if (response.status === 408) {
           console.error('⏱️ Timeout na busca:', errorMessage);
+          closeAlert();
           error('Conexão Lenta', 'Houve uma oscilação na sua conexão com a internet. Por favor, verifique sua conexão e tente novamente.');
         } else {
           console.error('❌ Erro na API:', errorMessage);
+          closeAlert();
           error('Erro na Consulta', 'Não foi possível consultar os dados do cartão.');
         }
         
@@ -226,8 +233,10 @@ export default function NovoLancamentoPage() {
       console.error('❌ Erro geral na busca do associado:', err);
       
       if (err instanceof TypeError && err.message.includes('fetch')) {
+        closeAlert();
         error('Erro de Rede', 'Verifique sua conexão com a internet e tente novamente.');
       } else {
+        closeAlert();
         error('Erro na Busca', 'Não foi possível buscar os dados do cartão.');
       }
       
@@ -283,6 +292,7 @@ export default function NovoLancamentoPage() {
       // Se não conseguiu obter da API, falhar o processo
       if (!tentativaApiSucesso) {
         console.error('❌ Falha obrigatória: não foi possível obter mês corrente da API');
+        closeAlert();
         error('Erro no Mês Corrente', 'Não foi possível obter o mês corrente. Tente novamente.');
         setLoading(false);
         return; // Parar o processo aqui
@@ -366,6 +376,7 @@ export default function NovoLancamentoPage() {
                     setAssociado(novoAssociado);
                     
                     // Toast de sucesso com o saldo real
+                    closeAlert();
                     success('Cartão Encontrado!', `Saldo disponível: ${Math.max(0, saldoDisponivel).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`);
                   }
                 } else {
@@ -373,12 +384,14 @@ export default function NovoLancamentoPage() {
                   const contaText = await contaResponse.text();
                   console.error('❌ Resposta da API conta:', contaText);
                   
+                  closeAlert();
                   error('Erro no Saldo', 'Não foi possível consultar o saldo. Verifique os dados e tente novamente.');
                   setLoadingCartao(false);
                   return; // Parar o processo se não conseguir consultar o saldo
                 }
               } catch (errorConsulta) {
                 console.error('❌ Erro ao consultar gastos:', errorConsulta);
+                closeAlert();
                 error('Erro de Conexão', 'Problema na conexão ao consultar saldo. Verifique sua internet.');
                 setLoadingCartao(false);
                 return; // Parar o processo se houver erro de conexão
@@ -387,6 +400,7 @@ export default function NovoLancamentoPage() {
           }
         } catch (errorConta) {
           console.error('❌ Erro crítico ao consultar conta:', errorConta);
+          closeAlert();
           error('Erro Crítico', 'Não foi possível consultar dados da conta. Operação cancelada.');
           setLoadingCartao(false);
           return; // Parar completamente se houver erro crítico
@@ -399,6 +413,7 @@ export default function NovoLancamentoPage() {
       
       // Em caso de erro, falhar o processo - não usar fallback
       console.error('❌ Falha crítica: não foi possível obter mês corrente da API');
+      closeAlert();
       error('Erro Crítico', 'Não foi possível obter o mês corrente. Operação cancelada.');
       setLoading(false);
       return; // Parar completamente o processo
@@ -408,12 +423,14 @@ export default function NovoLancamentoPage() {
   // Função para autorizar pagamento (incluindo o campo divisao)
   const autorizarPagamento = async () => {
     if (!associado || !valor || !senha) {
+      closeAlert();
       error('Campos Obrigatórios', 'Por favor, preencha todos os campos obrigatórios.');
       return;
     }
 
     // Validar saldo disponível
     if (associado.saldo <= 0) {
+      closeAlert();
       error('Saldo Insuficiente', 'O saldo disponível deve ser maior que zero para realizar lançamentos.');
       return;
     }
@@ -422,6 +439,7 @@ export default function NovoLancamentoPage() {
     const valorNumerico = parseFloat(valor.replace(/[^\d,]/g, '').replace(',', '.'));
     
     if (valorNumerico > associado.saldo) {
+      closeAlert();
       error('Valor Inválido', `Valor da parcela (${valorNumerico.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}) não pode ser maior que o saldo disponível (${associado.saldo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })})`);
       return;
     }
@@ -432,6 +450,7 @@ export default function NovoLancamentoPage() {
       // Obter dados do convênio
       const dadosConvenioString = localStorage.getItem('dadosConvenio');
       if (!dadosConvenioString) {
+        closeAlert();
         error('Dados Não Encontrados', 'Os dados do convênio não foram encontrados.');
         setLoading(false);
         return;
@@ -675,6 +694,7 @@ export default function NovoLancamentoPage() {
     } catch (err) {
       console.error('❌ Erro ao autorizar pagamento:', err);
       const errorMessage = err instanceof Error ? err.message : 'Erro ao processar pagamento';
+      closeAlert();
       error('Erro no Pagamento', errorMessage);
     } finally {
       // Só reabilitar o loading se não foi processado com sucesso
@@ -739,6 +759,7 @@ export default function NovoLancamentoPage() {
         }
       ).catch(err => {
         console.error("Erro ao iniciar o scanner:", err);
+        closeAlert();
         error('Erro na Câmera', 'Não foi possível acessar a câmera do dispositivo.');
         setShowQrReader(false);
       });
@@ -1110,6 +1131,7 @@ export default function NovoLancamentoPage() {
                     onClick={() => {
                       setShowConfirmacao(false);
                       // Aqui você processaria o pagamento
+                      closeAlert();
                       success('Pagamento Processado!', 'O pagamento foi processado com sucesso.');
                     }}
                     className="flex-1 py-2 px-4 bg-green-600 text-white rounded-md hover:bg-green-700"
