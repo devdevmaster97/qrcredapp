@@ -34,6 +34,7 @@ export default function NovoLancamentoPage() {
   const [senha, setSenha] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingCartao, setLoadingCartao] = useState(false);
+  const [pagamentoProcessado, setPagamentoProcessado] = useState(false);
   const [mesCorrente, setMesCorrente] = useState('');
   const [showQrReader, setShowQrReader] = useState(false);
   const [showConfirmacao, setShowConfirmacao] = useState(false);
@@ -715,8 +716,9 @@ export default function NovoLancamentoPage() {
 
       await gravarVenda();
 
-      // 4. Sucesso - redirecionar para página de sucesso
+      // 4. Sucesso - marcar como processado e redirecionar
       console.log('🎉 Pagamento processado com sucesso!');
+      setPagamentoProcessado(true); // Marcar como processado para manter botão desabilitado
       
       // Salvar dados da transação para a página de sucesso
       const dadosTransacao = {
@@ -741,7 +743,12 @@ export default function NovoLancamentoPage() {
       const errorMessage = error instanceof Error ? error.message : 'Erro ao processar pagamento';
       error('Erro no Pagamento', errorMessage);
     } finally {
-      setLoading(false);
+      // Só reabilitar o loading se não foi processado com sucesso
+      if (!pagamentoProcessado) {
+        setLoading(false);
+      }
+      // Se foi processado com sucesso, manter loading=true e pagamentoProcessado=true
+      // para manter o botão desabilitado até o redirecionamento
     }
   };
 
@@ -1134,11 +1141,11 @@ export default function NovoLancamentoPage() {
               {!(valorParcela > associado.saldo) && (
                 <button
                   onClick={autorizarPagamento}
-                  disabled={loading || !valor || !senha || !associado || associado.saldo <= 0 || (valor ? parseFloat(valor.replace(/[^\d,]/g, '').replace(',', '.')) > associado.saldo : false)}
+                  disabled={loading || pagamentoProcessado || !valor || !senha || !associado || associado.saldo <= 0 || (valor ? parseFloat(valor.replace(/[^\d,]/g, '').replace(',', '.')) > associado.saldo : false)}
                   className="w-full py-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 font-bold text-lg transition-all transform hover:scale-[1.02] disabled:hover:scale-100 shadow-lg"
                 >
                   {loading ? <FaSpinner className="animate-spin text-xl" /> : <FaCheckCircle className="text-xl" />}
-                  Autorizar Pagamento
+                  {pagamentoProcessado ? 'Pagamento Processado' : loading ? 'Processando...' : 'Autorizar Pagamento'}
                 </button>
               )}
             </div>
