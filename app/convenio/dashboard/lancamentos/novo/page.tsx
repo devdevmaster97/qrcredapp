@@ -584,83 +584,62 @@ export default function NovoLancamentoPage() {
       console.log('💾 URL da API:', API_GRAVA_VENDA);
       console.log('✅ Dados que serão gravados na tabela sind.conta:', dadosVenda);
       
-      const gravarVenda = () => {
-        return new Promise((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open('POST', API_GRAVA_VENDA, true);
-          xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+      const gravarVenda = async () => {
+        try {
+          console.log('💾 Gravando venda via API interna...');
+          console.log('✅ Dados que serão enviados:', dadosVenda);
           
-          xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4) {
-              if (xhr.status === 200) {
-                try {
-                  console.log('💾 Resposta bruta da API de gravação:', xhr.responseText);
-                  
-                  if (!xhr.responseText || xhr.responseText.trim() === '') {
-                    console.error('❌ Resposta vazia da API de gravação de venda');
-                    reject(new Error('API de gravação retornou resposta vazia'));
-                    return;
-                  }
-                  
-                  // Verificar se a resposta contém HTML (erro PHP)
-                  if (xhr.responseText.includes('<br />') || xhr.responseText.includes('<b>Warning</b>') || xhr.responseText.includes('<b>Error</b>')) {
-                    console.error('❌ Erro PHP detectado na resposta:', xhr.responseText);
-                    
-                    // Extrair mensagem de erro mais legível
-                    let errorMessage = 'Erro no servidor';
-                    
-                    if (xhr.responseText.includes('Undefined variable $parcela')) {
-                      errorMessage = 'Erro interno: Parâmetro de parcela não definido no servidor';
-                    } else if (xhr.responseText.includes('id_divisao')) {
-                      errorMessage = 'Erro interno: Campo divisão não encontrado no banco de dados';
-                    } else if (xhr.responseText.includes('SQLSTATE')) {
-                      errorMessage = 'Erro no banco de dados. Contate o suporte técnico.';
-                    }
-                    
-                    reject(new Error(errorMessage));
-                    return;
-                  }
-                  
-                  const response = JSON.parse(xhr.responseText);
-                  console.log('💾 Resposta gravação venda:', response);
-                  
-                  if (response.situacao === 1) {
-                    console.log('✅ Venda gravada com sucesso na tabela sind.conta');
-                    console.log('📄 Registro gerado:', response.registrolan);
-                    resolve(response);
-                  } else if (response.situacao === 2) {
-                    console.log('❌ Senha incorreta');
-                    reject(new Error('Senha incorreta'));
-                  } else {
-                    console.log('❌ Erro ao gravar venda:', response.erro || response.message);
-                    reject(new Error(response.erro || response.message || 'Erro ao gravar venda'));
-                  }
-                } catch (error) {
-                  console.error('❌ Erro ao processar resposta da gravação:', error);
-                  console.error('❌ Resposta recebida:', xhr.responseText);
-                  
-                  // Se a resposta contém HTML, é um erro PHP
-                  if (xhr.responseText.includes('<br />') || xhr.responseText.includes('Warning') || xhr.responseText.includes('Error')) {
-                    reject(new Error('Erro interno do servidor. Contate o suporte técnico.'));
-                  } else {
-                    reject(new Error('Erro ao processar resposta da API de gravação'));
-                  }
-                }
-              } else {
-                console.error('❌ Erro HTTP na gravação:', xhr.status);
-                reject(new Error('Erro na gravação da venda'));
-              }
-            }
+          const headers = {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
           };
 
-          // Preparar parâmetros para envio
-          const params = Object.keys(dadosVenda)
-            .map(key => `${encodeURIComponent(key)}=${encodeURIComponent((dadosVenda as any)[key] || '')}`)
-            .join('&');
+          const response = await fetch('/api/convenio/gravar-venda', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(dadosVenda),
+            cache: 'no-store'
+          });
+
+          console.log('✅ Resposta recebida da API interna:', {
+            status: response.status,
+            statusText: response.statusText
+          });
+
+          const data = await response.json();
+          console.log('� Dados recebidos da API:', data);
+
+          if (response.ok && data.success && data.situacao === 1) {
+            console.log('✅ Venda gravada com sucesso na tabela sind.conta');
+            console.log('📄 Registro gerado:', data.registrolan);
+            return data;
+          } else {
+            // Tratar diferentes tipos de erro
+            const errorMessage = data.error || 'Erro desconhecido';
+            
+            if (data.situacao === 2) {
+              console.log('❌ Senha incorreta');
+              throw new Error('Senha incorreta');
+            } else if (response.status === 408) {
+              console.error('⏱️ Timeout na gravação:', errorMessage);
+              throw new Error('Conexão lenta. Houve uma oscilação na sua conexão com a internet. Tente novamente.');
+            } else {
+              console.log('❌ Erro ao gravar venda:', errorMessage);
+              throw new Error(errorMessage);
+            }
+          }
           
-          console.log('📤 Parâmetros enviados:', params);
-          xhr.send(params);
-        });
+        } catch (err) {
+          console.error('❌ Erro geral na gravação da venda:', err);
+          
+          if (err instanceof TypeError && err.message.includes('fetch')) {
+            throw new Error('Erro de rede. Verifique sua conexão com a internet e tente novamente.');
+          } else {
+            throw err;
+          }
+        }
       };
 
       await gravarVenda();
