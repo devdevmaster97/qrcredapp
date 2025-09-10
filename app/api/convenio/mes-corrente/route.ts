@@ -160,7 +160,7 @@ export async function GET(request: NextRequest) {
       const response = NextResponse.json({
         success: true,
         data: {
-          mes_corrente: jsonData.abreviacao,
+          abreviacao: jsonData.abreviacao,
           id_divisao: jsonData.id_divisao,
           status: jsonData.status
         }
