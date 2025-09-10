@@ -9,11 +9,11 @@ export async function POST(request: NextRequest) {
     
     // Processar dados da requisição
     const body = await request.json();
-    const { matricula, senha } = body;
+    const { matricula, senha, id_associado } = body;
     
     // Validar parâmetros obrigatórios
     if (!matricula || !senha) {
-      console.error('❌ Parâmetros obrigatórios não fornecidos:', { matricula: !!matricula, senha: !!senha });
+      console.error('❌ Parâmetros obrigatórios não fornecidos:', { matricula: !!matricula, senha: !!senha, id_associado: !!id_associado });
       return NextResponse.json(
         { 
           success: false,
@@ -24,11 +24,18 @@ export async function POST(request: NextRequest) {
     }
     
     console.log('🔐 Verificando senha para matrícula:', matricula);
+    console.log('🔐 ID do associado:', id_associado);
     
     // Preparar dados para enviar ao backend PHP
     const formData = new URLSearchParams();
     formData.append('matricula', matricula);
     formData.append('senha', senha);
+    
+    // Adicionar id_associado se fornecido
+    if (id_associado) {
+      formData.append('id_associado', id_associado.toString());
+      console.log('📤 Incluindo id_associado:', id_associado);
+    }
     
     console.log('📤 Enviando dados para consulta_pass_assoc.php');
     

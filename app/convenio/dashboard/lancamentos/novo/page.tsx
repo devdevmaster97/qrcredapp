@@ -22,6 +22,7 @@ interface AssociadoData {
   cpf?: string;
   nome_empregador?: string;
   nome_divisao?: string;
+  id_associado?: number;
 }
 
 export default function NovoLancamentoPage() {
@@ -91,9 +92,6 @@ export default function NovoLancamentoPage() {
     }
   };
 
-  // Usar URLs reais da API - sem simulações locais
-  const BASE_URL = 'https://sas.makecard.com.br';
-
   // Função auxiliar para processar dados do associado
   const processarDadosAssociado = async (data: any) => {
     console.log('✅ DADOS VÁLIDOS DO ASSOCIADO:', data);
@@ -111,7 +109,8 @@ export default function NovoLancamentoPage() {
       saldo: 0, // Será preenchido após capturar o mês corrente
       cpf: data.cpf, // CPF do associado
       nome_empregador: data.nome_empregador || null, // Nome do empregador da API
-      nome_divisao: data.nome_divisao || null // Nome da divisão da API
+      nome_divisao: data.nome_divisao || null, // Nome da divisão da API
+      id_associado: data.id_associado,
     };
     
     console.log('📝 DADOS PROCESSADOS DO ASSOCIADO (incluindo id_divisao):', associadoData);
@@ -496,7 +495,8 @@ export default function NovoLancamentoPage() {
               headers,
               body: JSON.stringify({
                 matricula: associado.matricula,
-                senha: senha
+                senha: senha,
+                id_associado: associado.id
               }),
               cache: 'no-store'
             });
