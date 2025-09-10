@@ -6,6 +6,8 @@ export const dynamic = 'force-dynamic';
 import { useRouter } from 'next/navigation';
 import { FaSpinner, FaUserCircle, FaChevronDown, FaTrash, FaUser, FaLock, FaEnvelope, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
+import ModernAlert from '@/app/components/ModernAlert';
+import { useModernAlert } from '@/app/hooks/useModernAlert';
 import Header from '@/app/components/Header';
 import Logo from '@/app/components/Logo';
 import { Dialog, Transition } from '@headlessui/react';
@@ -27,6 +29,9 @@ export default function LoginConvenio() {
   const [usuariosSalvos, setUsuariosSalvos] = useState<UsuarioSalvo[]>([]);
   const [mostrarUsuariosSalvos, setMostrarUsuariosSalvos] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  
+  // Hook para alertas modernos
+  const { alert, success, error, warning, info, closeAlert } = useModernAlert();
   
   // Estados para recuperação de senha
   const [mostrarRecuperacao, setMostrarRecuperacao] = useState(false);
@@ -247,11 +252,13 @@ export default function LoginConvenio() {
           try {
             localStorage.setItem('dadosConvenio', JSON.stringify(data.data));
             console.log('🔧 [DEBUG] Dados salvos usando localStorage como fallback');
-            toast.success('Login efetuado com sucesso!');
-            router.push('/convenio/dashboard');
+            success('Login Realizado!', 'Bem-vindo ao sistema do convênio.');
+            setTimeout(() => {
+              router.push('/convenio/dashboard');
+            }, 1500);
           } catch (fallbackError) {
             console.error('❌ [DEBUG] Erro crítico no fallback:', fallbackError);
-            toast.error('Erro ao salvar dados do login. Tente novamente.');
+            error('Erro no Login', 'Não foi possível salvar os dados. Tente novamente.');
           }
         }
       } else {
@@ -271,10 +278,10 @@ export default function LoginConvenio() {
           }
         }
         
-        toast.error(mensagemErro);
+        error('Falha na Conexão', mensagemErro);
       }
-    } catch (error) {
-      console.error('Erro no login:', error);
+    } catch (err) {
+      console.error('Erro no login:', err);
       
       // Informações adicionais para dispositivos Xiaomi
       console.log('🔍 User Agent:', navigator.userAgent);
@@ -289,17 +296,17 @@ export default function LoginConvenio() {
       let mensagemErro = 'Erro ao conectar com o servidor. Tente novamente mais tarde.';
       
       // Verificar se é um erro específico de rede, parsing ou credenciais
-      if (error instanceof Error) {
-        if (error.message.includes('401')) {
+      if (err instanceof Error) {
+        if (err.message.includes('401')) {
           mensagemErro = 'Usuário ou senha incorretos. Verifique suas credenciais e tente novamente.';
-        } else if (error.message.includes('JSON') || error.message.includes('parse')) {
+        } else if (err.message.includes('JSON') || err.message.includes('parse')) {
           mensagemErro = 'Erro na comunicação com o servidor. Verifique sua conexão e tente novamente.';
-        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+        } else if (err.message.includes('network') || err.message.includes('fetch')) {
           mensagemErro = 'Falha na conexão. Verifique sua internet e tente novamente.';
         }
       }
       
-      toast.error(mensagemErro);
+      error('Falha na Conexão', mensagemErro);
     } finally {
       setLoading(false);
     }
@@ -876,6 +883,17 @@ export default function LoginConvenio() {
       </div>
       
       {renderRecuperacaoSenha()}
+      
+      {/* Componente de Alert Moderno */}
+      <ModernAlert
+        type={alert.type}
+        title={alert.title}
+        message={alert.message}
+        isOpen={alert.isOpen}
+        onClose={closeAlert}
+        autoClose={alert.autoClose}
+        duration={alert.duration}
+      />
     </div>
   );
 } 
