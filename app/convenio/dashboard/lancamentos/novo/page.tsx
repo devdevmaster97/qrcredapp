@@ -532,12 +532,13 @@ export default function NovoLancamentoPage() {
       const valorLimpo = valor.replace(/[^\d,]/g, '').replace(',', '.');
       const valorPorParcela = (parseFloat(valorLimpo) / parcelas).toFixed(2);
       
-      const dadosVenda = {
+      // Preparar dados base
+      const dadosVenda: any = {
         // Parâmetros obrigatórios que a API espera
         valor_pedido: valorLimpo,
         cod_convenio: dadosConvenio.cod_convenio,
         matricula: associado.matricula,
-        qtde_parcelas: parcelas,
+        parcela: parcelas, // Corrigido: usar 'parcela' ao invés de 'qtde_parcelas'
         mes_corrente: mesCorrente,
         valor_parcela: valorPorParcela,
         primeiro_mes: mesCorrente,
@@ -547,9 +548,16 @@ export default function NovoLancamentoPage() {
         empregador: associado.empregador,
         descricao: descricao || 'Lançamento via app',
         uri_cupom: '', // Será preenchido se necessário
-        id_associado: associado.id,
-        divisao: associado.id_divisao || null // NOVO: Campo divisao será gravado na tabela sind.conta
+        id_associado: associado.id
       };
+
+      // Adicionar divisao apenas se existir e for válida
+      if (associado.id_divisao && associado.id_divisao !== null && associado.id_divisao !== undefined && String(associado.id_divisao).trim() !== '') {
+        dadosVenda.divisao = associado.id_divisao;
+        console.log('🏢 Campo divisao adicionado:', associado.id_divisao);
+      } else {
+        console.log('⚠️ Campo id_divisao não encontrado ou inválido, não será enviado para evitar erro no banco');
+      }
 
       console.log('💳 Dados para gravação na tabela sind.conta:', dadosVenda);
       console.log('🏢 Campo divisao será gravado com valor:', associado.id_divisao);
@@ -646,6 +654,25 @@ export default function NovoLancamentoPage() {
                     return;
                   }
                   
+                  // Verificar se a resposta contém HTML (erro PHP)
+                  if (xhr.responseText.includes('<br />') || xhr.responseText.includes('<b>Warning</b>') || xhr.responseText.includes('<b>Error</b>')) {
+                    console.error('❌ Erro PHP detectado na resposta:', xhr.responseText);
+                    
+                    // Extrair mensagem de erro mais legível
+                    let errorMessage = 'Erro no servidor';
+                    
+                    if (xhr.responseText.includes('Undefined variable $parcela')) {
+                      errorMessage = 'Erro interno: Parâmetro de parcela não definido no servidor';
+                    } else if (xhr.responseText.includes('id_divisao')) {
+                      errorMessage = 'Erro interno: Campo divisão não encontrado no banco de dados';
+                    } else if (xhr.responseText.includes('SQLSTATE')) {
+                      errorMessage = 'Erro no banco de dados. Contate o suporte técnico.';
+                    }
+                    
+                    reject(new Error(errorMessage));
+                    return;
+                  }
+                  
                   const response = JSON.parse(xhr.responseText);
                   console.log('💾 Resposta gravação venda:', response);
                   
@@ -663,7 +690,13 @@ export default function NovoLancamentoPage() {
                 } catch (error) {
                   console.error('❌ Erro ao processar resposta da gravação:', error);
                   console.error('❌ Resposta recebida:', xhr.responseText);
-                  reject(new Error('Erro ao processar resposta da API de gravação'));
+                  
+                  // Se a resposta contém HTML, é um erro PHP
+                  if (xhr.responseText.includes('<br />') || xhr.responseText.includes('Warning') || xhr.responseText.includes('Error')) {
+                    reject(new Error('Erro interno do servidor. Contate o suporte técnico.'));
+                  } else {
+                    reject(new Error('Erro ao processar resposta da API de gravação'));
+                  }
                 }
               } else {
                 console.error('❌ Erro HTTP na gravação:', xhr.status);
