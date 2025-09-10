@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
-import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,29 +16,43 @@ export async function GET(request: NextRequest) {
       url: request.url
     });
     
-    // Recuperar o token de autenticação dos cookies
-    const cookieStore = cookies();
-    const tokenEncoded = cookieStore.get('convenioToken')?.value;
+    // Usar a API de dados existente para obter informações do convênio
+    const baseUrl = request.url.split('/api/')[0];
+    const dadosResponse = await fetch(`${baseUrl}/api/convenio/dados`, {
+      method: 'GET',
+      headers: {
+        'Cookie': request.headers.get('cookie') || '',
+        'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     
-    if (!tokenEncoded) {
+    if (!dadosResponse.ok) {
+      console.log('❌ MÊS CORRENTE - Erro ao buscar dados do convênio:', dadosResponse.status);
       return NextResponse.json(
-        { success: false, message: 'Não autenticado' },
+        { success: false, message: 'Erro ao obter dados do convênio' },
+        { status: dadosResponse.status }
+      );
+    }
+    
+    const dadosConvenio = await dadosResponse.json();
+    
+    if (!dadosConvenio.success) {
+      console.log('❌ MÊS CORRENTE - API de dados retornou erro:', dadosConvenio.message);
+      return NextResponse.json(
+        { success: false, message: dadosConvenio.message },
         { status: 401 }
       );
     }
-
-    // Decodificar o token para obter os dados do convênio
-    const tokenData = JSON.parse(atob(tokenEncoded));
     
-    console.log('🔍 API MÊS CORRENTE - Token decodificado:', {
-      user: tokenData.user,
-      id: tokenData.id,
-      divisao: tokenData.divisao || tokenData.id_divisao,
-      timestamp: tokenData.timestamp
+    console.log('🔍 API MÊS CORRENTE - Dados do convênio obtidos:', {
+      cod_convenio: dadosConvenio.data.cod_convenio,
+      razaosocial: dadosConvenio.data.razaosocial
     });
     
-    // Obter código da divisão (pode estar como divisao ou id_divisao no token)
-    const codigoDivisao = tokenData.divisao || tokenData.id_divisao || tokenData.id;
+    // Usar o cod_convenio como divisão para buscar o mês corrente
+    const codigoDivisao = dadosConvenio.data.cod_convenio;
     
     if (!codigoDivisao) {
       console.log('❌ MÊS CORRENTE - Código divisão não encontrado no token');
