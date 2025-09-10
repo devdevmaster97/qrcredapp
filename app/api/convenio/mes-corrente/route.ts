@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
       // Fallback: usar a API de dados existente para obter informações do convênio
       console.log('🔍 API MÊS CORRENTE - Divisão não informada, buscando dos dados do convênio...');
       const baseUrl = request.url.split('/api/')[0];
-      const dadosResponse = await fetch(`${baseUrl}/api/convenio/dados`, {
+      const dadosResponse = await fetch(`${baseUrl}/api/convenio/dados?t=${Date.now()}`, {
         method: 'GET',
         headers: {
           'Cookie': request.headers.get('cookie') || '',
@@ -61,8 +61,8 @@ export async function GET(request: NextRequest) {
         razaosocial: dadosConvenio.data.razaosocial
       });
       
-      // Usar o cod_convenio como divisão para buscar o mês corrente
-      codigoDivisao = dadosConvenio.data.cod_convenio;
+      // Usar o campo divisao se disponível, senão usar cod_convenio como fallback
+      codigoDivisao = dadosConvenio.data.divisao || dadosConvenio.data.cod_convenio;
     }
     
     if (!codigoDivisao) {
