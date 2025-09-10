@@ -25,7 +25,9 @@ class ChromeErrorHandler {
   private errorLog: ErrorInfo[] = [];
 
   private constructor() {
-    this.setupGlobalErrorHandlers();
+    if (typeof window !== 'undefined') {
+      this.setupGlobalErrorHandlers();
+    }
   }
 
   public static getInstance(): ChromeErrorHandler {
@@ -37,6 +39,8 @@ class ChromeErrorHandler {
 
   // Configurar handlers globais de erro
   private setupGlobalErrorHandlers(): void {
+    if (typeof window === 'undefined') return;
+    
     // Handler para erros JavaScript não capturados
     window.addEventListener('error', (event) => {
       console.error('🚨 [ERROR HANDLER] Erro JavaScript capturado:', event);
@@ -74,15 +78,28 @@ class ChromeErrorHandler {
     }
 
     // Salvar no localStorage para análise posterior
-    try {
-      localStorage.setItem('chromeErrorLog', JSON.stringify(this.errorLog));
-    } catch (e) {
-      console.warn('⚠️ [ERROR HANDLER] Não foi possível salvar log de erros no localStorage');
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem('chromeErrorLog', JSON.stringify(this.errorLog));
+      } catch (e) {
+        console.warn('⚠️ [ERROR HANDLER] Não foi possível salvar log de erros no localStorage');
+      }
     }
   }
 
   // Obter informações do navegador
   public getBrowserInfo(): BrowserInfo {
+    if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+      return {
+        isChrome: false,
+        isMobile: false,
+        version: 'desconhecida',
+        platform: 'desconhecida',
+        cookieEnabled: false,
+        onLine: false
+      };
+    }
+    
     const userAgent = navigator.userAgent.toLowerCase();
     
     return {
@@ -131,6 +148,8 @@ class ChromeErrorHandler {
 
   // Executar diagnóstico completo
   public runDiagnostics(): void {
+    if (typeof window === 'undefined') return;
+    
     console.log('🔧 [DIAGNOSTICS] Iniciando diagnóstico do Chrome...');
     
     const browserInfo = this.getBrowserInfo();
@@ -204,13 +223,15 @@ class ChromeErrorHandler {
       return result;
     } catch (error) {
       console.error(`❌ [SAFE EXECUTE] Erro em ${operationName}:`, error);
-      this.logError({
-        message: `Erro em ${operationName}: ${error}`,
-        stack: error instanceof Error ? error.stack : undefined,
-        userAgent: navigator.userAgent,
-        timestamp: new Date().toISOString(),
-        url: window.location.href
-      });
+      if (typeof window !== 'undefined' && typeof navigator !== 'undefined') {
+        this.logError({
+          message: `Erro em ${operationName}: ${error}`,
+          stack: error instanceof Error ? error.stack : undefined,
+          userAgent: navigator.userAgent,
+          timestamp: new Date().toISOString(),
+          url: window.location.href
+        });
+      }
       return fallback;
     }
   }
@@ -228,13 +249,15 @@ class ChromeErrorHandler {
       return result;
     } catch (error) {
       console.error(`❌ [SAFE EXECUTE ASYNC] Erro em ${operationName}:`, error);
-      this.logError({
-        message: `Erro assíncrono em ${operationName}: ${error}`,
-        stack: error instanceof Error ? error.stack : undefined,
-        userAgent: navigator.userAgent,
-        timestamp: new Date().toISOString(),
-        url: window.location.href
-      });
+      if (typeof window !== 'undefined' && typeof navigator !== 'undefined') {
+        this.logError({
+          message: `Erro assíncrono em ${operationName}: ${error}`,
+          stack: error instanceof Error ? error.stack : undefined,
+          userAgent: navigator.userAgent,
+          timestamp: new Date().toISOString(),
+          url: window.location.href
+        });
+      }
       return fallback;
     }
   }

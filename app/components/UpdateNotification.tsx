@@ -13,6 +13,8 @@ export default function UpdateNotification() {
   
   // Função para forçar a atualização da aplicação
   const forceUpdate = async () => {
+    if (typeof window === 'undefined') return;
+    
     try {
       // Limpar caches do navegador
       if ('caches' in window) {
@@ -20,16 +22,11 @@ export default function UpdateNotification() {
         await Promise.all(
           cacheNames.map(cacheName => {
             if (cacheName.startsWith('qrcred-')) {
-              return caches.delete(cacheName);
+              console.log('🗑️ Limpando cache:', cacheName);
+              return window.caches.delete(cacheName);
             }
-          })
+          }).filter(Boolean)
         );
-      }
-      
-      // Desregistrar os service workers atuais
-      if ('serviceWorker' in navigator) {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(registrations.map(reg => reg.unregister()));
       }
       
       // Recarregar a página
@@ -146,19 +143,23 @@ export default function UpdateNotification() {
     }
     
     // Monitorar mudanças de conexão para verificar atualizações quando o usuário estiver online
-    window.addEventListener('online', checkForUpdates);
-    
-    // Verificar atualizações quando a aplicação volta a ficar visível
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') {
-        checkForUpdates();
-      }
-    });
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', checkForUpdates);
+      
+      // Verificar atualizações quando a aplicação volta a ficar visível
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          checkForUpdates();
+        }
+      });
+    }
     
     return () => {
       clearInterval(intervalId);
-      window.removeEventListener('online', checkForUpdates);
-      if ('serviceWorker' in navigator) {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('online', checkForUpdates);
+      }
+      if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
         navigator.serviceWorker.removeEventListener('message', handleMessage);
       }
     };

@@ -24,10 +24,12 @@ export default function PWAInstallPrompt() {
 
   useEffect(() => {
     // Verificar se já está instalado como PWA
-    if (window.matchMedia('(display-mode: standalone)').matches || 
-        window.navigator.standalone === true) {
-      setInstalledPWA(true);
-      return;
+    if (typeof window !== 'undefined') {
+      if (window.matchMedia('(display-mode: standalone)').matches || 
+          window.navigator.standalone === true) {
+        setInstalledPWA(true);
+        return;
+      }
     }
 
     // Intercepta o evento beforeinstallprompt
@@ -41,19 +43,23 @@ export default function PWAInstallPrompt() {
     };
 
     // Adiciona o listener do evento
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    // Verifica se já foi instalado
-    window.addEventListener('appinstalled', () => {
-      setInstalledPWA(true);
-      setIsVisible(false);
-      deferredPrompt.current = null;
-    });
+      // Verifica se já foi instalado
+      window.addEventListener('appinstalled', () => {
+        setInstalledPWA(true);
+        setIsVisible(false);
+        deferredPrompt.current = null;
+      });
+    }
 
     // Cleanup ao desmontar
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', () => {});
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        window.removeEventListener('appinstalled', () => {});
+      }
     };
   }, []);
 

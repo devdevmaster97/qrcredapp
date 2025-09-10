@@ -43,6 +43,16 @@ export function useAdesaoAntecipacao(): AdesaoAntecipacaoStatus {
     
     try {
       // Obter dados do usuário do localStorage
+      if (typeof window === 'undefined') {
+        setStatus(prev => ({
+          ...prev,
+          jaAderiu: false,
+          loading: false,
+          error: 'Ambiente servidor - aguardando cliente'
+        }));
+        return false;
+      }
+      
       const storedUser = localStorage.getItem('qrcred_user');
       if (!storedUser) {
         console.log('❌ Antecipação: Usuário não encontrado no localStorage');
@@ -118,7 +128,7 @@ export function useAdesaoAntecipacao(): AdesaoAntecipacaoStatus {
       lastStatusRef.current = jaAderiu;
       
       // Disparar evento customizado se mudou o status (apenas uma vez)
-      if (jaAderiu && !eventDispatchedRef.current && !skipEventDispatch) {
+      if (jaAderiu && !eventDispatchedRef.current && !skipEventDispatch && typeof window !== 'undefined') {
         console.log('🎉 Antecipação: Adesão detectada - disparando evento');
         window.dispatchEvent(new CustomEvent('antecipacaoAdesaoDetected', {
           detail: { dados: resultado.dados }
@@ -209,10 +219,12 @@ export function useAdesaoAntecipacao(): AdesaoAntecipacaoStatus {
       console.log('👁️ Antecipação: Janela recebeu foco - verificando possível assinatura');
       
       // Se há possível assinatura pendente, forçar verificação
-      const possibleSignature = localStorage.getItem('antecipacao_possible_signature');
-      if (possibleSignature) {
-        console.log('✍️ Antecipação: Possível assinatura detectada - forçando verificação');
-        verificarAdesao();
+      if (typeof window !== 'undefined') {
+        const possibleSignature = localStorage.getItem('antecipacao_possible_signature');
+        if (possibleSignature) {
+          console.log('✍️ Antecipação: Possível assinatura detectada - forçando verificação');
+          verificarAdesao();
+        }
       }
     };
 
@@ -230,9 +242,11 @@ export function useAdesaoAntecipacao(): AdesaoAntecipacaoStatus {
       verificarAdesao();
     };
 
-    window.addEventListener('focus', handleWindowFocus);
-    window.addEventListener('antecipacaoAdesaoStatusChanged', handleAntecipacaoStatusChanged);
-    window.addEventListener('forceAntecipacaoAdesaoCheck', handleForceCheck);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', handleWindowFocus);
+      window.addEventListener('antecipacaoAdesaoStatusChanged', handleAntecipacaoStatusChanged);
+      window.addEventListener('forceAntecipacaoAdesaoCheck', handleForceCheck);
+    }
 
     return () => {
       hookDestroyedRef.current = true;
@@ -246,9 +260,11 @@ export function useAdesaoAntecipacao(): AdesaoAntecipacaoStatus {
         clearTimeout(startDelay);
       }
       
-      window.removeEventListener('focus', handleWindowFocus);
-      window.removeEventListener('antecipacaoAdesaoStatusChanged', handleAntecipacaoStatusChanged);
-      window.removeEventListener('forceAntecipacaoAdesaoCheck', handleForceCheck);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('focus', handleWindowFocus);
+        window.removeEventListener('antecipacaoAdesaoStatusChanged', handleAntecipacaoStatusChanged);
+        window.removeEventListener('forceAntecipacaoAdesaoCheck', handleForceCheck);
+      }
     };
   }, []);
 

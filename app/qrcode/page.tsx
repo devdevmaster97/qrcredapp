@@ -1,6 +1,8 @@
 import AuthGuard from "@/app/components/auth/AuthGuard"
 import QRCodeContent from "@/app/components/dashboard/QrCodeContent"
 
+export const dynamic = 'force-dynamic';
+
 export default function QRCodePage() {
   return (
     <AuthGuard>

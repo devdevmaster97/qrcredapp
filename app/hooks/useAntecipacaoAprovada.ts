@@ -157,16 +157,20 @@ export function useAntecipacaoAprovada(): UseAntecipacaoAprovadaResult {
       }
     };
 
-    window.addEventListener('focus', handleWindowFocus);
-    window.addEventListener('antecipacaoStatusChanged', handleAntecipacaoStatusChanged);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', handleWindowFocus);
+      window.addEventListener('antecipacaoStatusChanged', handleAntecipacaoStatusChanged);
+    }
 
     return () => {
       isMounted = false;
       if (intervalId) {
         clearInterval(intervalId);
       }
-      window.removeEventListener('focus', handleWindowFocus);
-      window.removeEventListener('antecipacaoStatusChanged', handleAntecipacaoStatusChanged);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('focus', handleWindowFocus);
+        window.removeEventListener('antecipacaoStatusChanged', handleAntecipacaoStatusChanged);
+      }
     };
   }, []);
 
