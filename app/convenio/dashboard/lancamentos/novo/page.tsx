@@ -212,16 +212,27 @@ export default function NovoLancamentoPage() {
         
         if (response.status === 404) {
           console.warn('⚠️ Cartão não encontrado:', errorMessage);
+          console.log('🔧 DEBUG: Chamando closeAlert()...');
           closeAlert();
-          error('Cartão Não Encontrado', 'O cartão informado não foi encontrado no sistema.');
+          console.log('🔧 DEBUG: Chamando error() para cartão não encontrado...');
+          
+          // Pequeno delay para garantir que o closeAlert() seja processado
+          setTimeout(() => {
+            error('Cartão Não Encontrado', 'O cartão informado não foi encontrado no sistema.');
+            console.log('🔧 DEBUG: Função error() executada para cartão não encontrado');
+          }, 100);
         } else if (response.status === 408) {
           console.error('⏱️ Timeout na busca:', errorMessage);
           closeAlert();
-          error('Conexão Lenta', 'Houve uma oscilação na sua conexão com a internet. Por favor, verifique sua conexão e tente novamente.');
+          setTimeout(() => {
+            error('Conexão Lenta', 'Houve uma oscilação na sua conexão com a internet. Por favor, verifique sua conexão e tente novamente.');
+          }, 100);
         } else {
           console.error('❌ Erro na API:', errorMessage);
           closeAlert();
-          error('Erro na Consulta', 'Não foi possível consultar os dados do cartão.');
+          setTimeout(() => {
+            error('Erro na Consulta', 'Não foi possível consultar os dados do cartão.');
+          }, 100);
         }
         
         setCartao('');
