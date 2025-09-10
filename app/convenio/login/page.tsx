@@ -10,7 +10,7 @@ import Header from '@/app/components/Header';
 import Logo from '@/app/components/Logo';
 import { Dialog, Transition } from '@headlessui/react';
 import { X, Loader2 } from 'lucide-react';
-import { chromeErrorHandler, initializeErrorHandler } from '@/app/utils/errorHandler';
+// Import errorHandler dynamically to avoid SSR issues
 
 interface UsuarioSalvo {
   usuario: string;
@@ -46,12 +46,9 @@ export default function LoginConvenio() {
 
   // Carregar usuários salvos quando o componente é montado
   useEffect(() => {
-    // Inicializar sistema de tratamento de erros
-    initializeErrorHandler();
-    
-    // Usar wrapper seguro para carregar usuários
+    // Carregar usuários salvos apenas no cliente
     if (typeof window !== 'undefined') {
-      chromeErrorHandler.safeExecute(() => {
+      try {
         console.log('🔧 [DEBUG] Iniciando carregamento de usuários salvos...');
         setIsMounted(true);
         
@@ -61,28 +58,26 @@ export default function LoginConvenio() {
           return;
         }
       
-      const usuariosSalvosJson = chromeErrorHandler.safeExecute(
-        () => localStorage.getItem('convenioUsuariosSalvos'),
-        null,
-        'obter usuários salvos do localStorage'
-      );
-      
-      console.log('🔧 [DEBUG] Dados brutos do localStorage:', usuariosSalvosJson);
-      
-      if (usuariosSalvosJson) {
-        const usuarios = chromeErrorHandler.safeExecute(
-          () => JSON.parse(usuariosSalvosJson),
-          [],
-          'fazer parse dos usuários salvos'
-        );
+        const usuariosSalvosJson = localStorage.getItem('convenioUsuariosSalvos');
+        console.log('🔧 [DEBUG] Dados brutos do localStorage:', usuariosSalvosJson);
         
-        console.log('🔧 [DEBUG] Usuários parseados com sucesso:', usuarios);
-        setUsuariosSalvos(usuarios);
-      } else {
-        console.log('🔧 [DEBUG] Nenhum usuário salvo encontrado');
+        if (usuariosSalvosJson) {
+          try {
+            const usuarios = JSON.parse(usuariosSalvosJson);
+            console.log('🔧 [DEBUG] Usuários parseados com sucesso:', usuarios);
+            setUsuariosSalvos(usuarios);
+          } catch (parseError) {
+            console.error('❌ [DEBUG] Erro ao fazer parse dos usuários salvos:', parseError);
+            setUsuariosSalvos([]);
+          }
+        } else {
+          console.log('🔧 [DEBUG] Nenhum usuário salvo encontrado');
+          setUsuariosSalvos([]);
+        }
+      } catch (error) {
+        console.error('❌ [DEBUG] Erro no carregamento inicial:', error);
         setUsuariosSalvos([]);
       }
-      }, undefined, 'carregamento inicial de usuários');
     }
   }, []);
 

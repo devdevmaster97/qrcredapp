@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation';
 import Header from '../components/Header';
 
+export const dynamic = 'force-dynamic';
+
 export default function ConvenioPage() {
   const router = useRouter();
 
