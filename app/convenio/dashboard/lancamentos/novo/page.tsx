@@ -1155,6 +1155,17 @@ export default function NovoLancamentoPage() {
           )}
         </div>
       </div>
+
+      {/* Componente de Alerta Moderno */}
+      <ModernAlert
+        isOpen={alert.isOpen}
+        type={alert.type}
+        title={alert.title}
+        message={alert.message}
+        onClose={closeAlert}
+        autoClose={alert.autoClose}
+        duration={alert.duration}
+      />
     </div>
   );
 }
