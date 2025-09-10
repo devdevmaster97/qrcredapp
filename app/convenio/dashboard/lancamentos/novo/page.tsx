@@ -216,7 +216,7 @@ export default function NovoLancamentoPage() {
           error('Cartão Não Encontrado', 'O cartão informado não foi encontrado no sistema.');
         } else if (response.status === 408) {
           console.error('⏱️ Timeout na busca:', errorMessage);
-          error('Tempo Esgotado', 'O tempo limite foi excedido. Tente novamente.');
+          error('Conexão Lenta', 'Houve uma oscilação na sua conexão com a internet. Por favor, verifique sua conexão e tente novamente.');
         } else {
           console.error('❌ Erro na API:', errorMessage);
           error('Erro na Consulta', 'Não foi possível consultar os dados do cartão.');
