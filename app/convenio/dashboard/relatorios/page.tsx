@@ -119,22 +119,43 @@ export default function RelatoriosPage() {
               parcela: data.data[0].parcela,
               tipo_parcela: typeof data.data[0].parcela
             });
+            
+            // Debug específico dos meses encontrados nos lançamentos
+            const mesesEncontrados = data.data.map((l: Lancamento) => l.mes);
+            console.log('🗓️ RELATÓRIOS - Todos os meses encontrados nos lançamentos:', mesesEncontrados);
+            console.log('🗓️ RELATÓRIOS - Meses únicos antes da ordenação:', Array.from(new Set(mesesEncontrados)));
           }
           
           setLancamentos(data.data);
-          // Extrair meses únicos dos lançamentos
-          const meses = Array.from(new Set(data.data.map((l: Lancamento) => l.mes))) as string[];
-          // Ordenar meses do mais recente para o mais antigo
-          const mesesOrdenados = meses.sort().reverse();
+          
+          // Extrair meses únicos dos lançamentos com validação
+          const mesesBrutos = data.data.map((l: Lancamento) => l.mes).filter((mes: string) => mes && mes.trim() !== '');
+          const mesesUnicos = Array.from(new Set(mesesBrutos)) as string[];
+          
+          console.log('🗓️ RELATÓRIOS - Meses únicos extraídos:', mesesUnicos);
+          
+          // Ordenar meses corretamente (assumindo formato YYYY-MM ou similar)
+          const mesesOrdenados = mesesUnicos.sort((a, b) => {
+            // Se os meses estão no formato YYYY-MM, ordenar cronologicamente
+            if (a.includes('-') && b.includes('-')) {
+              return b.localeCompare(a); // Mais recente primeiro
+            }
+            // Se estão em outro formato, ordenar alfabeticamente reverso
+            return b.localeCompare(a);
+          });
+          
+          console.log('🗓️ RELATÓRIOS - Meses ordenados para o select:', mesesOrdenados);
+          
           setMesesDisponiveis(mesesOrdenados);
           
-          // Definir o mês corrente como padrão (prioriza o da API)
+          // Definir o mês selecionado com prioridade para o mês corrente da API
           if (mesCorrente && mesesOrdenados.includes(mesCorrente)) {
             setMesSelecionado(mesCorrente);
-            console.log('✅ RELATÓRIOS - Usando mês corrente da API:', mesCorrente);
+            console.log('✅ RELATÓRIOS - Usando mês corrente da API como selecionado:', mesCorrente);
           } else if (mesesOrdenados.length > 0) {
             setMesSelecionado(mesesOrdenados[0]);
-            console.log('⚠️ RELATÓRIOS - Mês da API não encontrado, usando primeiro disponível:', mesesOrdenados[0]);
+            console.log('⚠️ RELATÓRIOS - Mês da API não encontrado nos lançamentos, usando primeiro disponível:', mesesOrdenados[0]);
+            console.log('⚠️ RELATÓRIOS - Mês corrente da API era:', mesCorrente);
           }
         } else {
           console.log('❌ RELATÓRIOS - Erro da API:', data.message);
