@@ -2,7 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import toast from 'react-hot-toast';
+import { toast } from 'react-hot-toast';
+import ModernAlert from '@/app/components/ModernAlert';
+import { useModernAlert } from '@/app/hooks/useModernAlert';
 import { FaArrowLeft, FaCreditCard, FaSpinner, FaCheckCircle, FaQrcode } from 'react-icons/fa';
 import { Html5Qrcode } from 'html5-qrcode';
 import Header from '../../../../components/Header';
@@ -24,8 +26,8 @@ interface AssociadoData {
 
 export default function NovoLancamentoPage() {
   const router = useRouter();
-  const [cartao, setCartao] = useState('');
   const [associado, setAssociado] = useState<AssociadoData | null>(null);
+  const [cartao, setCartao] = useState('');
   const [valor, setValor] = useState('');
   const [parcelas, setParcelas] = useState(1);
   const [descricao, setDescricao] = useState('');
@@ -36,10 +38,34 @@ export default function NovoLancamentoPage() {
   const [showQrReader, setShowQrReader] = useState(false);
   const [showConfirmacao, setShowConfirmacao] = useState(false);
   const [valorParcela, setValorParcela] = useState(0);
+  
+  // Hook para alertas modernos
+  const { alert, success, error, warning, info, closeAlert } = useModernAlert();
   const [valorPagamento, setValorPagamento] = useState('');
   const qrReaderRef = useRef<HTMLDivElement>(null);
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
   const [maxParcelas, setMaxParcelas] = useState(12);
+  const cartaoInputRef = useRef<HTMLInputElement>(null);
+
+  // useEffect para focar no input do cartão quando a página carrega (apenas em desktop)
+  useEffect(() => {
+    const focusCartaoInput = () => {
+      // Verificar se é desktop/computador
+      const userAgent = navigator.userAgent.toLowerCase();
+      const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
+      const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      const isDesktop = !isMobile && !hasTouch;
+      
+      // Focar apenas em desktop para melhor UX
+      if (isDesktop && cartaoInputRef.current) {
+        setTimeout(() => {
+          cartaoInputRef.current?.focus();
+        }, 300); // Pequeno delay para garantir que a página carregou
+      }
+    };
+
+    focusCartaoInput();
+  }, []);
 
   // Função para detectar se é um dispositivo desktop/computador
   const isDesktop = () => {
@@ -914,6 +940,7 @@ export default function NovoLancamentoPage() {
             </label>
             <div className="flex flex-col sm:flex-row gap-3">
               <input
+                ref={cartaoInputRef}
                 type="tel"
                 inputMode="numeric"
                 pattern="[0-9]*"
