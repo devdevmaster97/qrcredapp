@@ -147,7 +147,7 @@ export default function NovoLancamentoPage() {
         await capturarMesCorrente(associadoData.matricula, associadoData.empregador, associadoData);
       } catch (err) {
         console.error('❌ Erro ao capturar mês corrente:', err);
-        error('Erro nos Dados', 'Não foi possível obter dados completos do associado.');
+        error('Erro no Mês Corrente', 'Não foi possível obter dados completos do associado.');
         
         // Em caso de erro, atualizar com saldo 0
         setAssociado(associadoData);
@@ -252,36 +252,37 @@ export default function NovoLancamentoPage() {
       
       // Tentar obter da API primeiro
       try {
-        console.log('📅 Consultando API de mês corrente...');
+        console.log('📅 Consultando API interna de mês corrente...');
         const associadoAtual = associadoCompleto || associado;
         
         if (associadoAtual && associadoAtual.id_divisao) {
-          const formDataMes = new URLSearchParams();
-          formDataMes.append('divisao', associadoAtual.id_divisao.toString());
+          console.log('📅 Enviando divisão para API interna:', associadoAtual.id_divisao);
           
-          console.log('📅 Enviando divisão para API:', associadoAtual.id_divisao);
-          
-          const mesResponse = await fetch(API_MESES, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: formDataMes.toString()
+          const headers = {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          };
+
+          const mesResponse = await fetch(`/api/convenio/mes-corrente?t=${Date.now()}&divisao=${associadoAtual.id_divisao}`, {
+            method: 'GET',
+            headers,
+            cache: 'no-store'
           });
           
           if (mesResponse.ok) {
             const mesData = await mesResponse.json();
-            console.log('📅 Resposta da API de mês:', mesData);
+            console.log('📅 Resposta da API interna de mês:', mesData);
             
-            if (mesData.abreviacao) {
-              mesAtual = mesData.abreviacao;
+            if (mesData.success && mesData.data && mesData.data.abreviacao) {
+              mesAtual = mesData.data.abreviacao;
               tentativaApiSucesso = true;
-              console.log('✅ Mês corrente obtido da API:', mesAtual);
+              console.log('✅ Mês corrente obtido da API interna:', mesAtual);
             }
           }
         }
       } catch (errorApi) {
-        console.error('❌ Erro ao consultar API de mês:', errorApi);
+        console.error('❌ Erro ao consultar API interna de mês:', errorApi);
       }
       
       // Se não conseguiu obter da API, falhar o processo
