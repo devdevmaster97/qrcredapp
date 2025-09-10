@@ -288,9 +288,11 @@ export default function LoginConvenio() {
       
       let mensagemErro = 'Erro ao conectar com o servidor. Tente novamente mais tarde.';
       
-      // Verificar se é um erro específico de rede ou parsing
+      // Verificar se é um erro específico de rede, parsing ou credenciais
       if (error instanceof Error) {
-        if (error.message.includes('JSON') || error.message.includes('parse')) {
+        if (error.message.includes('401')) {
+          mensagemErro = 'Usuário ou senha incorretos. Verifique suas credenciais e tente novamente.';
+        } else if (error.message.includes('JSON') || error.message.includes('parse')) {
           mensagemErro = 'Erro na comunicação com o servidor. Verifique sua conexão e tente novamente.';
         } else if (error.message.includes('network') || error.message.includes('fetch')) {
           mensagemErro = 'Falha na conexão. Verifique sua internet e tente novamente.';
