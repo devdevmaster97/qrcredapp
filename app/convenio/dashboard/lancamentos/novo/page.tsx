@@ -170,105 +170,72 @@ export default function NovoLancamentoPage() {
       error('Cartão Obrigatório', 'Por favor, informe o número do cartão.');
       return;
     }
-
+  
     console.log('🔍 Iniciando busca para cartão:', cartaoParaBuscar);
     setLoadingCartao(true);
     setAssociado(null);
-
+  
     try {
-      console.log('🔍 Buscando associado pelo cartão:', cartaoParaBuscar);
+      console.log('🔍 Buscando associado pelo cartão via API interna:', cartaoParaBuscar);
       info('Buscando Cartão', 'Aguarde enquanto consultamos os dados do cartão...');
       
-      // Usando XHR diretamente para melhor controle e diagnóstico
-      const xhr = new XMLHttpRequest();
-      
-      // Definir um timeout de 20 segundos
-      xhr.timeout = 20000;
-      
-      // Configurar a requisição
-      xhr.open('POST', API_URL, true);
-      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-      
-      // Monitorar o carregamento
-      xhr.onloadstart = () => console.log('🔍 Iniciando busca de associado');
-      
-      // Configurar o handler de sucesso
-      xhr.onload = async function() {
-        console.log('✅ Resposta recebida para busca do associado:', {
-          status: xhr.status,
-          statusText: xhr.statusText,
-          headers: xhr.getAllResponseHeaders()
-        });
+      const headers = {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      };
+  
+      const response = await fetch('/api/convenio/buscar-associado', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          cartaodigitado: cartaoParaBuscar
+        }),
+        cache: 'no-store'
+      });
+  
+      console.log('✅ Resposta recebida da API interna:', {
+        status: response.status,
+        statusText: response.statusText
+      });
+  
+      const data = await response.json();
+      console.log('📄 Dados recebidos da API:', data);
+  
+      if (response.ok && data.success && data.data) {
+        console.log('✅ Dados do associado válidos, iniciando processamento...');
+        await processarDadosAssociado(data.data);
+        console.log('✅ Processamento do associado concluído');
+      } else {
+        // Tratar diferentes tipos de erro
+        const errorMessage = data.error || 'Erro desconhecido';
         
-        // Verificar se a resposta foi bem-sucedida
-        if (xhr.status >= 200 && xhr.status < 300) {
-          const responseText = xhr.responseText;
-          console.log('📄 Resposta da API (texto):', responseText.substring(0, 500));
-          
-          if (!responseText || responseText.trim() === '') {
-            console.error('❌ Resposta vazia da API');
-            error('Erro na Consulta', 'Não foi possível consultar os dados do cartão.');
-            setLoadingCartao(false);
-            return;
-          }
-          
-          // Tentar converter para JSON
-          try {
-            const data = JSON.parse(responseText);
-            console.log('🧩 Dados parseados:', data);
-            
-            // Verificação simplificada - apenas verificamos se o nome não é incorreto ou vazio
-            if (data && data.nome && data.nome !== 'login incorreto' && data.nome !== "login fazio") {
-              console.log('✅ Dados do associado válidos, iniciando processamento...');
-              await processarDadosAssociado(data);
-              console.log('✅ Processamento do associado concluído');
-              setLoadingCartao(false);
-              return;
-            } else {
-              // Se a API responder mas não encontrar o cartão
-              console.warn('⚠️ Cartão não encontrado ou login inválido:', data);
-              error('Cartão Não Encontrado', 'O cartão informado não foi encontrado no sistema.');
-              setCartao('');
-              setLoadingCartao(false);
-            }
-          } catch (parseError) {
-            console.error('❌ Erro ao fazer parse do JSON:', parseError);
-            error('Erro de Formato', 'A resposta do servidor está em formato inválido.');
-            setLoadingCartao(false);
-            return;
-          }
+        if (response.status === 404) {
+          console.warn('⚠️ Cartão não encontrado:', errorMessage);
+          error('Cartão Não Encontrado', 'O cartão informado não foi encontrado no sistema.');
+        } else if (response.status === 408) {
+          console.error('⏱️ Timeout na busca:', errorMessage);
+          error('Tempo Esgotado', 'O tempo limite foi excedido. Tente novamente.');
         } else {
-          console.error('❌ Erro na resposta:', xhr.status, xhr.statusText);
-          error('Erro na API', `Erro na resposta do servidor: ${xhr.status}`);
-          setLoadingCartao(false);
+          console.error('❌ Erro na API:', errorMessage);
+          error('Erro na Consulta', 'Não foi possível consultar os dados do cartão.');
         }
-      };
+        
+        setCartao('');
+      }
       
-      // Configurar handler de erro
-      xhr.onerror = function() {
-        console.error('❌ Erro de rede na requisição XHR');
-        error('Erro de Rede', 'Verifique sua conexão com a internet e tente novamente.');
-        setLoadingCartao(false);
-      };
+      setLoadingCartao(false);
       
-      // Configurar handler de timeout
-      xhr.ontimeout = function() {
-        console.error('⏱️ Timeout na busca do associado');
-        error('Tempo Esgotado', 'O tempo limite foi excedido. Tente novamente.');
-        setLoadingCartao(false);
-      };
-      
-      // Preparar dados para envio
-      const formData = new URLSearchParams();
-      formData.append('cartaodigitado', cartaoParaBuscar);
-      
-      console.log('📤 Enviando dados:', formData.toString());
-      
-      // Enviar a requisição
-      xhr.send(formData.toString());
     } catch (err) {
       console.error('❌ Erro geral na busca do associado:', err);
-      error('Erro na Busca', 'Não foi possível buscar os dados do cartão.');
+      
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        error('Erro de Rede', 'Verifique sua conexão com a internet e tente novamente.');
+      } else {
+        error('Erro na Busca', 'Não foi possível buscar os dados do cartão.');
+      }
+      
       setLoadingCartao(false);
     }
   };
