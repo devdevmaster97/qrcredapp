@@ -246,12 +246,7 @@ export default function NovoLancamentoPage() {
     }
   };
 
-  // Função para gerar mês corrente localmente como fallback
-  const gerarMesCorrenteLocal = () => {
-    const meses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-    const data = new Date();
-    return `${meses[data.getMonth()]}/${data.getFullYear()}`;
-  };
+  // Função removida - não usar fallback local para mês corrente
 
   // Modificar a função capturarMesCorrente para aceitar o objeto associado completo
   const capturarMesCorrente = async (matricula: string, empregador: string, associadoCompleto: AssociadoData | null = null, retryCount = 0): Promise<void> => {
@@ -295,14 +290,15 @@ export default function NovoLancamentoPage() {
         console.error('❌ Erro ao consultar API de mês:', errorApi);
       }
       
-      // Se não conseguiu obter da API, gerar localmente
+      // Se não conseguiu obter da API, falhar o processo
       if (!tentativaApiSucesso) {
-        mesAtual = gerarMesCorrenteLocal();
-        console.log('⚠️ Usando mês corrente gerado localmente:', mesAtual);
-        toast.error('Usando mês atual do sistema como fallback');
+        console.error('❌ Falha obrigatória: não foi possível obter mês corrente da API');
+        toast.error('Erro: não foi possível obter o mês corrente. Tente novamente.');
+        setLoading(false);
+        return; // Parar o processo aqui
       }
       
-      // Atualizar o estado com o mês obtido (seja da API ou gerado localmente)
+      // Atualizar o estado apenas com o mês obtido da API
       setMesCorrente(mesAtual);
       
       // Continuar com a consulta da conta
@@ -419,17 +415,11 @@ export default function NovoLancamentoPage() {
     } catch (error) {
       console.error('❌ Erro geral na captura de mês corrente:', error);
       
-      // Em caso de erro, usar mês local e associado com saldo 0
-      const mesLocal = gerarMesCorrenteLocal();
-      setMesCorrente(mesLocal);
-      
-      const associadoFinal = associadoCompleto || associado;
-      if (associadoFinal) {
-        setAssociado({ ...associadoFinal, saldo: 0 });
-      }
-      
-      toast.error('Não foi possível obter dados completos.');
-      throw error;
+      // Em caso de erro, falhar o processo - não usar fallback
+      console.error('❌ Falha crítica: não foi possível obter mês corrente da API');
+      toast.error('Erro crítico: não foi possível obter o mês corrente. Operação cancelada.');
+      setLoading(false);
+      return; // Parar completamente o processo
     }
   };
 
