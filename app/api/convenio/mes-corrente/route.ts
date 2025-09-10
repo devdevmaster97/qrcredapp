@@ -6,6 +6,17 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
+    // Recuperar parâmetros da URL para logs
+    const { searchParams } = new URL(request.url);
+    const timestamp = searchParams.get('t');
+    const platform = searchParams.get('platform');
+    
+    console.log('🔍 API MÊS CORRENTE - Parâmetros recebidos:', {
+      timestamp,
+      platform,
+      url: request.url
+    });
+    
     // Recuperar o token de autenticação dos cookies
     const cookieStore = cookies();
     const tokenEncoded = cookieStore.get('convenioToken')?.value;
