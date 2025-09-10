@@ -192,10 +192,10 @@ export default function RelatoriosPage() {
       
       if (response.ok) {
         const data = await response.json();
-        if (data.success && data.data.mes_corrente) {
-          console.log('✅ MÊS CORRENTE - Recebido da API:', data.data.mes_corrente);
-          setMesCorrente(data.data.mes_corrente);
-          setMesSelecionado(data.data.mes_corrente);
+        if (data.success && data.data.abreviacao) {
+          console.log('✅ MÊS CORRENTE - Recebido da API:', data.data.abreviacao);
+          setMesCorrente(data.data.abreviacao);
+          setMesSelecionado(data.data.abreviacao);
           return; // Sucesso - não usar fallback
         } else {
           console.log('⚠️ MÊS CORRENTE - Erro na resposta da API:', data.message);
