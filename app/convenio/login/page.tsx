@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, Fragment } from 'react';
+
+export const dynamic = 'force-dynamic';
 import { useRouter } from 'next/navigation';
 import { FaSpinner, FaUserCircle, FaChevronDown, FaTrash, FaUser, FaLock, FaEnvelope, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
