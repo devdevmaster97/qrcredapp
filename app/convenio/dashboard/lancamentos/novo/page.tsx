@@ -474,57 +474,91 @@ export default function NovoLancamentoPage() {
       console.log('🔐 Senha (mascarada):', senha.replace(/./g, '*'));
       
       
-      // 1. Verificar senha usando API interna
+      // 1. Verificar senha usando API interna com retry automático
       const verificarSenha = async (): Promise<void> => {
-        try {
-          console.log('🔐 Verificando senha via API interna...');
-          
-          const headers = {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          };
-          
-          const response = await fetch('/api/convenio/verificar-senha', {
-            method: 'POST',
-            headers,
-            body: JSON.stringify({
-              matricula: associado.matricula,
-              senha: senha
-            }),
-            cache: 'no-store'
-          });
-          
-          console.log('🔐 Status da resposta da verificação:', response.status);
-          
-          const data = await response.json();
-          console.log('🔐 Dados da verificação de senha:', data);
-          
-          if (response.status === 401) {
-            closeAlert();
-            error('Senha Incorreta', 'A senha informada está incorreta. Tente novamente.');
-            throw new Error('Senha incorreta');
+        const maxRetries = 3;
+        let attempt = 0;
+        
+        while (attempt < maxRetries) {
+          try {
+            attempt++;
+            console.log(`🔐 Verificando senha via API interna (tentativa ${attempt}/${maxRetries})...`);
+            
+            const headers = {
+              'Content-Type': 'application/json',
+              'Cache-Control': 'no-cache, no-store, must-revalidate',
+              'Pragma': 'no-cache',
+              'Expires': '0'
+            };
+            
+            const response = await fetch('/api/convenio/verificar-senha', {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({
+                matricula: associado.matricula,
+                senha: senha
+              }),
+              cache: 'no-store'
+            });
+            
+            console.log('🔐 Status da resposta da verificação:', response.status);
+            
+            const data = await response.json();
+            console.log('🔐 Dados da verificação de senha:', data);
+            
+            if (response.status === 401) {
+              closeAlert();
+              error('Senha Incorreta', 'A senha informada está incorreta. Tente novamente.');
+              throw new Error('Senha incorreta');
+            }
+            
+            if (!response.ok || !data.success) {
+              closeAlert();
+              error('Erro na Verificação', data.error || 'Erro ao verificar senha');
+              throw new Error(data.error || 'Erro na verificação de senha');
+            }
+            
+            console.log('✅ Senha verificada com sucesso via API interna');
+            return; // Sucesso, sair da função
+            
+          } catch (fetchError) {
+            console.error(`❌ Erro na verificação de senha (tentativa ${attempt}):`, fetchError);
+            
+            if (fetchError instanceof Error && fetchError.message === 'Senha incorreta') {
+              throw fetchError; // Re-throw para manter a mensagem específica
+            }
+            
+            // Se é o último retry ou não é um erro de rede, falhar imediatamente
+            const isNetworkError = fetchError instanceof TypeError && 
+              (fetchError.message.includes('Failed to fetch') || 
+               fetchError.message.includes('NetworkError') ||
+               fetchError.message.includes('ERR_NETWORK_CHANGED'));
+            
+            if (attempt >= maxRetries || !isNetworkError) {
+              // Tratamento específico para diferentes tipos de erro
+              let errorTitle = 'Erro de Conexão';
+              let errorMessage = 'Não foi possível verificar a senha. Tente novamente.';
+              
+              if (fetchError instanceof TypeError) {
+                if (fetchError.message.includes('Failed to fetch')) {
+                  errorTitle = 'Problema de Conectividade';
+                  errorMessage = 'Houve uma instabilidade na sua conexão. Verifique sua internet e tente novamente.';
+                } else if (fetchError.message.includes('NetworkError')) {
+                  errorTitle = 'Erro de Rede';
+                  errorMessage = 'Problema na conexão com o servidor. Tente novamente em alguns segundos.';
+                }
+              }
+              
+              closeAlert();
+              error(errorTitle, errorMessage);
+              throw new Error('Erro de conexão na verificação de senha');
+            }
+            
+            // Aguardar antes do próximo retry (backoff exponencial)
+            const delay = Math.pow(2, attempt - 1) * 1000; // 1s, 2s, 4s
+            console.log(`⏳ Aguardando ${delay}ms antes da próxima tentativa...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
           }
-          
-          if (!response.ok || !data.success) {
-            closeAlert();
-            error('Erro na Verificação', data.error || 'Erro ao verificar senha');
-            throw new Error(data.error || 'Erro na verificação de senha');
-          }
-          
-          console.log('✅ Senha verificada com sucesso via API interna');
-          
-        } catch (fetchError) {
-          console.error('❌ Erro na verificação de senha:', fetchError);
-          
-          if (fetchError instanceof Error && fetchError.message === 'Senha incorreta') {
-            throw fetchError; // Re-throw para manter a mensagem específica
-          }
-          
-          closeAlert();
-          error('Erro de Conexão', 'Não foi possível verificar a senha. Tente novamente.');
-          throw new Error('Erro de conexão na verificação de senha');
         }
       };
 
