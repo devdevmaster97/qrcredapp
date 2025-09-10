@@ -71,13 +71,14 @@ export default function SaldoCard() {
       
       console.log('📅 Resposta da API interna mes-corrente:', response.data);
       
-      if (response.data && response.data.abreviacao) {
-        console.log('✅ Mês corrente obtido:', response.data.abreviacao);
-        return response.data.abreviacao;
+      if (response.data && response.data.success && response.data.data && response.data.data.abreviacao) {
+        console.log('✅ Mês corrente obtido:', response.data.data.abreviacao);
+        return response.data.data.abreviacao;
       } else if (response.data && response.data.error) {
         console.log('❌ Erro na API de meses:', response.data.error);
         throw new Error(response.data.error);
       } else {
+        console.log('❌ Estrutura de resposta inesperada:', response.data);
         throw new Error('Campo abreviacao não encontrado na resposta');
       }
     } catch (err) {
