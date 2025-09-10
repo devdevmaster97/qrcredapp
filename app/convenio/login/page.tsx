@@ -215,7 +215,7 @@ export default function LoginConvenio() {
             });
             
             // Forçar limpeza do cache do navegador
-            if ('caches' in window) {
+            if (typeof window !== 'undefined' && 'caches' in window) {
               caches.keys().then(names => {
                 names.forEach(name => {
                   caches.delete(name);
@@ -231,7 +231,9 @@ export default function LoginConvenio() {
             // Forçar recarregamento da página no mobile para limpar qualquer cache residual
             console.log('📱 Login - Forçando recarregamento no mobile');
             // Adicionar timestamp para evitar cache
-            window.location.href = `/convenio/dashboard?t=${Date.now()}`;
+            if (typeof window !== 'undefined') {
+              window.location.href = `/convenio/dashboard?t=${Date.now()}`;
+            }
           }, 800);
         } else {
           router.push('/convenio/dashboard');

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { codigosRecuperacao } from '../recuperacao-senha/route';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * API para debug da recuperação de senha
  * Mostra todos os códigos armazenados e permite diagnóstico

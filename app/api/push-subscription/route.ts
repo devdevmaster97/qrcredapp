@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 
+export const dynamic = 'force-dynamic';
+
 // POST - Registrar nova subscription
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { subscription, userCard, settings } = body;
 
+    console.log(' Registrando push subscription para usuário:', userCard);
     console.log('📱 Registrando push subscription para usuário:', userCard);
 
     if (!subscription || !userCard) {

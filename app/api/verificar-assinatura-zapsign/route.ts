@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 // Tipo para a resposta da API ZapSign (signatário individual)
 interface ZapSignSigner {
   external_id: string;

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { API_URL } from '@/app/utils/constants';
 import axios from 'axios';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * API para o usuário fazer seu próprio cadastro
  * @param request Requisição com dados do formulário
