@@ -9,50 +9,61 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const timestamp = searchParams.get('t');
     const platform = searchParams.get('platform');
+    const divisaoParam = searchParams.get('divisao');
     
     console.log('🔍 API MÊS CORRENTE - Parâmetros recebidos:', {
       timestamp,
       platform,
+      divisao: divisaoParam,
       url: request.url
     });
     
-    // Usar a API de dados existente para obter informações do convênio
-    const baseUrl = request.url.split('/api/')[0];
-    const dadosResponse = await fetch(`${baseUrl}/api/convenio/dados`, {
-      method: 'GET',
-      headers: {
-        'Cookie': request.headers.get('cookie') || '',
-        'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
-        'Pragma': 'no-cache',
-        'Expires': '0'
+    let codigoDivisao: string;
+    
+    // Se divisao foi passada como parâmetro, usar ela diretamente
+    if (divisaoParam) {
+      codigoDivisao = divisaoParam;
+      console.log('🔍 API MÊS CORRENTE - Usando divisão do parâmetro:', codigoDivisao);
+    } else {
+      // Fallback: usar a API de dados existente para obter informações do convênio
+      console.log('🔍 API MÊS CORRENTE - Divisão não informada, buscando dos dados do convênio...');
+      const baseUrl = request.url.split('/api/')[0];
+      const dadosResponse = await fetch(`${baseUrl}/api/convenio/dados`, {
+        method: 'GET',
+        headers: {
+          'Cookie': request.headers.get('cookie') || '',
+          'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+      
+      if (!dadosResponse.ok) {
+        console.log('❌ MÊS CORRENTE - Erro ao buscar dados do convênio:', dadosResponse.status);
+        return NextResponse.json(
+          { success: false, message: 'Erro ao obter dados do convênio' },
+          { status: dadosResponse.status }
+        );
       }
-    });
-    
-    if (!dadosResponse.ok) {
-      console.log('❌ MÊS CORRENTE - Erro ao buscar dados do convênio:', dadosResponse.status);
-      return NextResponse.json(
-        { success: false, message: 'Erro ao obter dados do convênio' },
-        { status: dadosResponse.status }
-      );
+      
+      const dadosConvenio = await dadosResponse.json();
+      
+      if (!dadosConvenio.success) {
+        console.log('❌ MÊS CORRENTE - API de dados retornou erro:', dadosConvenio.message);
+        return NextResponse.json(
+          { success: false, message: dadosConvenio.message },
+          { status: 401 }
+        );
+      }
+      
+      console.log('🔍 API MÊS CORRENTE - Dados do convênio obtidos:', {
+        cod_convenio: dadosConvenio.data.cod_convenio,
+        razaosocial: dadosConvenio.data.razaosocial
+      });
+      
+      // Usar o cod_convenio como divisão para buscar o mês corrente
+      codigoDivisao = dadosConvenio.data.cod_convenio;
     }
-    
-    const dadosConvenio = await dadosResponse.json();
-    
-    if (!dadosConvenio.success) {
-      console.log('❌ MÊS CORRENTE - API de dados retornou erro:', dadosConvenio.message);
-      return NextResponse.json(
-        { success: false, message: dadosConvenio.message },
-        { status: 401 }
-      );
-    }
-    
-    console.log('🔍 API MÊS CORRENTE - Dados do convênio obtidos:', {
-      cod_convenio: dadosConvenio.data.cod_convenio,
-      razaosocial: dadosConvenio.data.razaosocial
-    });
-    
-    // Usar o cod_convenio como divisão para buscar o mês corrente
-    const codigoDivisao = dadosConvenio.data.cod_convenio;
     
     if (!codigoDivisao) {
       console.log('❌ MÊS CORRENTE - Código divisão não encontrado no token');

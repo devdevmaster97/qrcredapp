@@ -205,7 +205,31 @@ export default function RelatoriosPage() {
       
       console.log(`🔍 MÊS CORRENTE - Buscando da API (${isMobile ? 'Mobile' : 'Desktop'})`);
       
-      const response = await fetch(`/api/convenio/mes-corrente?t=${Date.now()}&platform=${isMobile ? 'mobile' : 'desktop'}`, {
+      // Primeiro, obter os dados do convênio para pegar o código da divisão
+      console.log('🔍 MÊS CORRENTE - Obtendo dados do convênio para divisão...');
+      const dadosResponse = await fetch(`/api/convenio/dados?t=${Date.now()}`, {
+        method: 'GET',
+        headers,
+        cache: 'no-store'
+      });
+      
+      if (!dadosResponse.ok) {
+        console.log('❌ MÊS CORRENTE - Erro ao obter dados do convênio:', dadosResponse.status);
+        return;
+      }
+      
+      const dadosConvenio = await dadosResponse.json();
+      
+      if (!dadosConvenio.success || !dadosConvenio.data.divsao) {
+        console.log('❌ MÊS CORRENTE - Dados do convênio inválidos:', dadosConvenio);
+        return;
+      }
+      
+      const divisao = dadosConvenio.data.divisao;
+      console.log('🔍 MÊS CORRENTE - Divisão obtida:', divisao);
+      
+      // Agora chamar a API de mês corrente com o parâmetro divisao
+      const response = await fetch(`/api/convenio/mes-corrente?t=${Date.now()}&platform=${isMobile ? 'mobile' : 'desktop'}&divisao=${divisao}`, {
         method: 'GET',
         headers,
         cache: 'no-store'
