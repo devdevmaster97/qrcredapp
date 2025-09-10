@@ -370,44 +370,27 @@ export default function NovoLancamentoPage() {
                     });
                   }
                 } else {
-                  console.warn('⚠️ Erro ao consultar conta, usando limite como saldo');
-                  // Em caso de erro na consulta, usar limite como fallback
-                  const saldoDisponivel = limiteNumerico;
+                  console.error('❌ Erro ao consultar conta - API retornou erro');
+                  const contaText = await contaResponse.text();
+                  console.error('❌ Resposta da API conta:', contaText);
                   
-                  const associadoFinal = associadoCompleto || associado;
-                  if (associadoFinal) {
-                    const novoAssociado = { ...associadoFinal, saldo: Math.max(0, saldoDisponivel) };
-                    setAssociado(novoAssociado);
-                    
-                    toast.success(`Cartão encontrado! Saldo: ${saldoDisponivel.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, { 
-                      id: 'busca-cartao'
-                    });
-                  }
+                  toast.error('Erro ao consultar saldo. Verifique os dados e tente novamente.');
+                  setLoadingCartao(false);
+                  return; // Parar o processo se não conseguir consultar o saldo
                 }
               } catch (errorConsulta) {
                 console.error('❌ Erro ao consultar gastos:', errorConsulta);
-                // Em caso de erro, usar limite como fallback
-                const saldoDisponivel = limiteNumerico;
-                
-                const associadoFinal = associadoCompleto || associado;
-                if (associadoFinal) {
-                  const novoAssociado = { ...associadoFinal, saldo: Math.max(0, saldoDisponivel) };
-                  setAssociado(novoAssociado);
-                  
-                  toast.success(`Cartão encontrado! Saldo: ${saldoDisponivel.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, { 
-                    id: 'busca-cartao'
-                  });
-                }
+                toast.error('Erro de conexão ao consultar saldo. Verifique sua internet e tente novamente.');
+                setLoadingCartao(false);
+                return; // Parar o processo se houver erro de conexão
               }
             }
           }
         } catch (errorConta) {
-          console.error('❌ Erro ao consultar conta:', errorConta);
-          // Em caso de erro, usar o associado com saldo 0
-          const associadoFinal = associadoCompleto || associado;
-          if (associadoFinal) {
-            setAssociado({ ...associadoFinal, saldo: 0 });
-          }
+          console.error('❌ Erro crítico ao consultar conta:', errorConta);
+          toast.error('Erro crítico ao consultar dados da conta. Operação cancelada.');
+          setLoadingCartao(false);
+          return; // Parar completamente se houver erro crítico
         }
       }
       
