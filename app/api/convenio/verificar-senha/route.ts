@@ -99,8 +99,14 @@ export async function POST(request: NextRequest) {
     
     console.log('📄 Dados parseados da API PHP:', parsedData);
     
+    // Extrair situacao da nova estrutura padronizada do PHP
+    const situacao = parsedData.data?.situacao || parsedData.situacao;
+    console.log('📄 Valor específico de situacao:', situacao);
+    console.log('📄 Tipo de situacao:', typeof situacao);
+    console.log('📄 Success do PHP:', parsedData.success);
+    
     // Verificar se a senha está correta (PHP retorna 'certo' ou 'errado')
-    if (parsedData.situacao === 'certo') {
+    if (situacao === 'certo') {
       console.log('✅ Senha verificada com sucesso');
       
       return NextResponse.json({
@@ -117,20 +123,38 @@ export async function POST(request: NextRequest) {
           'Expires': '0'
         }
       });
-    } else if (parsedData.situacao === 'errado') {
-      console.log('❌ Senha incorreta - situacao:', parsedData.situacao);
+    } else if (situacao === 'errado') {
+      console.log('❌ Senha incorreta - situacao:', situacao);
       
       return NextResponse.json({
         success: false,
         error: 'Senha incorreta'
       }, { status: 401 });
     } else {
-      // Caso seja uma mensagem de erro do banco
-      console.log('❌ Erro do banco de dados - situacao:', parsedData.situacao);
+      // Caso seja uma mensagem de erro do banco ou outro erro
+      console.log('❌ Erro retornado pelo PHP - situacao:', situacao);
+      console.log('❌ Dados completos do PHP:', JSON.stringify(parsedData, null, 2));
+      
+      // Verificar se é um erro específico de conexão ou parâmetros
+      const errorMessage = situacao || parsedData.error || 'Erro desconhecido';
+      
+      // Se contém palavras-chave de erro de banco, tratar como erro de servidor
+      if (typeof errorMessage === 'string' && (
+        errorMessage.includes('Connection') || 
+        errorMessage.includes('PDO') || 
+        errorMessage.includes('database') ||
+        errorMessage.includes('SQL') ||
+        errorMessage.includes('SQLSTATE')
+      )) {
+        return NextResponse.json({
+          success: false,
+          error: 'Erro temporário no servidor. Tente novamente em alguns instantes.'
+        }, { status: 503 });
+      }
       
       return NextResponse.json({
         success: false,
-        error: 'Erro no servidor de verificação de senha'
+        error: `Erro na verificação: ${errorMessage}`
       }, { status: 500 });
     }
     
