@@ -265,8 +265,8 @@ export default function NovoLancamentoPage() {
       
       // Enviar a requisição
       xhr.send(formData.toString());
-    } catch (error) {
-      console.error('❌ Erro geral na busca do associado:', error);
+    } catch (err) {
+      console.error('❌ Erro geral na busca do associado:', err);
       error('Erro na Busca', 'Não foi possível buscar os dados do cartão.');
       setLoadingCartao(false);
     }
