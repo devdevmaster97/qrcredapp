@@ -48,15 +48,16 @@ export default function LoginConvenio() {
     initializeErrorHandler();
     
     // Usar wrapper seguro para carregar usuários
-    chromeErrorHandler.safeExecute(() => {
-      console.log('🔧 [DEBUG] Iniciando carregamento de usuários salvos...');
-      setIsMounted(true);
-      
-      // Verificar se localStorage está disponível
-      if (typeof Storage === "undefined") {
-        console.warn('⚠️ [DEBUG] localStorage não está disponível neste navegador');
-        return;
-      }
+    if (typeof window !== 'undefined') {
+      chromeErrorHandler.safeExecute(() => {
+        console.log('🔧 [DEBUG] Iniciando carregamento de usuários salvos...');
+        setIsMounted(true);
+        
+        // Verificar se localStorage está disponível
+        if (typeof Storage === "undefined") {
+          console.warn('⚠️ [DEBUG] localStorage não está disponível neste navegador');
+          return;
+        }
       
       const usuariosSalvosJson = chromeErrorHandler.safeExecute(
         () => localStorage.getItem('convenioUsuariosSalvos'),
@@ -79,7 +80,8 @@ export default function LoginConvenio() {
         console.log('🔧 [DEBUG] Nenhum usuário salvo encontrado');
         setUsuariosSalvos([]);
       }
-    }, undefined, 'carregamento inicial de usuários');
+      }, undefined, 'carregamento inicial de usuários');
+    }
   }, []);
 
   const handleVoltar = () => {
@@ -106,7 +108,10 @@ export default function LoginConvenio() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          usuario: formData.usuario,
+          senha: formData.senha
+        }),
       });
 
       console.log('🔧 [DEBUG] Resposta da API recebida:', {

@@ -13,8 +13,6 @@ export const metadata: Metadata = {
   title: 'Sistema de Assistência Social por Convênios',
   description: 'Sistema de Assistência Social por Convênios - SASCred',
   manifest: '/manifest.json',
-  themeColor: '#1e40af',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -55,6 +53,14 @@ export const metadata: Metadata = {
   verification: {
     google: 'adicione_seu_codigo_de_verificacao_aqui',
   },
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#1e40af'
 };
 
 export default function RootLayout({
