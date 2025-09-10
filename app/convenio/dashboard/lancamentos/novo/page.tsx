@@ -496,7 +496,8 @@ export default function NovoLancamentoPage() {
               body: JSON.stringify({
                 matricula: associado.matricula,
                 senha: senha,
-                id_associado: associado.id
+                id_associado: associado.id,
+                empregador: associado.empregador // Empregador sempre existe
               }),
               cache: 'no-store'
             });
