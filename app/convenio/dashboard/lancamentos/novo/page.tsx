@@ -93,12 +93,9 @@ export default function NovoLancamentoPage() {
 
   // Usar URLs reais da API - sem simulações locais
   const BASE_URL = 'https://sas.makecard.com.br';
-  const API_URL = `${BASE_URL}/localizaasapp.php`;
-  const API_MESES = `${BASE_URL}/meses_corrente_app.php`;
   const API_CONTA = `${BASE_URL}/conta_app.php`;
   const API_CONTA_SALDO = `${BASE_URL}/conta_saldo_app.php`; // API simplificada para cálculo de saldo
   const API_SENHA = `${BASE_URL}/consulta_pass_assoc.php`;
-  const API_GRAVA_VENDA = `${BASE_URL}/grava_venda_app.php`;
 
   // Função auxiliar para processar dados do associado
   const processarDadosAssociado = async (data: any) => {
@@ -581,7 +578,7 @@ export default function NovoLancamentoPage() {
 
       // 4. Gravar venda na API
       console.log('💾 Gravando venda na API...');
-      console.log('💾 URL da API:', API_GRAVA_VENDA);
+      console.log('💾 URL da API:', '/api/convenio/gravar-venda');
       console.log('✅ Dados que serão gravados na tabela sind.conta:', dadosVenda);
       
       const gravarVenda = async () => {

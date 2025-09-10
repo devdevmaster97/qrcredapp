@@ -5,6 +5,8 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('🔍 API MÊS CORRENTE - Iniciada');
+    
     // Recuperar parâmetros da URL para logs
     const { searchParams } = new URL(request.url);
     const timestamp = searchParams.get('t');
@@ -25,50 +27,25 @@ export async function GET(request: NextRequest) {
       codigoDivisao = divisaoParam;
       console.log('🔍 API MÊS CORRENTE - Usando divisão do parâmetro:', codigoDivisao);
     } else {
-      // Fallback: usar a API de dados existente para obter informações do convênio
-      console.log('🔍 API MÊS CORRENTE - Divisão não informada, buscando dos dados do convênio...');
-      const baseUrl = request.url.split('/api/')[0];
-      const dadosResponse = await fetch(`${baseUrl}/api/convenio/dados?t=${Date.now()}`, {
-        method: 'GET',
-        headers: {
-          'Cookie': request.headers.get('cookie') || '',
-          'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
-      });
-      
-      if (!dadosResponse.ok) {
-        console.log('❌ MÊS CORRENTE - Erro ao buscar dados do convênio:', dadosResponse.status);
-        return NextResponse.json(
-          { success: false, message: 'Erro ao obter dados do convênio' },
-          { status: dadosResponse.status }
-        );
-      }
-      
-      const dadosConvenio = await dadosResponse.json();
-      
-      if (!dadosConvenio.success) {
-        console.log('❌ MÊS CORRENTE - API de dados retornou erro:', dadosConvenio.message);
-        return NextResponse.json(
-          { success: false, message: dadosConvenio.message },
-          { status: 401 }
-        );
-      }
-      
-      console.log('🔍 API MÊS CORRENTE - Dados do convênio obtidos:', {
-        cod_convenio: dadosConvenio.data.cod_convenio,
-        razaosocial: dadosConvenio.data.razaosocial
-      });
-      
-      // Usar o campo divisao se disponível, senão usar cod_convenio como fallback
-      codigoDivisao = dadosConvenio.data.divisao || dadosConvenio.data.cod_convenio;
+      console.log('❌ MÊS CORRENTE - Divisão não informada como parâmetro');
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: 'Parâmetro divisao é obrigatório',
+          error: 'DIVISAO_OBRIGATORIA'
+        },
+        { status: 400 }
+      );
     }
     
     if (!codigoDivisao) {
-      console.log('❌ MÊS CORRENTE - Código divisão não encontrado no token');
+      console.log('❌ MÊS CORRENTE - Código divisão vazio');
       return NextResponse.json(
-        { success: false, message: 'Código divisão não encontrado' },
+        { 
+          success: false, 
+          message: 'Código divisão não pode ser vazio',
+          error: 'DIVISAO_VAZIA'
+        },
         { status: 400 }
       );
     }
@@ -79,10 +56,11 @@ export async function GET(request: NextRequest) {
     
     console.log('📤 API MÊS CORRENTE - Enviando para PHP:', {
       url: 'https://sas.makecard.com.br/meses_corrente_app.php',
-      divisao: codigoDivisao
+      divisao: codigoDivisao,
+      params: params.toString()
     });
     
-    // Fazer requisição para a API PHP
+    // Fazer requisição para a API PHP com timeout menor e tratamento robusto
     const response = await axios.post('https://sas.makecard.com.br/meses_corrente_app.php', 
       params,
       {
@@ -91,73 +69,87 @@ export async function GET(request: NextRequest) {
           'Accept': 'application/json, text/plain, */*',
           'User-Agent': 'SasApp/1.0',
         },
-        timeout: 15000,
-        validateStatus: () => true,
-        transformResponse: [(data) => {
-          // Tratamento robusto da resposta
-          try {
-            if (typeof data === 'object') {
-              return data;
-            }
-            
-            if (typeof data === 'string') {
-              // Limpeza de warnings PHP
-              let cleanData = data;
-              cleanData = data.replace(/<br\s*\/?>\s*<b>(?:Deprecated|Notice|Warning|Fatal error)[^}]*?<\/b>[^}]*?<br\s*\/?>/gi, '');
-              cleanData = cleanData.replace(/<br\s*\/?>/gi, '');
-              cleanData = cleanData.trim();
-              
-              // Extrair JSON válido
-              const regexMatch = cleanData.match(/({.*})/);
-              if (regexMatch) {
-                cleanData = regexMatch[1];
-              } else {
-                const jsonStart = cleanData.indexOf('{');
-                const jsonEnd = cleanData.lastIndexOf('}');
-                if (jsonStart !== -1 && jsonEnd !== -1) {
-                  cleanData = cleanData.substring(jsonStart, jsonEnd + 1);
-                }
-              }
-              
-              return JSON.parse(cleanData);
-            }
-            
-            return data;
-          } catch (parseError) {
-            console.error('❌ Erro no parse da resposta (mês corrente):', parseError);
-            console.log('📄 Dados brutos recebidos (mês corrente):', data);
-            return { erro_parse: true, dados_brutos: data };
-          }
-        }]
+        timeout: 10000, // Reduzido para 10 segundos
+        validateStatus: (status) => {
+          console.log('📊 Status HTTP recebido da API PHP:', status);
+          return status >= 200 && status < 600; // Aceitar todos os status para debug
+        }
       }
     );
 
-    console.log('📥 MÊS CORRENTE - Resposta API PHP:', response.data);
+    console.log('📥 MÊS CORRENTE - Resposta completa da API PHP:', {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+      data: response.data
+    });
     
-    // Verificar se houve erro no parse
-    if (response.data && response.data.erro_parse) {
-      console.log('❌ Erro no parse da resposta de mês corrente - dados brutos:', response.data.dados_brutos);
+    // Verificar status HTTP da resposta
+    if (response.status !== 200) {
+      console.error('❌ API PHP retornou status não-200:', response.status);
+      return NextResponse.json({
+        success: false,
+        message: `Erro na API externa: HTTP ${response.status}`,
+        error: 'API_EXTERNA_ERRO',
+        details: {
+          status: response.status,
+          statusText: response.statusText,
+          data: response.data
+        }
+      }, { status: 502 }); // Bad Gateway
+    }
+
+    // Processar resposta
+    let jsonData;
+    try {
+      if (typeof response.data === 'string') {
+        // Limpeza de warnings PHP
+        let cleanData = response.data;
+        cleanData = cleanData.replace(/<br\s*\/?>\s*<b>(?:Deprecated|Notice|Warning|Fatal error)[^}]*?<\/b>[^}]*?<br\s*\/?>/gi, '');
+        cleanData = cleanData.replace(/<br\s*\/?>/gi, '');
+        cleanData = cleanData.trim();
+        
+        // Extrair JSON válido
+        const regexMatch = cleanData.match(/({.*})/);
+        if (regexMatch) {
+          cleanData = regexMatch[1];
+        } else {
+          const jsonStart = cleanData.indexOf('{');
+          const jsonEnd = cleanData.lastIndexOf('}');
+          if (jsonStart !== -1 && jsonEnd !== -1) {
+            cleanData = cleanData.substring(jsonStart, jsonEnd + 1);
+          }
+        }
+        
+        jsonData = JSON.parse(cleanData);
+      } else {
+        jsonData = response.data;
+      }
+    } catch (parseError) {
+      console.error('❌ Erro no parse da resposta (mês corrente):', parseError);
+      console.log('📄 Dados brutos recebidos (mês corrente):', response.data);
       return NextResponse.json({
         success: false,
         message: 'Erro no formato da resposta do servidor',
+        error: 'PARSE_ERROR',
         debug: {
-          erro: 'Parse JSON falhou ao buscar mês corrente',
-          dados_brutos: response.data.dados_brutos
+          erro: parseError instanceof Error ? parseError.message : String(parseError),
+          dados_brutos: response.data
         }
-      }, { status: 500 });
+      }, { status: 502 });
     }
 
-    const jsonData = response.data;
+    console.log('📥 MÊS CORRENTE - Dados processados:', jsonData);
 
     // Verificar se a resposta foi bem-sucedida
-    if (jsonData && (jsonData.success || jsonData.abreviacao)) {
-      console.log('✅ MÊS CORRENTE - Dados recebidos:', {
+    if (jsonData && jsonData.abreviacao) {
+      console.log('✅ MÊS CORRENTE - Dados válidos recebidos:', {
         abreviacao: jsonData.abreviacao,
         id_divisao: jsonData.id_divisao,
         status: jsonData.status
       });
       
-      const response = NextResponse.json({
+      const successResponse = NextResponse.json({
         success: true,
         data: {
           abreviacao: jsonData.abreviacao,
@@ -167,23 +159,49 @@ export async function GET(request: NextRequest) {
       });
       
       // Headers anti-cache
-      response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
-      response.headers.set('Pragma', 'no-cache');
-      response.headers.set('Expires', '0');
+      successResponse.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+      successResponse.headers.set('Pragma', 'no-cache');
+      successResponse.headers.set('Expires', '0');
       
-      return response;
+      return successResponse;
     } else {
-      console.log('❌ MÊS CORRENTE - API PHP retornou erro ou dados inválidos:', jsonData);
+      console.log('❌ MÊS CORRENTE - API PHP retornou dados inválidos:', jsonData);
       return NextResponse.json({
         success: false,
-        message: jsonData.message || 'Erro ao buscar mês corrente'
-      }, { status: 400 });
+        message: 'Dados inválidos recebidos da API externa',
+        error: 'DADOS_INVALIDOS',
+        debug: jsonData
+      }, { status: 502 });
     }
+    
   } catch (error) {
     console.error('❌ MÊS CORRENTE - Erro geral:', error);
-    return NextResponse.json(
-      { success: false, message: 'Erro ao buscar mês corrente' },
-      { status: 500 }
-    );
+    
+    let errorMessage = 'Erro interno do servidor';
+    let errorCode = 'ERRO_INTERNO';
+    let statusCode = 500;
+    
+    if (axios.isAxiosError(error)) {
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Timeout na conexão com a API externa';
+        errorCode = 'TIMEOUT';
+        statusCode = 504; // Gateway Timeout
+      } else if (error.response) {
+        errorMessage = `Erro na API externa: ${error.response.status}`;
+        errorCode = 'API_EXTERNA_ERRO';
+        statusCode = 502; // Bad Gateway
+      } else if (error.request) {
+        errorMessage = 'Sem resposta da API externa';
+        errorCode = 'SEM_RESPOSTA';
+        statusCode = 503; // Service Unavailable
+      }
+    }
+    
+    return NextResponse.json({
+      success: false,
+      message: errorMessage,
+      error: errorCode,
+      details: error instanceof Error ? error.message : String(error)
+    }, { status: statusCode });
   }
 }
