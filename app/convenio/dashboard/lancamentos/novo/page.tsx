@@ -566,63 +566,44 @@ export default function NovoLancamentoPage() {
         tipoIdDivisao: typeof associado.id_divisao
       });
 
-      // 3. Buscar mês corrente da API antes de gravar
-      console.log('📅 Buscando mês corrente da API...');
-      console.log('📅 URL da API de meses:', API_MESES);
+      // 3. Buscar mês corrente da API interna antes de gravar
+      console.log('📅 Buscando mês corrente da API interna...');
       console.log('📅 Divisão do associado:', associado.id_divisao);
       
-      const buscarMesCorrente = () => {
-        return new Promise((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open('POST', API_MESES, true);
-          xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-          
-          xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4) {
-              if (xhr.status === 200) {
-                try {
-                  console.log('📅 Resposta bruta da API de meses:', xhr.responseText);
-                  
-                  if (!xhr.responseText || xhr.responseText.trim() === '') {
-                    console.error('❌ Resposta vazia da API de meses');
-                    reject(new Error('API de meses retornou resposta vazia'));
-                    return;
-                  }
-                  
-                  const response = JSON.parse(xhr.responseText);
-                  console.log('📅 Resposta API de meses:', response);
-                  
-                  if (response.error) {
-                    console.log('❌ Erro na API de meses:', response.error);
-                    reject(new Error(response.error));
-                  } else if (response.abreviacao) {
-                    console.log('✅ Mês corrente obtido:', response.abreviacao);
-                    resolve(response.abreviacao);
-                  } else {
-                    console.log('❌ Campo abreviacao não encontrado na resposta');
-                    reject(new Error('Campo abreviacao não encontrado'));
-                  }
-                } catch (error) {
-                  console.error('❌ Erro ao processar resposta da API de meses:', error);
-                  console.error('❌ Resposta recebida:', xhr.responseText);
-                  reject(new Error('Erro ao processar resposta da API de meses'));
-                }
-              } else {
-                console.error('❌ Erro HTTP na API de meses:', xhr.status);
-                reject(new Error('Erro na consulta do mês corrente'));
-              }
-            }
+      const buscarMesCorrente = async (): Promise<string> => {
+        try {
+          const headers = {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
           };
 
-          // Preparar parâmetros para envio (divisão é obrigatória)
-          const params = `divisao=${encodeURIComponent(associado.id_divisao || '')}`;
-          
-          console.log('📤 Parâmetros enviados para API de meses:', params);
-          xhr.send(params);
-        });
+          const response = await fetch(`/api/convenio/mes-corrente?t=${Date.now()}&divisao=${associado.id_divisao}`, {
+            method: 'GET',
+            headers,
+            cache: 'no-store'
+          });
+
+          if (!response.ok) {
+            throw new Error(`Erro HTTP: ${response.status}`);
+          }
+
+          const data = await response.json();
+          console.log('📅 Resposta da API interna de mês corrente:', data);
+
+          if (data.success && data.data && data.data.abreviacao) {
+            console.log('✅ Mês corrente obtido da API interna:', data.data.abreviacao);
+            return data.data.abreviacao;
+          } else {
+            throw new Error('Campo abreviacao não encontrado na resposta');
+          }
+        } catch (error) {
+          console.error('❌ Erro ao buscar mês corrente da API interna:', error);
+          throw new Error('Erro na consulta do mês corrente');
+        }
       };
 
-      const abreviacaoMes = await buscarMesCorrente() as string;
+      const abreviacaoMes = await buscarMesCorrente();
       
       // Atualizar dadosVenda com a abreviação obtida da API
       dadosVenda.mes_corrente = abreviacaoMes;
