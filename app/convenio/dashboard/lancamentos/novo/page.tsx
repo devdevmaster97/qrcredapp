@@ -313,30 +313,41 @@ export default function NovoLancamentoPage() {
               try {
                 console.log('📊 Consultando gastos do mês corrente...');
                 
-                const formData = new URLSearchParams();
-                formData.append('matricula', associadoAtual.matricula);
-                formData.append('empregador', associadoAtual.empregador.toString());
-                formData.append('mes', mesAtual);
-                formData.append('id', associadoAtual.id.toString());
-                formData.append('divisao', associadoAtual.id_divisao?.toString() || '');
+                const dadosConta = {
+                  matricula: associadoAtual.matricula,
+                  empregador: associadoAtual.empregador.toString(),
+                  mes: mesAtual,
+                  id: associadoAtual.id.toString(),
+                  divisao: associadoAtual.id_divisao?.toString() || ''
+                };
                 
-                const contaResponse = await fetch(API_CONTA, {
+                const contaResponse = await fetch('/api/convenio/consultar-conta', {
                   method: 'POST',
                   headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
+                    'Content-Type': 'application/json',
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
                   },
-                  body: formData.toString()
+                  body: JSON.stringify(dadosConta),
+                  cache: 'no-store'
                 });
                 
                 if (contaResponse.ok) {
-                  const contaData = await contaResponse.json();
-                  console.log('📊 Dados da conta recebidos:', contaData);
+                  const responseData = await contaResponse.json();
+                  console.log('📊 Resposta da API interna:', responseData);
                   
                   let totalGastos = 0;
                   
-                  if (Array.isArray(contaData)) {
+                  if (responseData.success && Array.isArray(responseData.data)) {
                     // Somar todos os valores das contas do mês
-                    totalGastos = contaData.reduce((total, conta) => {
+                    totalGastos = responseData.data.reduce((total: number, conta: any) => {
+                      const valor = parseFloat(conta.valor || 0);
+                      return total + valor;
+                    }, 0);
+                  } else if (Array.isArray(responseData)) {
+                    // Fallback para compatibilidade com formato antigo
+                    totalGastos = responseData.reduce((total: number, conta: any) => {
                       const valor = parseFloat(conta.valor || 0);
                       return total + valor;
                     }, 0);
