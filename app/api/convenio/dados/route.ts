@@ -122,6 +122,7 @@ export async function GET(request: NextRequest) {
         success: true,
         data: {
           cod_convenio: jsonData.cod_convenio,
+          divisao: jsonData.divisao,
           razaosocial: jsonData.razaosocial,
           nome_fantasia: jsonData.nomefantasia,
           endereco: jsonData.endereco,
