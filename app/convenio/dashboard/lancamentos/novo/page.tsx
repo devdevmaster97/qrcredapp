@@ -93,9 +93,7 @@ export default function NovoLancamentoPage() {
 
   // Usar URLs reais da API - sem simulações locais
   const BASE_URL = 'https://sas.makecard.com.br';
-  const API_CONTA = `${BASE_URL}/conta_app.php`;
-  const API_CONTA_SALDO = `${BASE_URL}/conta_saldo_app.php`; // API simplificada para cálculo de saldo
-  const API_SENHA = `${BASE_URL}/consulta_pass_assoc.php`;
+  //const API_SENHA = `${BASE_URL}/consulta_pass_assoc.php`;
 
   // Função auxiliar para processar dados do associado
   const processarDadosAssociado = async (data: any) => {
@@ -443,7 +441,7 @@ export default function NovoLancamentoPage() {
 
       // 1. Verificar senha do associado
       console.log('🔐 Verificando senha do associado...');
-      console.log('🔐 URL da API:', API_SENHA);
+      //console.log('🔐 URL da API:', API_SENHA);
       console.log('🔐 Matrícula:', associado.matricula);
       console.log('🔐 Senha (mascarada):', senha.replace(/./g, '*'));
       
