@@ -93,7 +93,6 @@ export default function NovoLancamentoPage() {
 
   // Usar URLs reais da API - sem simulações locais
   const BASE_URL = 'https://sas.makecard.com.br';
-  //const API_SENHA = `${BASE_URL}/consulta_pass_assoc.php`;
 
   // Função auxiliar para processar dados do associado
   const processarDadosAssociado = async (data: any) => {
@@ -471,64 +470,65 @@ export default function NovoLancamentoPage() {
 
       // 1. Verificar senha do associado
       console.log('🔐 Verificando senha do associado...');
-      //console.log('🔐 URL da API:', API_SENHA);
       console.log('🔐 Matrícula:', associado.matricula);
       console.log('🔐 Senha (mascarada):', senha.replace(/./g, '*'));
       
-      // TEMPORÁRIO: Pular verificação de senha para testar o resto do fluxo
-      console.log('⚠️ MODO DEBUG: Pulando verificação de senha temporariamente');
       
-      // Remover comentário das linhas abaixo quando a API estiver funcionando:
-      /*
-      const verificarSenha = () => {
-        return new Promise((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open('POST', API_SENHA, true);
-          xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+      // 1. Verificar senha usando API interna
+      const verificarSenha = async (): Promise<void> => {
+        try {
+          console.log('🔐 Verificando senha via API interna...');
           
-          xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4) {
-              if (xhr.status === 200) {
-                try {
-                  console.log('🔐 Resposta bruta da API:', xhr.responseText);
-                  
-                  if (!xhr.responseText || xhr.responseText.trim() === '') {
-                    console.error('❌ Resposta vazia da API de verificação de senha');
-                    reject(new Error('API de verificação de senha retornou resposta vazia'));
-                    return;
-                  }
-                  
-                  const response = JSON.parse(xhr.responseText);
-                  console.log('🔐 Resposta verificação senha:', response);
-                  
-                  if (response.situacao === 1) {
-                    console.log('✅ Senha verificada com sucesso');
-                    resolve(response);
-                  } else {
-                    console.log('❌ Senha incorreta');
-                    reject(new Error('Senha incorreta'));
-                  }
-                } catch (error) {
-                  console.error('❌ Erro ao processar resposta da verificação de senha:', error);
-                  console.error('❌ Resposta recebida:', xhr.responseText);
-                  reject(new Error('Erro ao processar resposta da API de verificação de senha'));
-                }
-              } else {
-                console.error('❌ Erro HTTP na verificação de senha:', xhr.status);
-                reject(new Error('Erro na verificação de senha'));
-              }
-            }
+          const headers = {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
           };
-
-          const params = `matricula=${encodeURIComponent(associado.matricula)}&senha=${encodeURIComponent(senha)}`;
-          console.log('📤 URL da API de verificação:', API_SENHA);
-          console.log('📤 Parâmetros enviados para verificação:', params);
-          xhr.send(params);
-        });
+          
+          const response = await fetch('/api/convenio/verificar-senha', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              matricula: associado.matricula,
+              senha: senha
+            }),
+            cache: 'no-store'
+          });
+          
+          console.log('🔐 Status da resposta da verificação:', response.status);
+          
+          const data = await response.json();
+          console.log('🔐 Dados da verificação de senha:', data);
+          
+          if (response.status === 401) {
+            closeAlert();
+            error('Senha Incorreta', 'A senha informada está incorreta. Tente novamente.');
+            throw new Error('Senha incorreta');
+          }
+          
+          if (!response.ok || !data.success) {
+            closeAlert();
+            error('Erro na Verificação', data.error || 'Erro ao verificar senha');
+            throw new Error(data.error || 'Erro na verificação de senha');
+          }
+          
+          console.log('✅ Senha verificada com sucesso via API interna');
+          
+        } catch (fetchError) {
+          console.error('❌ Erro na verificação de senha:', fetchError);
+          
+          if (fetchError instanceof Error && fetchError.message === 'Senha incorreta') {
+            throw fetchError; // Re-throw para manter a mensagem específica
+          }
+          
+          closeAlert();
+          error('Erro de Conexão', 'Não foi possível verificar a senha. Tente novamente.');
+          throw new Error('Erro de conexão na verificação de senha');
+        }
       };
 
       await verificarSenha();
-      */
 
       // 2. Preparar dados para gravação na tabela sind.conta (parâmetros corretos para a API)
       const valorLimpo = valor.replace(/[^\d,]/g, '').replace(',', '.');

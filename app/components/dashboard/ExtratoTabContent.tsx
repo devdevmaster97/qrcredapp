@@ -129,17 +129,19 @@ export default function ExtratoTabContent({ cartao }: ExtratoTabContentProps) {
       const divisao = associadoResponse.data.id_divisao;
       console.log('📅 Divisão do associado:', divisao);
       
-      // Chamar API meses_corrente_app.php diretamente
-      const formData = new FormData();
-      formData.append('divisao', divisao.toString());
-      
-      const response = await axios.post('https://sas.makecard.com.br/meses_corrente_app.php', formData, {
+      // Chamar API interna para mês corrente
+      const response = await axios.post('/api/convenio/mes-corrente', {
+        abreviacao: divisao.toString()
+      }, {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         }
       });
       
-      console.log('📅 Resposta da API meses_corrente_app.php:', response.data);
+      console.log('📅 Resposta da API interna mes-corrente:', response.data);
       
       if (response.data && response.data.abreviacao) {
         console.log('✅ Mês corrente obtido:', response.data.abreviacao);
