@@ -194,7 +194,10 @@ export default function LoginConvenio() {
             localStorage.setItem('convenioUsuariosSalvos', JSON.stringify(usuariosFiltrados));
           }
           
-          toast.success('Login efetuado com sucesso!');
+          success('Login Realizado!', 'Bem-vindo ao sistema do convênio.');
+          setTimeout(() => {
+            router.push('/convenio/dashboard');
+          }, 1500);
         }
         
         // DISPOSITIVOS MÓVEIS: Forçar limpeza adicional e redirecionamento especial
@@ -204,7 +207,7 @@ export default function LoginConvenio() {
           
           // Limpeza agressiva para dispositivos móveis
           try {
-            // Limpar todos os dados relacionados a convênio
+            // Limpar dados antigos 
             const keys = Object.keys(localStorage);
             keys.forEach(key => {
               if (key.includes('convenio') || key.includes('Convenio') || key.includes('lancamento')) {
@@ -322,7 +325,7 @@ export default function LoginConvenio() {
     const usuariosAtualizados = usuariosSalvos.filter(u => u.usuario !== usuario);
     setUsuariosSalvos(usuariosAtualizados);
     localStorage.setItem('convenioUsuariosSalvos', JSON.stringify(usuariosAtualizados));
-    toast.success('Usuário removido');
+    success('Usuário Removido', 'Usuário foi removido da lista de salvos.');
   };
 
   // Função para abrir o modal de recuperação de senha
@@ -357,7 +360,7 @@ export default function LoginConvenio() {
   // Função para solicitar código de recuperação
   const handleRecuperarSenha = async () => {
     if (!emailRecuperacao) {
-      setMensagemRecuperacao('Por favor, informe o email');
+      error('Email Obrigatório', 'Digite seu email para receber o código de recuperação.'); 
       return;
     }
     
@@ -411,7 +414,7 @@ export default function LoginConvenio() {
   // Função para validar o código de recuperação
   const handleValidarCodigo = async () => {
     if (!codigoRecuperacao || codigoRecuperacao.length < 6) {
-      setMensagemRecuperacao('Por favor, informe o código de verificação completo');
+      error('Código Obrigatório', 'Digite o código recebido em seu email.'); 
       return;
     }
     
@@ -457,17 +460,17 @@ export default function LoginConvenio() {
   // Função para definir a nova senha
   const handleDefinirNovaSenha = async () => {
     if (!novaSenha) {
-      setMensagemRecuperacao('Por favor, informe a nova senha');
+      error('Senha Obrigatória', 'Por favor, informe a nova senha'); 
       return;
     }
     
     if (novaSenha.length < 6) {
-      setMensagemRecuperacao('A senha deve ter no mínimo 6 caracteres');
+      error('Senha Muito Curta', 'A senha deve conter pelo menos 6 caracteres.'); 
       return;
     }
     
     if (novaSenha !== confirmacaoSenha) {
-      setMensagemRecuperacao('As senhas não conferem');
+      error('Senhas Não Coincidem', 'Verifique se as senhas digitadas são idênticas.'); 
       return;
     }
     
@@ -491,8 +494,7 @@ export default function LoginConvenio() {
       const result = await response.json();
       
       if (result.success) {
-        setMensagemRecuperacao('Senha redefinida com sucesso!');
-        
+        success('Senha Alterada!', 'Sua nova senha foi definida com sucesso.'); 
         // Após 3 segundos, fechar o modal e limpar os campos
         setTimeout(() => {
           setMostrarRecuperacao(false);
