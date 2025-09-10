@@ -39,14 +39,7 @@ export default function RelatoriosPage() {
   const [showComprovanteModal, setShowComprovanteModal] = useState(false);
   const [lancamentoSelecionado, setLancamentoSelecionado] = useState<Lancamento | null>(null);
 
-  // Função para gerar o mês corrente no formato abreviado (ex: JAN/2024)
-  const gerarMesCorrente = () => {
-    const meses = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
-    const data = new Date();
-    const mes = meses[data.getMonth()];
-    const ano = data.getFullYear();
-    return `${mes}/${ano}`;
-  };
+  // Função removida - usar apenas mês da API para evitar inconsistências
 
   // Buscar lançamentos do banco de dados
   useEffect(() => {
@@ -214,11 +207,7 @@ export default function RelatoriosPage() {
       console.error('❌ MÊS CORRENTE - Erro ao buscar da API:', error);
     }
     
-    // ⚠️ FALLBACK: Só usar mês local se a API realmente falhar
-    console.log('🔄 MÊS CORRENTE - Usando fallback local (AGO/2025 fixo para testes)');
-    const mesLocal = 'AGO/2025'; // Temporariamente fixo para garantir consistência
-    setMesCorrente(mesLocal);
-    setMesSelecionado(mesLocal);
+    // Sem fallback - usar apenas dados da API
   };
 
   // Filtrar lançamentos pelo mês selecionado

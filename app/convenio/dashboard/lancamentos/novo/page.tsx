@@ -738,9 +738,9 @@ export default function NovoLancamentoPage() {
       // Redirecionar para página de sucesso
       router.push('/convenio/dashboard/lancamentos/sucesso');
       
-    } catch (error) {
-      console.error('❌ Erro ao autorizar pagamento:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erro ao processar pagamento';
+    } catch (err) {
+      console.error('❌ Erro ao autorizar pagamento:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao processar pagamento';
       error('Erro no Pagamento', errorMessage);
     } finally {
       // Só reabilitar o loading se não foi processado com sucesso
