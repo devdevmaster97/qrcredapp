@@ -538,7 +538,7 @@ export default function NovoLancamentoPage() {
         valor_pedido: valorLimpo,
         cod_convenio: dadosConvenio.cod_convenio,
         matricula: associado.matricula,
-        parcela: parcelas, // Corrigido: usar 'parcela' ao invés de 'qtde_parcelas'
+        qtde_parcelas: parcelas, // Corrigido: PHP espera 'qtde_parcelas' na linha 47
         mes_corrente: mesCorrente,
         valor_parcela: valorPorParcela,
         primeiro_mes: mesCorrente,
@@ -551,13 +551,20 @@ export default function NovoLancamentoPage() {
         id_associado: associado.id
       };
 
-      // Adicionar divisao apenas se existir e for válida
+      // TEMPORARIAMENTE: Não enviar campo divisao para evitar erro no trigger do banco
+      // O trigger está tentando acessar old.id_divisao que não existe na estrutura atual
+      console.log('⚠️ Campo divisao temporariamente desabilitado para evitar erro no trigger do banco');
+      console.log('🔍 id_divisao do associado (não será enviado):', associado.id_divisao);
+      
+      // Quando o banco for atualizado, descomentar as linhas abaixo:
+      /*
       if (associado.id_divisao && associado.id_divisao !== null && associado.id_divisao !== undefined && String(associado.id_divisao).trim() !== '') {
         dadosVenda.divisao = associado.id_divisao;
         console.log('🏢 Campo divisao adicionado:', associado.id_divisao);
       } else {
         console.log('⚠️ Campo id_divisao não encontrado ou inválido, não será enviado para evitar erro no banco');
       }
+      */
 
       console.log('💳 Dados para gravação na tabela sind.conta:', dadosVenda);
       console.log('🏢 Campo divisao será gravado com valor:', associado.id_divisao);
