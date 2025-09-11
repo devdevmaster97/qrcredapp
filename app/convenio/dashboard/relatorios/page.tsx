@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FaSpinner, FaFilter, FaUndo, FaExclamationTriangle, FaTimes, FaCheck, FaReceipt, FaFileAlt, FaShare, FaPrint } from 'react-icons/fa';
+import { FaSpinner, FaFilter, FaUndo, FaExclamationTriangle, FaTimes, FaCheck, FaReceipt, FaFileAlt, FaShare, FaPrint, FaFilePdf, FaFileCsv, FaDownload } from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import axios from 'axios';
 import Image from 'next/image';
@@ -625,6 +625,100 @@ export default function RelatoriosPage() {
     toast.success('Comprovante baixado com sucesso!');
   };
 
+  // Função para exportar relatório em PDF
+  const exportarPDF = async () => {
+    try {
+      const { jsPDF } = await import('jspdf');
+      await import('jspdf-autotable');
+      
+      const doc = new jsPDF();
+      
+      // Cabeçalho
+      doc.setFontSize(16);
+      doc.text('SASCRED - Relatório de Lançamentos', 20, 20);
+      
+      doc.setFontSize(12);
+      doc.text(`Período: ${mesSelecionado || 'Todos os meses'}`, 20, 30);
+      doc.text(`Data de geração: ${new Date().toLocaleDateString('pt-BR')}`, 20, 40);
+      doc.text(`Total: ${totalDoMes.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 20, 50);
+      
+      // Preparar dados da tabela
+      const dadosTabela = lancamentosFiltrados.map(lancamento => [
+        lancamento.nome_associado || lancamento.associado,
+        `R$ ${formatarValorLista(lancamento.valor)}`,
+        lancamento.lancamento || '#' + lancamento.id,
+        formatarData(lancamento.data),
+        lancamento.hora,
+        lancamento.parcela || '01/01'
+      ]);
+      
+      // Adicionar tabela
+      (doc as any).autoTable({
+        head: [['Associado', 'Valor', 'Lançamento', 'Data', 'Hora', 'Parcela']],
+        body: dadosTabela,
+        startY: 60,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [59, 130, 246] }
+      });
+      
+      // Salvar PDF
+      const nomeArquivo = `relatorio_lancamentos_${mesSelecionado || 'todos'}_${new Date().toISOString().split('T')[0]}.pdf`;
+      doc.save(nomeArquivo);
+      
+      toast.success('Relatório PDF exportado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar PDF:', error);
+      toast.error('Erro ao exportar PDF. Verifique se a biblioteca está disponível.');
+    }
+  };
+
+  // Função para exportar relatório em CSV
+  const exportarCSV = () => {
+    try {
+      // Cabeçalho do CSV
+      const cabecalho = 'Associado,Valor,Lançamento,Data,Hora,Parcela,Mês,Empregador\n';
+      
+      // Dados do CSV
+      const dadosCSV = lancamentosFiltrados.map(lancamento => {
+        const linha = [
+          `"${(lancamento.nome_associado || lancamento.associado).replace(/"/g, '""')}"`,
+          `"R$ ${formatarValorLista(lancamento.valor)}"`,
+          `"${lancamento.lancamento || '#' + lancamento.id}"`,
+          `"${formatarData(lancamento.data)}"`,
+          `"${lancamento.hora}"`,
+          `"${lancamento.parcela || '01/01'}"`,
+          `"${lancamento.mes}"`,
+          `"${(lancamento.nome_empregador || lancamento.empregador).replace(/"/g, '""')}"`
+        ];
+        return linha.join(',');
+      }).join('\n');
+      
+      // Adicionar total no final
+      const totalLinha = `\n\n"TOTAL","${totalDoMes.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}","","","","","${mesSelecionado || 'Todos'}",""`;
+      
+      const csvContent = cabecalho + dadosCSV + totalLinha;
+      
+      // Criar e baixar arquivo
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      
+      const nomeArquivo = `relatorio_lancamentos_${mesSelecionado || 'todos'}_${new Date().toISOString().split('T')[0]}.csv`;
+      
+      link.href = url;
+      link.download = nomeArquivo;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      toast.success('Relatório CSV exportado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao exportar CSV:', error);
+      toast.error('Erro ao exportar CSV.');
+    }
+  };
+
   return (
     <div>
       <div className="mb-6">
@@ -636,23 +730,48 @@ export default function RelatoriosPage() {
       <div className="bg-white shadow rounded-lg p-6">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 gap-3">
           <h2 className="text-lg font-medium text-gray-900">Lançamentos</h2>
-          <div className="flex items-center space-x-2">
-            <FaFilter className="text-gray-500" />
-            <label htmlFor="mes" className="text-sm font-medium text-gray-700">
-              Filtrar por Mês:
-            </label>
-            <select
-              id="mes"
-              value={mesSelecionado}
-              onChange={(e) => setMesSelecionado(e.target.value)}
-              className="block w-full md:w-48 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-            >
-              {mesesDisponiveis.map((mes) => (
-                <option key={mes} value={mes}>
-                  {mes}
-                </option>
-              ))}
-            </select>
+          <div className="flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-4">
+            {/* Filtro por Mês */}
+            <div className="flex items-center space-x-2">
+              <FaFilter className="text-gray-500" />
+              <label htmlFor="mes" className="text-sm font-medium text-gray-700">
+                Filtrar por Mês:
+              </label>
+              <select
+                id="mes"
+                value={mesSelecionado}
+                onChange={(e) => setMesSelecionado(e.target.value)}
+                className="block w-full md:w-48 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+              >
+                {mesesDisponiveis.map((mes) => (
+                  <option key={mes} value={mes}>
+                    {mes}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            {/* Botões de Exportação */}
+            <div className="flex items-center space-x-2">
+              <FaDownload className="text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">Exportar:</span>
+              <button
+                onClick={exportarPDF}
+                className="flex items-center px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors"
+                title="Exportar para PDF"
+              >
+                <FaFilePdf className="mr-1 h-4 w-4" />
+                PDF
+              </button>
+              <button
+                onClick={exportarCSV}
+                className="flex items-center px-3 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors"
+                title="Exportar para CSV"
+              >
+                <FaFileCsv className="mr-1 h-4 w-4" />
+                CSV
+              </button>
+            </div>
           </div>
         </div>
 
