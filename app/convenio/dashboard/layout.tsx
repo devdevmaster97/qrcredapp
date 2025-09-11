@@ -274,7 +274,7 @@ export default function DashboardLayout({
           onClick={() => setSidebarOpen(false)}
         />
         
-        <div className="relative flex-1 flex flex-col max-w-xs w-full bg-blue-600">
+        <div className="relative flex-1 flex flex-col max-w-xs w-full" style={{backgroundColor: '#1C2260'}}>
           <div className="absolute top-0 right-0 -mr-12 pt-2">
             <button
               className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
@@ -343,7 +343,7 @@ export default function DashboardLayout({
       {/* Sidebar para desktop */}
       <div className="hidden md:flex md:flex-shrink-0">
         <div className="flex flex-col w-64">
-          <div className="flex flex-col h-0 flex-1 border-r border-blue-300 bg-blue-600">
+          <div className="flex flex-col h-0 flex-1 border-r border-blue-300" style={{backgroundColor: '#1C2260'}}>
             <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
               <div className="flex items-center justify-center flex-shrink-0 px-4 mb-4">
                 <div className="bg-white p-2 rounded-full">

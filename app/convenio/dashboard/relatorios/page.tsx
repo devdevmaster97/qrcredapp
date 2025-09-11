@@ -38,6 +38,7 @@ export default function RelatoriosPage() {
   const [showModal, setShowModal] = useState(false);
   const [showComprovanteModal, setShowComprovanteModal] = useState(false);
   const [lancamentoSelecionado, setLancamentoSelecionado] = useState<Lancamento | null>(null);
+  const [termoBusca, setTermoBusca] = useState<string>('');
 
   // Função removida - usar apenas mês da API para evitar inconsistências
 
@@ -274,10 +275,24 @@ export default function RelatoriosPage() {
     // Sem fallback - usar apenas dados da API
   };
 
-  // Filtrar lançamentos pelo mês selecionado
-  const lancamentosFiltrados = mesSelecionado
-    ? lancamentos.filter(l => l.mes === mesSelecionado)
-    : lancamentos;
+  // Filtrar lançamentos pelo mês selecionado e termo de busca
+  const lancamentosFiltrados = lancamentos.filter(lancamento => {
+    // Filtro por mês
+    const filtroMes = mesSelecionado ? lancamento.mes === mesSelecionado : true;
+    
+    // Filtro por termo de busca
+    const filtroBusca = termoBusca ? (
+      (lancamento.nome_associado || lancamento.associado || '').toLowerCase().includes(termoBusca.toLowerCase()) ||
+      (lancamento.empregador || '').toLowerCase().includes(termoBusca.toLowerCase()) ||
+      (lancamento.nome_empregador || '').toLowerCase().includes(termoBusca.toLowerCase()) ||
+      (lancamento.lancamento || '').toString().toLowerCase().includes(termoBusca.toLowerCase()) ||
+      (lancamento.valor || '').toLowerCase().includes(termoBusca.toLowerCase()) ||
+      (lancamento.data || '').toLowerCase().includes(termoBusca.toLowerCase()) ||
+      (lancamento.cpf_associado || lancamento.cpf || '').toLowerCase().includes(termoBusca.toLowerCase())
+    ) : true;
+    
+    return filtroMes && filtroBusca;
+  });
 
   // Calcular total dos lançamentos do mês selecionado
   const calcularTotalMes = () => {
@@ -765,6 +780,21 @@ export default function RelatoriosPage() {
         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 gap-3">
           <h2 className="text-lg font-medium text-gray-900">Lançamentos</h2>
           <div className="flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-4">
+            {/* Campo de Busca */}
+            <div className="flex items-center space-x-2">
+              <label htmlFor="busca" className="text-sm font-medium text-gray-700">
+                Buscar:
+              </label>
+              <input
+                id="busca"
+                type="text"
+                value={termoBusca}
+                onChange={(e) => setTermoBusca(e.target.value)}
+                placeholder="Nome, CPF, valor, data..."
+                className="block w-full md:w-64 pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+              />
+            </div>
+            
             {/* Filtro por Mês */}
             <div className="flex items-center space-x-2">
               <FaFilter className="text-gray-500" />
