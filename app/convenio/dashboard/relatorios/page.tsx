@@ -789,7 +789,7 @@ export default function RelatoriosPage() {
         <div className="mb-4">
           <h2 className="text-lg font-medium text-gray-900 mb-4">Lançamentos</h2>
           
-          <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
+          <div className="flex flex-col xl:flex-row xl:justify-between xl:items-center gap-4">
             {/* Primeira linha: Campo de Busca e Filtro por Mês */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-1">
               {/* Campo de Busca */}
@@ -829,7 +829,7 @@ export default function RelatoriosPage() {
             </div>
             
             {/* Segunda linha: Botões de Exportação */}
-            <div className="flex items-center space-x-2 w-full lg:w-auto justify-start lg:justify-end">
+            <div className="flex items-center space-x-2 w-full xl:w-auto justify-start xl:justify-end">
               <FaDownload className="text-gray-500" />
               <span className="text-sm font-medium text-gray-700 whitespace-nowrap">Exportar:</span>
               <button
