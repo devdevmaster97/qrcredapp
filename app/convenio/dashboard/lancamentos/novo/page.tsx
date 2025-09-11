@@ -33,6 +33,7 @@ export default function NovoLancamentoPage() {
   const [parcelas, setParcelas] = useState(1);
   const [descricao, setDescricao] = useState('');
   const [senha, setSenha] = useState('');
+  const [senhaVisual, setSenhaVisual] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingCartao, setLoadingCartao] = useState(false);
   const [pagamentoProcessado, setPagamentoProcessado] = useState(false);
@@ -928,6 +929,12 @@ export default function NovoLancamentoPage() {
     setValor(value);
   };
 
+  const handleSenhaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, ''); // Apenas números
+    setSenha(value);
+    setSenhaVisual('•'.repeat(value.length)); // Mostrar bolinhas
+  };
+
   const handleLerQRCode = () => {
     setShowQrReader(true);
   };
@@ -1140,8 +1147,8 @@ export default function NovoLancamentoPage() {
                       type="tel"
                       inputMode="numeric"
                       pattern="[0-9]*"
-                      value={senha}
-                      onChange={(e) => setSenha(e.target.value)}
+                      value={senhaVisual}
+                      onChange={handleSenhaChange}
                       placeholder="Digite a senha"
                       autoComplete="off"
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
