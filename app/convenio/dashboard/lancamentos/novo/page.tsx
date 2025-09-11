@@ -1143,6 +1143,7 @@ export default function NovoLancamentoPage() {
                       value={senha}
                       onChange={(e) => setSenha(e.target.value)}
                       placeholder="Digite a senha"
+                      autoComplete="off"
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
