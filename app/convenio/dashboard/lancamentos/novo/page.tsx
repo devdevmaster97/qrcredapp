@@ -657,34 +657,29 @@ export default function NovoLancamentoPage() {
       
       const gravarVenda = async () => {
         try {
-          console.log('💾 Gravando venda via API interna...');
-          console.log('✅ Dados que serão enviados:', dadosVenda);
+          console.log('💾 Iniciando gravação da venda...');
           
-          const headers = {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          };
-
           const response = await fetch('/api/convenio/gravar-venda', {
             method: 'POST',
-            headers,
+            headers: {
+              'Content-Type': 'application/json',
+            },
             body: JSON.stringify(dadosVenda),
-            cache: 'no-store'
-          });
-
-          console.log('✅ Resposta recebida da API interna:', {
-            status: response.status,
-            statusText: response.statusText
           });
 
           const data = await response.json();
-          console.log('� Dados recebidos da API:', data);
+          console.log('📄 Dados recebidos da API:', data);
 
           if (response.ok && data.success && data.situacao === 1) {
             console.log('✅ Venda gravada com sucesso na tabela sind.conta');
             console.log('📄 Registro gerado:', data.registrolan);
+            
+            // Armazenar o registrolan para usar no comprovante
+            if (data.registrolan) {
+              console.log('💾 Salvando registrolan para comprovante:', data.registrolan);
+              sessionStorage.setItem('ultimoRegistroLan', data.registrolan);
+            }
+            
             return data;
           } else {
             // Tratar diferentes tipos de erro
@@ -720,6 +715,7 @@ export default function NovoLancamentoPage() {
       setPagamentoProcessado(true); // Marcar como processado para manter botão desabilitado
       
       // Salvar dados da transação para a página de sucesso
+      const registroLan = sessionStorage.getItem('ultimoRegistroLan');
       const dadosTransacao = {
         associado: associado.nome,
         cpf: associado.cpf,
@@ -729,7 +725,7 @@ export default function NovoLancamentoPage() {
         descricao: descricao || 'Lançamento via app',
         timestamp: new Date().toISOString(),
         nomeConvenio: dadosConvenio.razaosocial || dadosConvenio.nome || 'Convênio',
-        lancamento: `${new Date().toLocaleDateString('pt-BR')} - ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+        lancamento: registroLan || 'N/A'
       };
       
       localStorage.setItem('ultimaTransacao', JSON.stringify(dadosTransacao));
