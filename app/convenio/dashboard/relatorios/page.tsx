@@ -277,6 +277,9 @@ export default function RelatoriosPage() {
 
   // Filtrar lançamentos pelo mês selecionado e termo de busca
   const lancamentosFiltrados = lancamentos.filter(lancamento => {
+    // Verificar se o lançamento tem dados válidos
+    if (!lancamento) return false;
+    
     // Filtro por mês
     const filtroMes = mesSelecionado ? lancamento.mes === mesSelecionado : true;
     
@@ -286,7 +289,7 @@ export default function RelatoriosPage() {
       (lancamento.empregador || '').toLowerCase().includes(termoBusca.toLowerCase()) ||
       (lancamento.nome_empregador || '').toLowerCase().includes(termoBusca.toLowerCase()) ||
       (lancamento.lancamento || '').toString().toLowerCase().includes(termoBusca.toLowerCase()) ||
-      (lancamento.valor || '').toLowerCase().includes(termoBusca.toLowerCase()) ||
+      (lancamento.valor || '').toString().toLowerCase().includes(termoBusca.toLowerCase()) ||
       (lancamento.data || '').toLowerCase().includes(termoBusca.toLowerCase()) ||
       (lancamento.cpf_associado || lancamento.cpf || '').toLowerCase().includes(termoBusca.toLowerCase())
     ) : true;
@@ -297,7 +300,8 @@ export default function RelatoriosPage() {
   // Calcular total dos lançamentos do mês selecionado
   const calcularTotalMes = () => {
     return lancamentosFiltrados.reduce((total, lancamento) => {
-      const valor = parseFloat(lancamento.valor.replace(',', '.')) || 0;
+      if (!lancamento || !lancamento.valor) return total;
+      const valor = parseFloat(lancamento.valor.toString().replace(',', '.')) || 0;
       return total + valor;
     }, 0);
   };
