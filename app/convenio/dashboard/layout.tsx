@@ -274,7 +274,7 @@ export default function DashboardLayout({
           onClick={() => setSidebarOpen(false)}
         />
         
-        <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white">
+        <div className="relative flex-1 flex flex-col max-w-xs w-full bg-blue-600">
           <div className="absolute top-0 right-0 -mr-12 pt-2">
             <button
               className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
@@ -285,13 +285,32 @@ export default function DashboardLayout({
           </div>
           
           <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
-            <div className="flex-shrink-0 flex items-center justify-center px-4">
-              <img 
-                src="/icons/icon-192x192.png" 
-                alt="Logo SasCred" 
-                className="h-12 w-12 rounded-full object-cover"
-              />
+            <div className="flex-shrink-0 flex items-center justify-center px-4 mb-4">
+              <div className="bg-white p-2 rounded-full">
+                <img 
+                  src="/icons/icon-192x192.png" 
+                  alt="Logo SasCred" 
+                  className="h-8 w-8 rounded-full object-cover"
+                />
+              </div>
             </div>
+            
+            {/* Informações do convênio no sidebar mobile */}
+            {convenioData && (
+              <div className="px-4 mb-4">
+                <div className="text-center">
+                  <h3 className="text-xs font-semibold text-white leading-tight break-words">
+                    {convenioData.razaosocial}
+                  </h3>
+                  {identificador && (
+                    <p className="mt-1 text-xs text-blue-100">{identificador}</p>
+                  )}
+                  {enderecoCompleto && (
+                    <p className="mt-1 text-xs text-blue-100 leading-tight">{enderecoCompleto}</p>
+                  )}
+                </div>
+              </div>
+            )}
             <nav className="mt-5 px-2 space-y-1">
               {menuItems.map((item) => (
                 <Link
@@ -300,8 +319,8 @@ export default function DashboardLayout({
                   onClick={() => setSidebarOpen(false)}
                   className={`group flex items-center px-2 py-2 text-base font-medium rounded-md ${
                     item.current
-                      ? 'bg-gray-100 text-gray-900'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      ? 'bg-blue-700 text-white'
+                      : 'text-blue-100 hover:bg-blue-700 hover:text-white'
                   }`}
                 >
                   {item.icon}
@@ -311,7 +330,7 @@ export default function DashboardLayout({
               
               <button
                 onClick={handleLogout}
-                className="w-full group flex items-center px-2 py-2 text-base font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                className="w-full group flex items-center px-2 py-2 text-base font-medium rounded-md text-blue-100 hover:bg-blue-700 hover:text-white"
               >
                 <FaSignOutAlt className="w-5 h-5" />
                 <span className="ml-3">Sair</span>
@@ -324,24 +343,43 @@ export default function DashboardLayout({
       {/* Sidebar para desktop */}
       <div className="hidden md:flex md:flex-shrink-0">
         <div className="flex flex-col w-64">
-          <div className="flex flex-col h-0 flex-1 border-r border-gray-200 bg-white">
+          <div className="flex flex-col h-0 flex-1 border-r border-blue-300 bg-blue-600">
             <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
-              <div className="flex items-center justify-center flex-shrink-0 px-4">
-                <img 
-                  src="/icons/icon-192x192.png" 
-                  alt="Logo SasCred" 
-                  className="h-12 w-12 rounded-full object-cover"
-                />
+              <div className="flex items-center justify-center flex-shrink-0 px-4 mb-4">
+                <div className="bg-white p-2 rounded-full">
+                  <img 
+                    src="/icons/icon-192x192.png" 
+                    alt="Logo SasCred" 
+                    className="h-8 w-8 rounded-full object-cover"
+                  />
+                </div>
               </div>
-              <nav className="mt-5 flex-1 px-2 bg-white space-y-1">
+              
+              {/* Informações do convênio no sidebar */}
+              {convenioData && (
+                <div className="px-4 mb-4">
+                  <div className="text-center">
+                    <h3 className="text-xs font-semibold text-white leading-tight break-words">
+                      {convenioData.razaosocial}
+                    </h3>
+                    {identificador && (
+                      <p className="mt-1 text-xs text-blue-100">{identificador}</p>
+                    )}
+                    {enderecoCompleto && (
+                      <p className="mt-1 text-xs text-blue-100 leading-tight">{enderecoCompleto}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+              <nav className="mt-5 flex-1 px-2 space-y-1">
                 {menuItems.map((item) => (
                   <Link
                     key={item.name}
                     href={item.href}
                     className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md ${
                       item.current
-                        ? 'bg-gray-100 text-gray-900'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        ? 'bg-blue-700 text-white'
+                        : 'text-blue-100 hover:bg-blue-700 hover:text-white'
                     }`}
                   >
                     {item.icon}
@@ -351,7 +389,7 @@ export default function DashboardLayout({
                 
                 <button
                   onClick={handleLogout}
-                  className="w-full group flex items-center px-2 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  className="w-full group flex items-center px-2 py-2 text-sm font-medium rounded-md text-blue-100 hover:bg-blue-700 hover:text-white"
                 >
                   <FaSignOutAlt className="w-5 h-5" />
                   <span className="ml-3">Sair</span>
@@ -372,18 +410,9 @@ export default function DashboardLayout({
           </button>
         </div>
         
-        {/* Cabeçalho com informações do convênio */}
+        {/* Cabeçalho vazio */}
         <div className="bg-white shadow">
           <div className="px-4 sm:px-6 py-4">
-            <h1 className="text-xl font-semibold text-gray-900">
-              {convenioData?.razaosocial || 'Carregando...'}
-            </h1>
-            {identificador && (
-              <p className="mt-1 text-sm text-gray-600">{identificador}</p>
-            )}
-            {enderecoCompleto && (
-              <p className="mt-1 text-sm text-gray-600">{enderecoCompleto}</p>
-            )}
           </div>
         </div>
         
