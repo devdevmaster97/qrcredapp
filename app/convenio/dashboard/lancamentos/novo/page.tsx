@@ -657,18 +657,30 @@ export default function NovoLancamentoPage() {
       
       const gravarVenda = async () => {
         try {
-          console.log('💾 Iniciando gravação da venda...');
+          console.log('💾 Gravando venda via API interna...');
+          console.log('✅ Dados que serão enviados:', dadosVenda);
+          
+          const headers = {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          };
           
           const response = await fetch('/api/convenio/gravar-venda', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            headers,
             body: JSON.stringify(dadosVenda),
+            cache: 'no-store'
+          });
+
+          console.log('✅ Resposta recebida da API interna:', {
+            status: response.status,
+            statusText: response.statusText
           });
 
           const data = await response.json();
-          console.log('📄 Dados recebidos da API:', data);
+          console.log('� Dados recebidos da API:', data);
 
           if (response.ok && data.success && data.situacao === 1) {
             console.log('✅ Venda gravada com sucesso na tabela sind.conta');
@@ -1126,6 +1138,8 @@ export default function NovoLancamentoPage() {
                     </label>
                     <input
                       type="password"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
                       value={senha}
                       onChange={(e) => setSenha(e.target.value)}
                       placeholder="Digite a senha"
