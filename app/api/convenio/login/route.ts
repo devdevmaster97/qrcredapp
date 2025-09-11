@@ -208,7 +208,7 @@ export async function POST(request: NextRequest) {
       
       const apiResponse = NextResponse.json({
         success: true,
-        data: {
+        convenio: {
           cod_convenio: response.data.cod_convenio,
           razaosocial: response.data.razaosocial,
           nome_fantasia: response.data.nomefantasia,
