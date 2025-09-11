@@ -59,9 +59,13 @@ export default function RelatoriosPage() {
           console.log('📱 RELATÓRIOS - Dispositivo móvel detectado, usando headers anti-cache');
         }
 
-        const response = await fetch(`/api/convenio/lancamentos?t=${Date.now()}`, {
-          method: 'GET',
-          headers,
+        const response = await fetch(`/api/convenio/lancamentos`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...headers
+          },
+          body: JSON.stringify({}),
           cache: 'no-store'
         });
         
