@@ -180,7 +180,8 @@ export default function DashboardPage() {
         <p className="mt-1 text-sm text-gray-600">Visão geral do seu convênio</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      {/* Primeira linha com 4 cards principais */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-6">
         {/* Card de Lançamentos */}
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
@@ -237,9 +238,11 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Card de Mês Aberto para Lançamentos */}
-        <div className="bg-white rounded-lg shadow p-6">
+      {/* Segunda linha com card do mês aberto centralizado */}
+      <div className="flex justify-center mb-6">
+        <div className="bg-white rounded-lg shadow p-6 w-full max-w-sm">
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-orange-100">
               <FaCalendarAlt className="h-6 w-6 text-orange-600" />
