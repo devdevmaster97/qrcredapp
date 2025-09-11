@@ -148,7 +148,7 @@ export default function DashboardPage() {
       <div className="mt-8">
         <h2 className="text-lg font-medium text-gray-900 mb-4">Ações Rápidas</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Link href="/convenio/dashboard/lancamentos" className="flex items-center justify-center p-4 bg-white rounded-lg shadow hover:bg-gray-50 transition duration-150">
+          <Link href="/convenio/dashboard/lancamentos/novo" className="flex items-center justify-center p-4 bg-white rounded-lg shadow hover:bg-gray-50 transition duration-150">
             <FaReceipt className="h-5 w-5 text-blue-600 mr-2" />
             <span className="text-gray-700">Novo Lançamento</span>
           </Link>
