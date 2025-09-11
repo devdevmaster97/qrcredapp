@@ -625,12 +625,10 @@ export default function RelatoriosPage() {
     toast.success('Comprovante baixado com sucesso!');
   };
 
-  // Função para exportar relatório em PDF
+  // Função para exportar relatório em PDF (versão simplificada sem autoTable)
   const exportarPDF = async () => {
     try {
       const { jsPDF } = await import('jspdf');
-      await import('jspdf-autotable');
-      
       const doc = new jsPDF();
       
       // Cabeçalho
@@ -642,24 +640,60 @@ export default function RelatoriosPage() {
       doc.text(`Data de geração: ${new Date().toLocaleDateString('pt-BR')}`, 20, 40);
       doc.text(`Total: ${totalDoMes.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 20, 50);
       
-      // Preparar dados da tabela
-      const dadosTabela = lancamentosFiltrados.map(lancamento => [
-        lancamento.nome_associado || lancamento.associado,
-        `R$ ${formatarValorLista(lancamento.valor)}`,
-        lancamento.lancamento || '#' + lancamento.id,
-        formatarData(lancamento.data),
-        lancamento.hora,
-        lancamento.parcela || '01/01'
-      ]);
+      // Linha separadora
+      doc.setLineWidth(0.5);
+      doc.line(20, 60, 190, 60);
       
-      // Adicionar tabela
-      (doc as any).autoTable({
-        head: [['Associado', 'Valor', 'Lançamento', 'Data', 'Hora', 'Parcela']],
-        body: dadosTabela,
-        startY: 60,
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [59, 130, 246] }
+      // Cabeçalho da tabela manual
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      let yPos = 75;
+      doc.text('Associado', 20, yPos);
+      doc.text('Valor', 80, yPos);
+      doc.text('Lançamento', 110, yPos);
+      doc.text('Data', 140, yPos);
+      doc.text('Hora', 165, yPos);
+      doc.text('Parcela', 180, yPos);
+      
+      // Linha após cabeçalho
+      doc.line(20, yPos + 3, 190, yPos + 3);
+      
+      // Dados da tabela
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      yPos += 10;
+      
+      lancamentosFiltrados.forEach((lancamento, index) => {
+        if (yPos > 270) { // Nova página se necessário
+          doc.addPage();
+          yPos = 20;
+        }
+        
+        const associado = (lancamento.nome_associado || lancamento.associado).substring(0, 15);
+        const valor = `R$ ${formatarValorLista(lancamento.valor)}`;
+        const numLancamento = (lancamento.lancamento || '#' + lancamento.id).toString().substring(0, 8);
+        const data = formatarData(lancamento.data);
+        const hora = lancamento.hora.substring(0, 5);
+        const parcela = (lancamento.parcela || '01/01').substring(0, 5);
+        
+        doc.text(associado, 20, yPos);
+        doc.text(valor, 80, yPos);
+        doc.text(numLancamento, 110, yPos);
+        doc.text(data, 140, yPos);
+        doc.text(hora, 165, yPos);
+        doc.text(parcela, 180, yPos);
+        
+        yPos += 8;
       });
+      
+      // Linha final
+      doc.setLineWidth(0.5);
+      doc.line(20, yPos + 5, 190, yPos + 5);
+      
+      // Total final
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`TOTAL: ${totalDoMes.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`, 20, yPos + 15);
       
       // Salvar PDF
       const nomeArquivo = `relatorio_lancamentos_${mesSelecionado || 'todos'}_${new Date().toISOString().split('T')[0]}.pdf`;
@@ -668,7 +702,7 @@ export default function RelatoriosPage() {
       toast.success('Relatório PDF exportado com sucesso!');
     } catch (error) {
       console.error('Erro ao exportar PDF:', error);
-      toast.error('Erro ao exportar PDF. Verifique se a biblioteca está disponível.');
+      toast.error('Erro ao exportar PDF.');
     }
   };
 
