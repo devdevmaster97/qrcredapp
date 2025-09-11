@@ -917,7 +917,7 @@ export default function RelatoriosPage() {
                         {lancamento.lancamento || '#' + lancamento.id}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {lancamento.data}
+                        {formatarData(lancamento.data)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {lancamento.hora} - Parcela {lancamento.parcela || '01/01'}
@@ -966,7 +966,7 @@ export default function RelatoriosPage() {
                       <span className="font-medium">Lançamento:</span> {lancamento.lancamento || '#' + lancamento.id}
                     </div>
                     <div className="text-sm text-gray-700 mb-1">
-                      <span className="font-medium">Data:</span> {lancamento.data}
+                      <span className="font-medium">Data:</span> {formatarData(lancamento.data)}
                     </div>
                     <div className="text-sm text-gray-700">
                       <span className="font-medium">Hora:</span> {lancamento.hora} - <span className="font-medium">Parcela:</span> {lancamento.parcela || '01/01'}
