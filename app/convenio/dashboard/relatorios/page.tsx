@@ -126,7 +126,9 @@ export default function RelatoriosPage() {
             });
             
             // Debug específico dos meses encontrados nos lançamentos
-            const mesesEncontrados = data.data.map((l: Lancamento) => l.mes);
+            const mesesEncontrados = data.data
+              .filter((l: Lancamento) => l && l.mes) // Verificar se lançamento e mes existem
+              .map((l: Lancamento) => l.mes);
             console.log('🗓️ RELATÓRIOS - Todos os meses encontrados nos lançamentos:', mesesEncontrados);
             console.log('🗓️ RELATÓRIOS - Meses únicos antes da ordenação:', Array.from(new Set(mesesEncontrados)));
           }
@@ -134,7 +136,10 @@ export default function RelatoriosPage() {
           setLancamentos(data.data);
           
           // Extrair meses únicos dos lançamentos com validação
-          const mesesBrutos = data.data.map((l: Lancamento) => l.mes).filter((mes: string) => mes && mes.trim() !== '');
+          const mesesBrutos = data.data
+            .filter((l: Lancamento) => l && l.mes) // Verificar se lançamento e mes existem
+            .map((l: Lancamento) => l.mes)
+            .filter((mes: string) => mes && mes.trim() !== '');
           const mesesUnicos = Array.from(new Set(mesesBrutos)) as string[];
           
           console.log('🗓️ RELATÓRIOS - Meses únicos extraídos:', mesesUnicos);
@@ -284,14 +289,14 @@ export default function RelatoriosPage() {
     const filtroMes = mesSelecionado ? lancamento.mes === mesSelecionado : true;
     
     // Filtro por termo de busca
-    const filtroBusca = termoBusca ? (
-      (lancamento.nome_associado || lancamento.associado || '').toLowerCase().includes(termoBusca.toLowerCase()) ||
-      (lancamento.empregador || '').toLowerCase().includes(termoBusca.toLowerCase()) ||
-      (lancamento.nome_empregador || '').toLowerCase().includes(termoBusca.toLowerCase()) ||
+    const filtroBusca = termoBusca && termoBusca.trim() ? (
+      (lancamento.nome_associado || lancamento.associado || '').toString().toLowerCase().includes(termoBusca.toLowerCase()) ||
+      (lancamento.empregador || '').toString().toLowerCase().includes(termoBusca.toLowerCase()) ||
+      (lancamento.nome_empregador || '').toString().toLowerCase().includes(termoBusca.toLowerCase()) ||
       (lancamento.lancamento || '').toString().toLowerCase().includes(termoBusca.toLowerCase()) ||
       (lancamento.valor || '').toString().toLowerCase().includes(termoBusca.toLowerCase()) ||
-      (lancamento.data || '').toLowerCase().includes(termoBusca.toLowerCase()) ||
-      (lancamento.cpf_associado || lancamento.cpf || '').toLowerCase().includes(termoBusca.toLowerCase())
+      (lancamento.data || '').toString().toLowerCase().includes(termoBusca.toLowerCase()) ||
+      (lancamento.cpf_associado || lancamento.cpf || '').toString().toLowerCase().includes(termoBusca.toLowerCase())
     ) : true;
     
     return filtroMes && filtroBusca;
