@@ -1137,7 +1137,7 @@ export default function NovoLancamentoPage() {
                       Senha do Associado
                     </label>
                     <input
-                      type="password"
+                      type="tel"
                       inputMode="numeric"
                       pattern="[0-9]*"
                       value={senha}
