@@ -930,9 +930,23 @@ export default function NovoLancamentoPage() {
   };
 
   const handleSenhaChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, ''); // Apenas números
-    setSenha(value);
-    setSenhaVisual('•'.repeat(value.length)); // Mostrar bolinhas
+    const inputValue = e.target.value;
+    
+    // Se o usuário está apagando (backspace), remover último caractere
+    if (inputValue.length < senhaVisual.length) {
+      const newSenha = senha.slice(0, -1);
+      setSenha(newSenha);
+      setSenhaVisual('•'.repeat(newSenha.length));
+      return;
+    }
+    
+    // Se o usuário está digitando, pegar apenas o último caractere digitado
+    const lastChar = inputValue.slice(-1);
+    if (/\d/.test(lastChar)) { // Apenas números
+      const newSenha = senha + lastChar;
+      setSenha(newSenha);
+      setSenhaVisual('•'.repeat(newSenha.length));
+    }
   };
 
   const handleLerQRCode = () => {
