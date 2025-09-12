@@ -84,25 +84,24 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     return arr.includes(str.toLowerCase());
   };
 
-  // Verificar se já existe solicitação no mês corrente
-  const jaTemSolicitacaoNoMes = (): boolean => {
-    if (!saldoData?.mesCorrente || ultimasSolicitacoes.length === 0) {
+  // Verificar se há saldo disponível para antecipação
+  const temSaldoDisponivel = (): boolean => {
+    if (!saldoData) {
       return false;
     }
 
-    // Verificar se há alguma solicitação para o mês corrente
-    const temSolicitacao = ultimasSolicitacoes.some(solicitacao => 
-      solicitacao.mes_corrente === saldoData.mesCorrente
-    );
+    // Verificar se o saldo disponível é maior que zero
+    const saldoDisponivel = saldoData.saldo > 0;
 
-    console.log(' Verificando solicitação no mês:', {
+    console.log('🔍 Verificando saldo disponível:', {
+      saldoAtual: saldoData.saldo,
+      limite: saldoData.limite,
+      total: saldoData.total,
       mesCorrente: saldoData.mesCorrente,
-      totalSolicitacoes: ultimasSolicitacoes.length,
-      temSolicitacaoNoMes: temSolicitacao,
-      solicitacoesDoMes: ultimasSolicitacoes.filter(s => s.mes_corrente === saldoData.mesCorrente)
+      temSaldoDisponivel: saldoDisponivel
     });
 
-    return temSolicitacao;
+    return saldoDisponivel;
   };
 
   // Função para buscar o mês corrente
@@ -810,53 +809,45 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
               </button>
             </div>
           </div>
-        ) : jaTemSolicitacaoNoMes() ? (
-          /* Mensagem quando já existe solicitação no mês */
-          <div className="p-6 bg-amber-50 border border-amber-200 rounded-lg text-center">
+        ) : !temSaldoDisponivel() ? (
+          /* Mensagem quando não há saldo disponível */
+          <div className="p-6 bg-red-50 border border-red-200 rounded-lg text-center">
             <div className="flex items-center justify-center mb-4">
-              <FaHourglassHalf className="text-amber-500 text-2xl mr-2" />
-              <h3 className="text-lg font-semibold text-amber-800">
-                Solicitação já Realizada
+              <FaTimesCircle className="text-red-500 text-2xl mr-2" />
+              <h3 className="text-lg font-semibold text-red-800">
+                Saldo Insuficiente
               </h3>
             </div>
-            <p className="text-amber-700 mb-4">
-              Você já possui uma solicitação de antecipação para o mês <strong>{saldoData?.mesCorrente}</strong>.
+            <p className="text-red-700 mb-4">
+              Você não possui saldo disponível para antecipação no mês <strong>{saldoData?.mesCorrente}</strong>.
             </p>
-            <p className="text-sm text-amber-600">
-              📅 <strong>Regra:</strong> É permitida apenas 1 solicitação por mês.<br/>
-              🔄 Aguarde o próximo mês para fazer uma nova solicitação.
+            <p className="text-sm text-red-600">
+              💰 <strong>Saldo atual:</strong> {saldoData ? formatarValor(saldoData.saldo) : 'R$ 0,00'}<br/>
+              📊 Para solicitar antecipação, é necessário ter saldo positivo disponível.
             </p>
             
-            {/* Mostrar detalhes da solicitação existente */}
-            {ultimasSolicitacoes.filter(s => s.mes_corrente === saldoData?.mesCorrente).map(solicitacao => (
-              <div key={solicitacao.id} className="mt-4 p-4 bg-white border border-amber-200 rounded-lg">
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Data:</span>
-                    <span className="font-medium">
-                      {format(new Date(solicitacao.data_solicitacao), "dd/MM/yyyy", { locale: ptBR })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Valor:</span>
-                    <span className="font-medium">
-                      {Number(solicitacao.valor_solicitado).toLocaleString('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL'
-                      })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Status:</span>
-                    <span>{formatarStatus(solicitacao.status)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Mês:</span>
-                    <span className="font-medium">{solicitacao.mes_corrente}</span>
-                  </div>
+            <div className="mt-4 p-4 bg-white border border-red-200 rounded-lg">
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Limite:</span>
+                  <span className="font-medium">
+                    {saldoData ? formatarValor(saldoData.limite) : 'R$ 0,00'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Utilizado:</span>
+                  <span className="font-medium">
+                    {saldoData ? formatarValor(saldoData.total) : 'R$ 0,00'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Disponível:</span>
+                  <span className="font-medium">
+                    {saldoData ? formatarValor(saldoData.saldo) : 'R$ 0,00'}
+                  </span>
                 </div>
               </div>
-            ))}
+            </div>
           </div>
         ) : (
           /* Formulário de Solicitação */
