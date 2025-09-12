@@ -104,40 +104,41 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     return saldoDisponivel;
   };
 
-  // Função para buscar o mês corrente
-  const fetchMesCorrente = useCallback(async (cartaoParam: string) => {
+  // Função para buscar o mês corrente usando id_divisao do associado
+  const fetchMesCorrente = useCallback(async (idDivisao: number) => {
     try {
-      if (!cartaoParam) {
-        console.error('Cartão não fornecido para buscar mês corrente');
+      if (!idDivisao) {
+        console.error('ID divisão não fornecido para buscar mês corrente');
         return null;
       }
 
-      const formData = new FormData();
-      formData.append('cartao', cartaoParam.trim());
+      console.log('🔍 Buscando mês corrente para divisão:', idDivisao);
       
-      console.log('Buscando mês corrente para cartão:', cartaoParam);
-      
-      const response = await axios.post('/api/mes-corrente', formData, {
+      // Chamar API correta com id_divisao como parâmetro GET
+      const response = await axios.get(`/api/convenio/mes-corrente?divisao=${idDivisao}&t=${Date.now()}`, {
         headers: {
-          'Content-Type': 'multipart/form-data'
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         }
       });
-      console.log('Resposta da API de mês corrente:', response.data);
+      
+      console.log('📥 Resposta da API de mês corrente:', response.data);
       
       // Verificar se a API retornou erro
-      if (response.data && response.data.error) {
-        console.error('❌ Erro da API de mês corrente:', response.data.error);
-        throw new Error(response.data.error);
+      if (response.data && !response.data.success) {
+        console.error('❌ Erro da API de mês corrente:', response.data.error || response.data.message);
+        throw new Error(response.data.error || response.data.message || 'Erro ao buscar mês corrente');
       }
 
       // Verificar se a resposta contém dados válidos
-      if (Array.isArray(response.data) && response.data.length > 0 && response.data[0].abreviacao) {
-        const mesAtual = response.data[0].abreviacao;
-        const porcentagem = parseFloat(response.data[0].porcentagem || '0');
+      if (response.data.success && response.data.data && response.data.data.abreviacao) {
+        const mesAtual = response.data.data.abreviacao;
+        const porcentagem = parseFloat(response.data.data.porcentagem || '0');
         console.log('✅ Mês corrente obtido da API:', mesAtual, 'porcentagem:', porcentagem);
         return { mesAtual, porcentagem };
       } else {
-        console.error('❌ Resposta inválida da API de mês corrente');
+        console.error('❌ Resposta inválida da API de mês corrente:', response.data);
         throw new Error('Não foi possível obter o mês corrente da API');
       }
     } catch (err) {
@@ -154,7 +155,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         throw new Error('Todos os parâmetros são obrigatórios: matricula, empregador, mes, id, divisao');
       }
 
-      console.log('Enviando parâmetros para /api/conta:', { matricula, empregador, mes, id, divisao });
+      console.log('📊 Enviando parâmetros para /api/conta:', { matricula, empregador, mes, id, divisao });
 
       // Buscar os dados da conta com todos os parâmetros obrigatórios
       const formDataConta = new FormData();
@@ -166,23 +167,36 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       
       const response = await axios.post('/api/conta', formDataConta, {
         headers: {
-          'Content-Type': 'multipart/form-data'
+          'Content-Type': 'multipart/form-data',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         }
       });
       
+      console.log('📥 Resposta da API conta:', response.data);
+      
+      // Verificar se a API retornou erro
+      if (response.data && response.data.error) {
+        console.error('❌ Erro da API conta:', response.data.error);
+        throw new Error(response.data.error || 'Erro ao consultar conta');
+      }
+      
       if (Array.isArray(response.data)) {
-        // Calcular o total das contas
+        // Calcular o total das contas do mês corrente
         let total = 0;
         for (const item of response.data) {
           total += parseFloat(item.valor || '0');
         }
         
+        console.log('💰 Total calculado das contas do mês:', total);
         return total;
       } else {
-        throw new Error('Formato de resposta inválido');
+        console.warn('⚠️ Nenhum dado de conta encontrado, assumindo total = 0');
+        return 0; // Se não há dados, assumir que não há gastos
       }
     } catch (error) {
-      console.error('Erro ao buscar dados da conta:', error);
+      console.error('❌ Erro ao buscar dados da conta:', error);
       throw error;
     }
   }, []);
@@ -220,14 +234,19 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       setLoading(true);
       setErro("");
       
-      // 1. Buscar mês corrente
-      const { mesAtual, porcentagem } = await fetchMesCorrente(cartao) || { mesAtual: null, porcentagem: 0 };
+      // 1. Validar se temos id_divisao do associado
+      if (!associadoData.id_divisao) {
+        throw new Error('ID divisão do associado não disponível');
+      }
+
+      // 2. Buscar mês corrente usando id_divisao do associado
+      const { mesAtual, porcentagem } = await fetchMesCorrente(associadoData.id_divisao) || { mesAtual: null, porcentagem: 0 };
       
       if (!mesAtual) {
         throw new Error('Mês corrente não disponível');
       }
       
-      // 2. Buscar dados da conta com os dados do associado que já temos
+      // 3. Buscar dados da conta com os dados do associado que já temos
       const total = await fetchConta(
         associadoData.matricula, 
         associadoData.empregador, 
@@ -236,17 +255,26 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         associadoData.id_divisao
       );
       
-      // 3. Calcular saldo
+      // 4. Calcular saldo
       const limite = parseFloat(associadoData.limite || '0');
       const saldo = limite - total;
       
-      // 4. Atualizar o estado
+      // 5. Atualizar o estado
       setSaldoData({
         saldo,
         limite,
         total,
         mesCorrente: mesAtual,
         porcentagem
+      });
+
+      console.log('✅ SALDO RECALCULADO PARA O MÊS CORRENTE:', {
+        mesCorrente: mesAtual,
+        limite: limite,
+        totalGastoNoMes: total,
+        saldoDisponivel: saldo,
+        porcentagem: porcentagem,
+        idDivisao: associadoData.id_divisao
       });
       
     } catch (error) {
@@ -342,6 +370,12 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       fetchHistoricoSolicitacoes();
     }
   }, [associadoData, loadSaldoData, isInitialLoading, fetchHistoricoSolicitacoes]);
+
+  // Função para forçar atualização do saldo (útil quando mês corrente muda)
+  const atualizarSaldo = useCallback(async () => {
+    console.log('🔄 Forçando atualização do saldo para verificar mudança de mês...');
+    await loadSaldoData();
+  }, [loadSaldoData]);
 
   // Formatar o valor como moeda brasileira
   const formatarValor = (valor: number): string => {
@@ -682,9 +716,9 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
           <div className="flex items-center justify-between">
             <h3 className="text-md font-medium text-gray-600">Saldo Disponível:</h3>
             <button 
-              onClick={() => loadSaldoData()}
+              onClick={() => atualizarSaldo()}
               className="bg-blue-600 hover:bg-blue-700 p-2 rounded text-white transition-colors"
-              title="Atualizar saldo"
+              title="Atualizar saldo e verificar mês corrente"
               disabled={loading}
               type="button"
             >
