@@ -582,6 +582,10 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
           
           // Atualizar o histórico de solicitações
           await fetchHistoricoSolicitacoes();
+          
+          // Recalcular o saldo disponível após a solicitação
+          console.log('🔄 Recalculando saldo disponível após nova solicitação...');
+          await loadSaldoData();
         } else {
           // Não é um sucesso real - tratar como erro
           console.log(`❌ [${requestId}] Resposta ambígua tratada como erro:`, response.data);
