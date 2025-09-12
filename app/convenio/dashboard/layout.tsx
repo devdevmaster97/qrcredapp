@@ -463,32 +463,32 @@ export default function DashboardLayout({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('🔵 Botão menu clicado - iOS:', isIOS, 'iOS 18.5:', isIOS18_5);
+              console.log('🔵 Botão menu clicado - iOS:', isIOS, 'iOS 18.5:', isIOS18_5, 'UserAgent:', navigator.userAgent);
               setSidebarOpen(true);
             }}
             onTouchEnd={(e) => {
-              if (isIOS && !isIOS18_5) {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('🔵 Botão menu touchEnd - iOS normal');
-                setSidebarOpen(true);
-              }
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('🔵 Botão menu touchEnd - SEMPRE');
+              setSidebarOpen(true);
             }}
             onTouchStart={(e) => {
-              if (isIOS18_5) {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('🔵 Botão menu touchStart - iOS 18.5');
-                setSidebarOpen(true);
-              }
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('🔵 Botão menu touchStart - SEMPRE');
+              setTimeout(() => setSidebarOpen(true), 50);
             }}
             onPointerDown={(e) => {
-              if (isIOS18_5) {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('🔵 Botão menu pointerDown - iOS 18.5');
-                setSidebarOpen(true);
-              }
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('🔵 Botão menu pointerDown - SEMPRE');
+              setTimeout(() => setSidebarOpen(true), 100);
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('🔵 Botão menu mouseDown - SEMPRE');
+              setSidebarOpen(true);
             }}
             style={{ 
               WebkitTapHighlightColor: 'transparent', 
