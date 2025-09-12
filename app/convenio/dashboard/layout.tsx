@@ -272,6 +272,8 @@ export default function DashboardLayout({
         <div 
           className="fixed inset-0 bg-gray-600 bg-opacity-75" 
           onClick={() => setSidebarOpen(false)}
+          onTouchStart={() => setSidebarOpen(false)}
+          style={{ WebkitTapHighlightColor: 'transparent', cursor: 'pointer' }}
         />
         
         <div className="relative flex-1 flex flex-col max-w-xs w-full" style={{backgroundColor: '#1C2260'}}>
@@ -279,6 +281,10 @@ export default function DashboardLayout({
             <button
               className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
               onClick={() => setSidebarOpen(false)}
+              onTouchStart={() => setSidebarOpen(false)}
+              style={{ WebkitTapHighlightColor: 'transparent', cursor: 'pointer' }}
+              type="button"
+              aria-label="Fechar menu"
             >
               <FaTimes className="h-6 w-6 text-white" />
             </button>
@@ -405,6 +411,10 @@ export default function DashboardLayout({
           <button
             className="-ml-0.5 -mt-0.5 h-12 w-12 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
             onClick={() => setSidebarOpen(true)}
+            onTouchStart={() => setSidebarOpen(true)}
+            style={{ WebkitTapHighlightColor: 'transparent', cursor: 'pointer' }}
+            type="button"
+            aria-label="Abrir menu"
           >
             <FaBars className="h-6 w-6" />
           </button>
