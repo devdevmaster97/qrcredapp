@@ -457,16 +457,28 @@ export default function NovoLancamentoPage() {
     setLoading(true);
 
     try {
-      // Obter dados do convênio
-      const dadosConvenioString = localStorage.getItem('dadosConvenio');
-      if (!dadosConvenioString) {
+      // Obter dados do convênio com verificação de segurança para Android
+      let dadosConvenio;
+      try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          const dadosConvenioString = localStorage.getItem('dadosConvenio');
+          if (!dadosConvenioString) {
+            closeAlert();
+            error('Dados Não Encontrados', 'Os dados do convênio não foram encontrados.');
+            setLoading(false);
+            return;
+          }
+          dadosConvenio = JSON.parse(dadosConvenioString);
+        } else {
+          throw new Error('localStorage não disponível');
+        }
+      } catch (storageError) {
+        console.error('❌ Erro ao acessar localStorage:', storageError);
         closeAlert();
-        error('Dados Não Encontrados', 'Os dados do convênio não foram encontrados.');
+        error('Erro de Armazenamento', 'Não foi possível acessar os dados salvos. Tente fazer login novamente.');
         setLoading(false);
         return;
       }
-
-      const dadosConvenio = JSON.parse(dadosConvenioString);
 
       // 1. Verificar senha do associado
       console.log('🔐 Verificando senha do associado...');
@@ -687,10 +699,22 @@ export default function NovoLancamentoPage() {
             console.log('✅ Venda gravada com sucesso na tabela sind.conta');
             console.log('📄 Registro gerado:', data.registrolan);
             
-            // Armazenar o registrolan para usar no comprovante
+            // Armazenar o registrolan para usar no comprovante com verificação de segurança
             if (data.registrolan) {
               console.log('💾 Salvando registrolan para comprovante:', data.registrolan);
-              sessionStorage.setItem('ultimoRegistroLan', data.registrolan);
+              try {
+                if (typeof window !== 'undefined' && window.sessionStorage) {
+                  sessionStorage.setItem('ultimoRegistroLan', data.registrolan);
+                } else {
+                  console.warn('⚠️ sessionStorage não disponível, usando variável temporária');
+                  // Fallback: usar uma variável global temporária
+                  (window as any).ultimoRegistroLan = data.registrolan;
+                }
+              } catch (storageError) {
+                console.error('❌ Erro ao salvar no sessionStorage:', storageError);
+                // Fallback: usar uma variável global temporária
+                (window as any).ultimoRegistroLan = data.registrolan;
+              }
             }
             
             return data;
@@ -727,8 +751,21 @@ export default function NovoLancamentoPage() {
       console.log('🎉 Pagamento processado com sucesso!');
       setPagamentoProcessado(true); // Marcar como processado para manter botão desabilitado
       
-      // Salvar dados da transação para a página de sucesso
-      const registroLan = sessionStorage.getItem('ultimoRegistroLan');
+      // Salvar dados da transação para a página de sucesso com verificação de segurança
+      let registroLan = 'N/A';
+      try {
+        if (typeof window !== 'undefined' && window.sessionStorage) {
+          registroLan = sessionStorage.getItem('ultimoRegistroLan') || 'N/A';
+        } else if ((window as any).ultimoRegistroLan) {
+          registroLan = (window as any).ultimoRegistroLan;
+        }
+      } catch (storageError) {
+        console.error('❌ Erro ao acessar sessionStorage:', storageError);
+        if ((window as any).ultimoRegistroLan) {
+          registroLan = (window as any).ultimoRegistroLan;
+        }
+      }
+
       const dadosTransacao = {
         associado: associado.nome,
         cpf: associado.cpf,
@@ -738,10 +775,22 @@ export default function NovoLancamentoPage() {
         descricao: descricao || 'Lançamento via app',
         timestamp: new Date().toISOString(),
         nomeConvenio: dadosConvenio.razaosocial || dadosConvenio.nome || 'Convênio',
-        lancamento: registroLan || 'N/A'
+        lancamento: registroLan
       };
       
-      localStorage.setItem('ultimaTransacao', JSON.stringify(dadosTransacao));
+      try {
+        if (typeof window !== 'undefined' && window.localStorage) {
+          localStorage.setItem('ultimaTransacao', JSON.stringify(dadosTransacao));
+        } else {
+          console.warn('⚠️ localStorage não disponível para salvar dados da transação');
+          // Fallback: usar variável global temporária
+          (window as any).ultimaTransacao = dadosTransacao;
+        }
+      } catch (storageError) {
+        console.error('❌ Erro ao salvar dados da transação:', storageError);
+        // Fallback: usar variável global temporária
+        (window as any).ultimaTransacao = dadosTransacao;
+      }
       
       // Redirecionar para página de sucesso
       router.push('/convenio/dashboard/lancamentos/sucesso');
