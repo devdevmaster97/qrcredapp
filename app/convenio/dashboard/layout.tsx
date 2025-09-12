@@ -39,6 +39,7 @@ export default function DashboardLayout({
   const [convenioData, setConvenioData] = useState<ConvenioData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isIOS, setIsIOS] = useState(false);
+  const [isIOS18_5, setIsIOS18_5] = useState(false);
   const retryCountRef = useRef(0);
   const maxRetries = 3;
   const toastShownRef = useRef(false);
@@ -51,7 +52,14 @@ export default function DashboardLayout({
     if (typeof window !== 'undefined') {
       const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent);
       setIsIOS(isIOSDevice);
+      
+      // Detectar especificamente iOS 18.5
+      const userAgent = navigator.userAgent;
+      const isIOS18_5Device = isIOSDevice && userAgent.includes('OS 18_5');
+      setIsIOS18_5(isIOS18_5Device);
+      
       console.log('📱 Dispositivo iOS detectado:', isIOSDevice);
+      console.log('📱 iOS 18.5 detectado:', isIOS18_5Device);
     }
     
     // CRÍTICO: Limpar dados antigos no início de cada carregamento
@@ -455,14 +463,30 @@ export default function DashboardLayout({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log('🔵 Botão menu clicado - iOS:', isIOS);
+              console.log('🔵 Botão menu clicado - iOS:', isIOS, 'iOS 18.5:', isIOS18_5);
               setSidebarOpen(true);
             }}
             onTouchEnd={(e) => {
-              if (isIOS) {
+              if (isIOS && !isIOS18_5) {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('🔵 Botão menu touchEnd - iOS');
+                console.log('🔵 Botão menu touchEnd - iOS normal');
+                setSidebarOpen(true);
+              }
+            }}
+            onTouchStart={(e) => {
+              if (isIOS18_5) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🔵 Botão menu touchStart - iOS 18.5');
+                setSidebarOpen(true);
+              }
+            }}
+            onPointerDown={(e) => {
+              if (isIOS18_5) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🔵 Botão menu pointerDown - iOS 18.5');
                 setSidebarOpen(true);
               }
             }}
