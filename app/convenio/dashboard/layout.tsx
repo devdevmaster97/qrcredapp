@@ -279,18 +279,52 @@ export default function DashboardLayout({
       <div className={`fixed inset-0 flex z-40 md:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
         <div 
           className="fixed inset-0 bg-gray-600 bg-opacity-75" 
-          onClick={() => setSidebarOpen(false)}
-          onTouchStart={() => setSidebarOpen(false)}
-          style={{ WebkitTapHighlightColor: 'transparent', cursor: 'pointer' }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🔵 Overlay clicado - fechando menu');
+            setSidebarOpen(false);
+          }}
+          onTouchEnd={(e) => {
+            if (isIOS) {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('🔵 Overlay touchEnd - fechando menu');
+              setSidebarOpen(false);
+            }
+          }}
+          style={{ 
+            WebkitTapHighlightColor: 'transparent', 
+            cursor: 'pointer',
+            touchAction: 'manipulation'
+          }}
         />
         
         <div className="relative flex-1 flex flex-col max-w-xs w-full" style={{backgroundColor: '#1C2260'}}>
           <div className="absolute top-0 right-0 -mr-12 pt-2">
             <button
               className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
-              onClick={() => setSidebarOpen(false)}
-              onTouchStart={() => setSidebarOpen(false)}
-              style={{ WebkitTapHighlightColor: 'transparent', cursor: 'pointer' }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🔵 Botão fechar clicado');
+                setSidebarOpen(false);
+              }}
+              onTouchEnd={(e) => {
+                if (isIOS) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log('🔵 Botão fechar touchEnd - iOS');
+                  setSidebarOpen(false);
+                }
+              }}
+              style={{ 
+                WebkitTapHighlightColor: 'transparent', 
+                cursor: 'pointer',
+                touchAction: 'manipulation',
+                userSelect: 'none',
+                WebkitUserSelect: 'none'
+              }}
               type="button"
               aria-label="Fechar menu"
             >
@@ -418,11 +452,26 @@ export default function DashboardLayout({
         <div className={`md:hidden pl-1 sm:pl-3 ${isIOS ? 'pt-12' : 'pt-1 sm:pt-3'}`}>
           <button
             className="-ml-0.5 -mt-0.5 h-12 w-12 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
-            onClick={() => setSidebarOpen(true)}
-            onTouchStart={() => setSidebarOpen(true)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log('🔵 Botão menu clicado - iOS:', isIOS);
+              setSidebarOpen(true);
+            }}
+            onTouchEnd={(e) => {
+              if (isIOS) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🔵 Botão menu touchEnd - iOS');
+                setSidebarOpen(true);
+              }
+            }}
             style={{ 
               WebkitTapHighlightColor: 'transparent', 
               cursor: 'pointer',
+              touchAction: 'manipulation',
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
               ...(isIOS && { marginTop: '8px' })
             }}
             type="button"
