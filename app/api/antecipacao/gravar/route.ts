@@ -139,7 +139,7 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     formData.append('valor_pedido', body.valor_pedido);
     formData.append('taxa', body.taxa);
     formData.append('valor_descontar', body.valor_descontar);
-    formData.append('mes_corrente', body.mes_corrente || '');
+    formData.append('mes', body.mes_corrente || '');
     formData.append('chave_pix', body.chave_pix);
     formData.append('id', (body.id || 0).toString());
     formData.append('id_divisao', (body.id_divisao || 0).toString());
@@ -164,10 +164,19 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     
     console.log(`📥 [${chaveUnica}] Resposta do PHP:`, {
       status: response.status,
-      data: response.data
+      data: response.data,
+      dataType: typeof response.data,
+      hasSuccess: 'success' in response.data,
+      successValue: response.data.success,
+      hasId: 'id' in response.data,
+      idValue: response.data.id,
+      hasMessage: 'message' in response.data,
+      messageValue: response.data.message,
+      hasError: 'error' in response.data,
+      errorValue: response.data.error
     });
     
-    // Verificar se houve erro (PHP retorna success como string "true"/"false")
+    // Verificar se houve erro (incluindo erros de duplicata da trigger)
     const temErro = response.status >= 400 ||
                    response.data.success === false || 
                    response.data.success === "false" ||
@@ -177,7 +186,10 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
                      response.data.message.toLowerCase().includes("incorreta") ||
                      response.data.message.toLowerCase().includes("inválida") ||
                      response.data.message.toLowerCase().includes("falhou") ||
-                     response.data.message.toLowerCase().includes("negado")
+                     response.data.message.toLowerCase().includes("negado") ||
+                     response.data.message.toLowerCase().includes("duplicata") ||
+                     response.data.message.toLowerCase().includes("duplicidade") ||
+                     response.data.message.toLowerCase().includes("duplicate")
                    ));
     
     if (temErro) {
@@ -202,14 +214,21 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     }
     
     // Sucesso - verificar se realmente foi bem-sucedido
-    const isSuccess = response.data.success === true || 
+    const isSuccess = response.status === 200 && (
+                     response.data.success === true || 
                      response.data.success === "true" ||
                      response.data.id ||
+                     response.data.registrolan ||
                      (response.data.message && (
                        response.data.message.toLowerCase().includes("sucesso") ||
                        response.data.message.toLowerCase().includes("inseridos") ||
-                       response.data.message.toLowerCase().includes("processada")
-                     ));
+                       response.data.message.toLowerCase().includes("processada") ||
+                       response.data.message.toLowerCase().includes("gravado") ||
+                       response.data.message.toLowerCase().includes("salvo")
+                     )) ||
+                     // Se não há mensagem de erro explícita e status 200, considerar sucesso
+                     (!response.data.error && !response.data.message)
+                     );
     
     if (isSuccess) {
       console.log(`✅ [${chaveUnica}] Antecipação gravada com sucesso`);
