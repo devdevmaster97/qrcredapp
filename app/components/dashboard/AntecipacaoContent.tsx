@@ -478,30 +478,19 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         request_id: requestId // Adicionar ID único
       };
       
-      console.log(`🌐 [${requestId}] Enviando DIRETAMENTE para PHP:`, payload);
-      
-      // Converter para FormData para PHP
-      const formData = new URLSearchParams();
-      formData.append('matricula', payload.matricula || '');
-      formData.append('pass', payload.pass);
-      formData.append('empregador', (payload.empregador || 0).toString());
-      formData.append('valor_pedido', payload.valor_pedido);
-      formData.append('taxa', payload.taxa);
-      formData.append('valor_descontar', payload.valor_descontar);
-      formData.append('mes_corrente', payload.mes_corrente || '');
-      formData.append('chave_pix', payload.chave_pix);
-      formData.append('id', (payload.id || 0).toString());
-      formData.append('id_divisao', (payload.id_divisao || 0).toString());
-      
+      console.log(`🌐 [${requestId}] Enviando para API interna:`, payload);
       
       const response = await axios.post(
-        'https://sas.makecard.com.br/grava_antecipacao_app.php',
-        formData,
+        '/api/antecipacao/gravar',
+        payload,
         {
           headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
           },
-          timeout: 10000,
+          timeout: 15000,
           // Não rejeitar em caso de status HTTP de erro para poder analisar a resposta
           validateStatus: () => true
         }
