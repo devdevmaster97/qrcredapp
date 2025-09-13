@@ -81,8 +81,14 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
 
   // Função segura para verificar se uma string está em um array
   const isStringInArray = (str: any, arr: string[]): boolean => {
-    if (typeof str !== 'string') return false;
-    return arr.includes(str.toLowerCase());
+    try {
+      if (typeof str !== 'string' || !str) return false;
+      if (!Array.isArray(arr)) return false;
+      return arr.includes(str.toLowerCase().trim());
+    } catch (error) {
+      console.warn('⚠️ Erro em isStringInArray:', error, { str, arr });
+      return false;
+    }
   };
 
   // Verificar se há saldo disponível para antecipação
@@ -672,66 +678,41 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
 
   // Formatar status para exibição amigável
   const formatarStatus = (status: string | boolean | null | undefined) => {
-    // Se for booleano, converter para string
-    if (typeof status === 'boolean') {
-      return status 
-        ? <span className="text-green-600 font-medium">Aprovada</span>
-        : <span className="text-red-600 font-medium">Recusada</span>;
-    }
-    
-    // Se for nulo ou indefinido, retornar pendente
-    if (status === null || status === undefined) {
+    try {
+      // Se for booleano, converter para string
+      if (typeof status === 'boolean') {
+        return status 
+          ? <span className="text-green-600 font-medium">Aprovada</span>
+          : <span className="text-red-600 font-medium">Recusada</span>;
+      }
+      
+      // Se for nulo ou indefinido, retornar pendente
+      if (status === null || status === undefined) {
+        return <span className="text-yellow-600 font-medium">Pendente</span>;
+      }
+      
+      // Se for string, verificar os valores
+      if (typeof status === 'string') {
+        if (isStringInArray(status, ['aprovado', 'aprovada', 's', 'sim'])) {
+          return <span className="text-green-600 font-medium">Aprovada</span>;
+        }
+        
+        if (isStringInArray(status, ['recusado', 'recusada', 'n', 'nao', 'não'])) {
+          return <span className="text-red-600 font-medium">Recusada</span>;
+        }
+        
+        if (isStringInArray(status, ['pendente', 'analise', 'análise'])) {
+          return <span className="text-yellow-600 font-medium">Em análise</span>;
+        }
+      }
+      
+      // Padrão para qualquer outro valor
+      return <span className="text-yellow-600 font-medium">Pendente</span>;
+    } catch (error) {
+      console.error('⚠️ Erro em formatarStatus:', error, { status });
       return <span className="text-yellow-600 font-medium">Pendente</span>;
     }
-    
-    // Se for string, verificar os valores
-    if (typeof status === 'string') {
-      const statusLower = status.toLowerCase();
-      
-      if (isStringInArray(status, ['aprovado', 'aprovada', 's', 'sim'])) {
-        return <span className="text-green-600 font-medium">Aprovada</span>;
-      }
-      
-      if (isStringInArray(status, ['recusado', 'recusada', 'n', 'nao', 'não'])) {
-        return <span className="text-red-600 font-medium">Recusada</span>;
-      }
-      
-      if (isStringInArray(status, ['pendente', 'analise', 'análise'])) {
-        return <span className="text-yellow-600 font-medium">Em análise</span>;
-      }
-    }
-    
-    // Padrão para qualquer outro valor
-    return <span className="text-yellow-600 font-medium">Pendente</span>;
   };
-
-
-  
-  // Função para obter classe CSS com base no status
-  const getStatusClass = (status: string | boolean | null | undefined) => {
-    // Se for booleano
-    if (typeof status === 'boolean') {
-      return status 
-        ? 'bg-green-50 border-green-200' 
-        : 'bg-red-50 border-red-200';
-    }
-    
-    // Se for string
-    if (typeof status === 'string') {
-      if (isStringInArray(status, ['aprovado', 'aprovada', 's', 'sim'])) {
-        return 'bg-green-50 border-green-200';
-      }
-      
-      if (isStringInArray(status, ['recusado', 'recusada', 'n', 'nao', 'não'])) {
-        return 'bg-red-50 border-red-200';
-      }
-    }
-    
-    // Padrão para pendente ou qualquer outro caso
-    return 'bg-yellow-50 border-yellow-200';
-  };
-  
-
 
   if (isInitialLoading && !associadoData) {
     return (
