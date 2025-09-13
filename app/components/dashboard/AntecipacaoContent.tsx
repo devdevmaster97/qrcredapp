@@ -432,10 +432,10 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     const requestId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     console.log(`🚀 [${requestId}] Iniciando nova solicitação de antecipação - Chave: ${chaveUnica}`);
     
-    // 1. VERIFICAR RATE LIMITING FRONTEND (30 segundos)
+    // 1. VERIFICAR RATE LIMITING FRONTEND (10 segundos - mais flexível)
     const ultimaSubmissaoTime = ultimaSubmissao.get(chaveUnica);
-    if (ultimaSubmissaoTime && (agora - ultimaSubmissaoTime) < 30000) {
-      const tempoRestante = Math.ceil((30000 - (agora - ultimaSubmissaoTime)) / 1000);
+    if (ultimaSubmissaoTime && (agora - ultimaSubmissaoTime) < 10000) {
+      const tempoRestante = Math.ceil((10000 - (agora - ultimaSubmissaoTime)) / 1000);
       console.log(`⏰ [${requestId}] Rate limit frontend ativo. Tempo restante: ${tempoRestante}s`);
       setErro(`Aguarde ${tempoRestante} segundos antes de tentar novamente`);
       return;

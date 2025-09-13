@@ -17,10 +17,10 @@ export async function POST(request: NextRequest) {
     const chaveUnica = `${body.matricula}_${body.empregador}_${body.valor_pedido}_${body.mes_corrente}`;
     const agora = Date.now();
     
-    // 1. VERIFICAR RATE LIMITING (1 minuto entre solicitações similares)
+    // 1. VERIFICAR RATE LIMITING (30 segundos - mais flexível)
     const ultimaRequisicao = ultimasRequisicoes.get(chaveUnica);
-    if (ultimaRequisicao && (agora - ultimaRequisicao) < 60000) { // 60 segundos
-      const tempoRestante = Math.ceil((60000 - (agora - ultimaRequisicao)) / 1000);
+    if (ultimaRequisicao && (agora - ultimaRequisicao) < 30000) { // 30 segundos
+      const tempoRestante = Math.ceil((30000 - (agora - ultimaRequisicao)) / 1000);
       console.log(`⏰ Rate limit ativo para ${chaveUnica}. Tempo restante: ${tempoRestante}s`);
       
       return NextResponse.json({
