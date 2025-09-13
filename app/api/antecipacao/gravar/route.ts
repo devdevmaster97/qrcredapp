@@ -86,13 +86,33 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     // Validar campos obrigatórios
     const camposObrigatorios = ['matricula', 'pass', 'empregador', 'valor_pedido', 'taxa', 'valor_descontar', 'mes_corrente', 'chave_pix'];
     
+    console.log(`🔍 [${chaveUnica}] Validando campos obrigatórios:`, {
+      matricula: body.matricula,
+      pass: body.pass ? '[PRESENTE]' : '[AUSENTE]',
+      empregador: body.empregador,
+      valor_pedido: body.valor_pedido,
+      taxa: body.taxa,
+      valor_descontar: body.valor_descontar,
+      mes_corrente: body.mes_corrente,
+      chave_pix: body.chave_pix
+    });
+    
     for (const campo of camposObrigatorios) {
-      if (!body[campo]) {
-        console.log(`❌ Campo obrigatório ausente: ${campo}`);
+      if (!body[campo] && body[campo] !== 0) { // Permitir valor 0 para campos numéricos
+        console.log(`❌ [${chaveUnica}] Campo obrigatório ausente: ${campo} (valor: ${body[campo]})`);
         return NextResponse.json({
           success: false,
-          error: `Campo obrigatório ausente: ${campo}`
-        }, { status: 400 });
+          error: `Campo obrigatório ausente: ${campo}`,
+          campo_ausente: campo,
+          dados_recebidos: Object.keys(body)
+        }, { 
+          status: 400,
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
       }
     }
     
