@@ -566,8 +566,15 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       } else {
         // Verificar se realmente foi um sucesso
         const isRealSuccess = response.data.success === true || 
+                             response.data.success === "true" ||
                              response.data.id || 
-                             (response.data.message && !response.data.message.toLowerCase().includes("erro"));
+                             response.data.data?.id ||
+                             (response.data.message && (
+                               response.data.message.toLowerCase().includes("sucesso") ||
+                               response.data.message.toLowerCase().includes("inseridos") ||
+                               response.data.message.toLowerCase().includes("processada") ||
+                               response.data.message.toLowerCase().includes("enviada")
+                             ));
         
         if (isRealSuccess) {
           console.log(`✅ [${requestId}] Solicitação processada com sucesso!`, {

@@ -132,9 +132,10 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
       data: response.data
     });
     
-    // Verificar se houve erro
+    // Verificar se houve erro (PHP retorna success como string "true"/"false")
     const temErro = response.status >= 400 ||
                    response.data.success === false || 
+                   response.data.success === "false" ||
                    (response.data.message && (
                      response.data.message.toLowerCase().includes("erro") ||
                      response.data.message.toLowerCase().includes("senha") ||
@@ -165,19 +166,49 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
       });
     }
     
-    // Sucesso
-    console.log(`✅ [${chaveUnica}] Antecipação gravada com sucesso`);
-    return NextResponse.json({
-      success: true,
-      data: response.data,
-      message: response.data.message || 'Solicitação processada com sucesso'
-    }, {
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
-      }
-    });
+    // Sucesso - verificar se realmente foi bem-sucedido
+    const isSuccess = response.data.success === true || 
+                     response.data.success === "true" ||
+                     response.data.id ||
+                     (response.data.message && (
+                       response.data.message.toLowerCase().includes("sucesso") ||
+                       response.data.message.toLowerCase().includes("inseridos") ||
+                       response.data.message.toLowerCase().includes("processada")
+                     ));
+    
+    if (isSuccess) {
+      console.log(`✅ [${chaveUnica}] Antecipação gravada com sucesso`);
+      return NextResponse.json({
+        success: true,
+        data: response.data,
+        message: response.data.message || 'Solicitação processada com sucesso',
+        id: response.data.id,
+        duplicate_prevented: response.data.duplicate_prevented
+      }, {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+    } else {
+      // Resposta ambígua - tratar como erro
+      console.log(`❌ [${chaveUnica}] Resposta ambígua do PHP:`, response.data);
+      ultimasRequisicoes.delete(chaveUnica);
+      
+      return NextResponse.json({
+        success: false,
+        error: response.data.message || 'Resposta inesperada do servidor',
+        data: response.data
+      }, { 
+        status: 400,
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+    }
     
   } catch (error) {
     console.error(`💥 [${chaveUnica}] Erro no processamento:`, error);
