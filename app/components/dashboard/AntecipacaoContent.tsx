@@ -591,12 +591,22 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
           setSenha("");
           setErro("");
           
-          // Atualizar o histórico de solicitações
-          await fetchHistoricoSolicitacoes();
+          // Atualizar o histórico de solicitações (sem bloquear o fluxo)
+          try {
+            await fetchHistoricoSolicitacoes();
+            console.log('✅ Histórico de solicitações atualizado');
+          } catch (error) {
+            console.warn('⚠️ Erro ao atualizar histórico (não crítico):', error);
+          }
           
-          // Recalcular o saldo disponível após a solicitação
-          console.log('🔄 Recalculando saldo disponível após nova solicitação...');
-          await loadSaldoData();
+          // Recalcular o saldo disponível após a solicitação (sem bloquear o fluxo)
+          try {
+            console.log('🔄 Recalculando saldo disponível após nova solicitação...');
+            await loadSaldoData();
+            console.log('✅ Saldo recalculado com sucesso');
+          } catch (error) {
+            console.warn('⚠️ Erro ao recalcular saldo (não crítico):', error);
+          }
         } else {
           // Não é um sucesso real - tratar como erro
           console.log(`❌ [${requestId}] Resposta ambígua tratada como erro:`, response.data);
