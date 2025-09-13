@@ -9,6 +9,7 @@ const ultimasRequisicoes = new Map<string, number>();
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🚨 API ANTECIPAÇÃO CHAMADA - TIMESTAMP:', new Date().toISOString());
     const body = await request.json();
     
     console.log('📥 API Antecipação - Dados recebidos:', body);
