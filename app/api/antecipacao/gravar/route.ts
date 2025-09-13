@@ -93,55 +93,10 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
   try {
     console.log(`🚀 Processando solicitação ${chaveUnica}`);
     
-    // PRIMEIRA VERIFICAÇÃO: Consultar banco para verificar duplicatas recentes
-    console.log(`🔍 [${chaveUnica}] Verificando duplicatas no banco de dados...`);
+    console.log(`🔍 [${chaveUnica}] Processando solicitação (verificação de duplicata removida temporariamente)`);
     
-    try {
-      const verificarDuplicataData = new URLSearchParams();
-      verificarDuplicataData.append('matricula', body.matricula || '');
-      verificarDuplicataData.append('empregador', (body.empregador || 0).toString());
-      verificarDuplicataData.append('valor_pedido', body.valor_pedido);
-      verificarDuplicataData.append('mes_corrente', body.mes_corrente || '');
-      verificarDuplicataData.append('verificar_apenas', '1'); // Flag para apenas verificar, não inserir
-      
-      const verificacaoResponse = await axios.post(
-        'https://sas.makecard.com.br/grava_antecipacao_app.php',
-        verificarDuplicataData,
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          },
-          timeout: 10000,
-          validateStatus: () => true
-        }
-      );
-      
-      console.log(`📥 [${chaveUnica}] Resposta da verificação de duplicata:`, verificacaoResponse.data);
-      
-      // Se encontrou duplicata recente (últimos 2 minutos)
-      if (verificacaoResponse.data && verificacaoResponse.data.duplicata_encontrada) {
-        console.log(`🚫 [${chaveUnica}] DUPLICATA DETECTADA NO BANCO - Bloqueando solicitação`);
-        return NextResponse.json({
-          success: false,
-          error: 'Solicitação similar já foi processada recentemente. Aguarde alguns minutos antes de tentar novamente.',
-          duplicate_prevented: true,
-          duplicata_banco: true
-        }, { 
-          status: 409, // Conflict
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          }
-        });
-      }
-    } catch (verificacaoError) {
-      console.warn(`⚠️ [${chaveUnica}] Erro na verificação de duplicata (continuando):`, verificacaoError);
-      // Continuar mesmo se a verificação falhar - não bloquear o fluxo
-    }
+    // NOTA: Verificação de duplicata no banco removida temporariamente devido a incompatibilidade
+    // com o PHP original do servidor. As proteções de rate limiting em memória continuam ativas.
     
     // Validar campos obrigatórios
     const camposObrigatorios = ['matricula', 'pass', 'empregador', 'valor_pedido', 'taxa', 'valor_descontar', 'mes_corrente', 'chave_pix'];
