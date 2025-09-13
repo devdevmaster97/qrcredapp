@@ -28,8 +28,9 @@ workbox.routing.registerRoute(
 );
 
 // Cache para API (chamadas de dados dinâmicos, com atualização frequente)
+// EXCETO antecipação que precisa sempre ir para o servidor para controle de duplicação
 workbox.routing.registerRoute(
-  /\/api\/.*$/,
+  /\/api\/(?!antecipacao).*$/,  // ← EXCLUI /api/antecipacao/* do cache
   new workbox.strategies.NetworkFirst({
     cacheName: 'api-cache',
     plugins: [
@@ -41,6 +42,14 @@ workbox.routing.registerRoute(
         statuses: [0, 200],
       }),
     ],
+  })
+);
+
+// Rota específica para antecipação - SEMPRE usar rede, NUNCA cache
+workbox.routing.registerRoute(
+  /\/api\/antecipacao\/.*$/,
+  new workbox.strategies.NetworkOnly({
+    networkTimeoutSeconds: 30,
   })
 );
 
