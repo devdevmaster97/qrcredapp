@@ -3,11 +3,85 @@ import axios from 'axios';
 
 export const dynamic = 'force-dynamic';
 
+// Cache para controlar requisições em andamento e rate limiting
+const requestsEmAndamento = new Map<string, Promise<any>>();
+const ultimasRequisicoes = new Map<string, number>();
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
     console.log('📥 API Antecipação - Dados recebidos:', body);
+    
+    // Criar chave única para esta solicitação
+    const chaveUnica = `${body.matricula}_${body.empregador}_${body.valor_pedido}_${body.mes_corrente}`;
+    const agora = Date.now();
+    
+    // 1. VERIFICAR RATE LIMITING (1 minuto entre solicitações similares)
+    const ultimaRequisicao = ultimasRequisicoes.get(chaveUnica);
+    if (ultimaRequisicao && (agora - ultimaRequisicao) < 60000) { // 60 segundos
+      const tempoRestante = Math.ceil((60000 - (agora - ultimaRequisicao)) / 1000);
+      console.log(`⏰ Rate limit ativo para ${chaveUnica}. Tempo restante: ${tempoRestante}s`);
+      
+      return NextResponse.json({
+        success: false,
+        error: `Aguarde ${tempoRestante} segundos antes de fazer nova solicitação similar`,
+        rate_limited: true,
+        tempo_restante: tempoRestante
+      }, { status: 429 });
+    }
+    
+    // 2. VERIFICAR SE JÁ EXISTE REQUISIÇÃO EM ANDAMENTO
+    if (requestsEmAndamento.has(chaveUnica)) {
+      console.log(`🔄 Requisição já em andamento para ${chaveUnica}. Aguardando...`);
+      
+      try {
+        // Aguardar a requisição em andamento
+        const resultado = await requestsEmAndamento.get(chaveUnica);
+        console.log(`✅ Retornando resultado da requisição em andamento para ${chaveUnica}`);
+        return resultado;
+      } catch (error) {
+        console.log(`❌ Erro na requisição em andamento para ${chaveUnica}:`, error);
+        // Se deu erro, remover do cache e continuar
+        requestsEmAndamento.delete(chaveUnica);
+      }
+    }
+    
+    // 3. MARCAR RATE LIMITING ANTES DE PROCESSAR
+    ultimasRequisicoes.set(chaveUnica, agora);
+    
+    // 4. CRIAR PROMISE PARA ESTA REQUISIÇÃO
+    const promiseRequisicao = processarSolicitacao(body, chaveUnica);
+    requestsEmAndamento.set(chaveUnica, promiseRequisicao);
+    
+    try {
+      const resultado = await promiseRequisicao;
+      return resultado;
+    } finally {
+      // Limpar cache após processamento
+      requestsEmAndamento.delete(chaveUnica);
+    }
+    
+  } catch (error) {
+    console.error('💥 Erro na API de antecipação:', error);
+    
+    return NextResponse.json({
+      success: false,
+      error: 'Erro interno do servidor'
+    }, { 
+      status: 500,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
+  }
+}
+
+async function processarSolicitacao(body: any, chaveUnica: string) {
+  try {
+    console.log(`🚀 Processando solicitação ${chaveUnica}`);
     
     // Validar campos obrigatórios
     const camposObrigatorios = ['matricula', 'pass', 'empregador', 'valor_pedido', 'taxa', 'valor_descontar', 'mes_corrente', 'chave_pix'];
@@ -35,7 +109,7 @@ export async function POST(request: NextRequest) {
     formData.append('id', (body.id || 0).toString());
     formData.append('id_divisao', (body.id_divisao || 0).toString());
     
-    console.log('🌐 Enviando para PHP grava_antecipacao_app.php:', Object.fromEntries(formData));
+    console.log(`🌐 [${chaveUnica}] Enviando para PHP grava_antecipacao_app.php:`, Object.fromEntries(formData));
     
     // Fazer chamada para o PHP
     const response = await axios.post(
@@ -53,7 +127,7 @@ export async function POST(request: NextRequest) {
       }
     );
     
-    console.log('📥 Resposta do PHP:', {
+    console.log(`📥 [${chaveUnica}] Resposta do PHP:`, {
       status: response.status,
       data: response.data
     });
@@ -72,7 +146,10 @@ export async function POST(request: NextRequest) {
     
     if (temErro) {
       const mensagem = response.data.message || 'Erro ao processar solicitação';
-      console.log('❌ Erro detectado:', mensagem);
+      console.log(`❌ [${chaveUnica}] Erro detectado:`, mensagem);
+      
+      // Remover do rate limiting se deu erro para permitir nova tentativa
+      ultimasRequisicoes.delete(chaveUnica);
       
       return NextResponse.json({
         success: false,
@@ -89,7 +166,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Sucesso
-    console.log('✅ Antecipação gravada com sucesso');
+    console.log(`✅ [${chaveUnica}] Antecipação gravada com sucesso`);
     return NextResponse.json({
       success: true,
       data: response.data,
@@ -103,7 +180,10 @@ export async function POST(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('💥 Erro na API de antecipação:', error);
+    console.error(`💥 [${chaveUnica}] Erro no processamento:`, error);
+    
+    // Remover do rate limiting se deu erro para permitir nova tentativa
+    ultimasRequisicoes.delete(chaveUnica);
     
     let errorMessage = 'Erro interno do servidor';
     let statusCode = 500;
