@@ -1,5 +1,25 @@
 importScripts('/workbox-4754cb34.js');
 
+// Forçar atualização do service worker - versão 2.1
+const CACHE_VERSION = 'v2.1';
+const CACHE_NAME = `sasapp-${CACHE_VERSION}`;
+
+// Limpar caches antigos na ativação
+self.addEventListener('activate', event => {
+  event.waitUntil(
+    caches.keys().then(cacheNames => {
+      return Promise.all(
+        cacheNames.map(cacheName => {
+          if (cacheName !== CACHE_NAME && cacheName.startsWith('sasapp-')) {
+            console.log('🗑️ Removendo cache antigo:', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+});
+
 workbox.routing.registerRoute(
   ({request}) => request.mode === 'navigate',
   new workbox.strategies.NetworkFirst({
@@ -46,12 +66,26 @@ workbox.routing.registerRoute(
 );
 
 // Rota específica para antecipação - SEMPRE usar rede, NUNCA cache
+// CRÍTICO: Evita duplicação de registros
 workbox.routing.registerRoute(
   /\/api\/antecipacao\/.*$/,
   new workbox.strategies.NetworkOnly({
     networkTimeoutSeconds: 30,
   })
 );
+
+// Forçar skip waiting para atualização imediata
+self.addEventListener('install', event => {
+  console.log('🔄 Service Worker instalado - versão', CACHE_VERSION);
+  self.skipWaiting();
+});
+
+// Notificar clientes sobre atualização
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
 
 // Se alguma rota não for especificamente tratada, cache como fallback
 workbox.routing.setCatchHandler(({event}) => {
