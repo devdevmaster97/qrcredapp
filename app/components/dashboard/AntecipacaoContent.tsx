@@ -73,6 +73,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
   const [solicitacaoData, setSolicitacaoData] = useState("");
   const [ultimasSolicitacoes, setUltimasSolicitacoes] = useState<SolicitacaoAntecipacao[]>([]);
   const [loadingHistorico, setLoadingHistorico] = useState(false);
+  const [mostrarTodasSolicitacoes, setMostrarTodasSolicitacoes] = useState(false);
   
   // Valores para exibição após a solicitação ser enviada
   const [valorConfirmado, setValorConfirmado] = useState("");
@@ -820,8 +821,8 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
                 <p className="text-gray-500 text-center py-2">Nenhuma solicitação encontrada</p>
               ) : (
                 <div className="space-y-3">
-                  {/* Solicitações Mais Recentes (limitando a 3) */}
-                  {ultimasSolicitacoes.slice(0, 3).map((solicitacao) => (
+                  {/* Solicitações Mais Recentes */}
+                  {(mostrarTodasSolicitacoes ? ultimasSolicitacoes : ultimasSolicitacoes.slice(0, 3)).map((solicitacao) => (
                     <div 
                       key={solicitacao.id} 
                       className={`p-3 rounded-lg border ${getStatusClass(solicitacao.status)}`}
@@ -847,11 +848,11 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
                   
                   {ultimasSolicitacoes.length > 3 && (
                     <button
-                      onClick={() => fetchHistoricoSolicitacoes()}
+                      onClick={() => setMostrarTodasSolicitacoes(!mostrarTodasSolicitacoes)}
                       className="text-blue-600 text-sm hover:underline w-full text-center py-1"
                       type="button"
                     >
-                      Ver mais solicitações
+                      {mostrarTodasSolicitacoes ? 'Ver menos solicitações' : 'Ver mais solicitações'}
                     </button>
                   )}
                 </div>
