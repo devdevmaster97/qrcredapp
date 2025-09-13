@@ -204,15 +204,24 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
       });
     }
     
-    // Sucesso - verificar se realmente foi bem-sucedido
-    const isSuccess = response.data.success === true || 
+    // Sucesso - verificar se realmente foi bem-sucedido (detecção mais flexível)
+    const isSuccess = response.status === 200 || 
+                     response.data.success === true || 
                      response.data.success === "true" ||
+                     response.data.success === 1 ||
+                     response.data.success === "1" ||
                      response.data.id ||
+                     response.data.situacao === 1 ||
+                     response.data.situacao === "1" ||
                      (response.data.message && (
                        response.data.message.toLowerCase().includes("sucesso") ||
                        response.data.message.toLowerCase().includes("inseridos") ||
-                       response.data.message.toLowerCase().includes("processada")
-                     ));
+                       response.data.message.toLowerCase().includes("processada") ||
+                       response.data.message.toLowerCase().includes("gravado") ||
+                       response.data.message.toLowerCase().includes("salvo")
+                     )) ||
+                     // Se não há erro explícito e status HTTP é 200, considerar sucesso
+                     (response.status === 200 && !temErro);
     
     if (isSuccess) {
       console.log(`✅ [${chaveUnica}] Antecipação gravada com sucesso`);
