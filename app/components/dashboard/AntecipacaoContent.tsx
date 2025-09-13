@@ -473,6 +473,8 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         valor_descontar: valorTotal.toFixed(2),
         mes_corrente: saldoData?.mesCorrente,
         chave_pix: chavePix,
+        id: associadoData?.id,
+        id_divisao: associadoData?.id_divisao,
         request_id: requestId // Adicionar ID único
       };
       
@@ -488,6 +490,9 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       formData.append('valor_descontar', payload.valor_descontar);
       formData.append('mes_corrente', payload.mes_corrente || '');
       formData.append('chave_pix', payload.chave_pix);
+      formData.append('id', (payload.id || 0).toString());
+      formData.append('id_divisao', (payload.id_divisao || 0).toString());
+      
       
       const response = await axios.post(
         'https://sas.makecard.com.br/grava_antecipacao_app.php',
@@ -548,10 +553,12 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
           
           // Limpar apenas o campo de senha para nova tentativa
           setSenha("");
-        } else {
-          console.log(`❌ [${requestId}] Erro na solicitação:`, mensagem);
-          setErro(mensagem || 'Erro ao processar solicitação');
+          
+          setLoading(false);
+          return;
         }
+        console.log(`❌ [${requestId}] Erro na solicitação:`, mensagem);
+        setErro(mensagem || 'Erro ao processar solicitação');
       } else {
         // Verificar se realmente foi um sucesso
         const isRealSuccess = response.data.success === true || 
