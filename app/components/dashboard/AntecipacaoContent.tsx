@@ -898,7 +898,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
               </button>
             </div>
           </div>
-        ) : !temSaldoDisponivel() ? (
+        ) : !isInitialLoading && !temSaldoDisponivel() ? (
           /* Mensagem quando não há saldo disponível */
           <div className="p-6 bg-red-50 border border-red-200 rounded-lg text-center">
             <div className="flex items-center justify-center mb-4">
