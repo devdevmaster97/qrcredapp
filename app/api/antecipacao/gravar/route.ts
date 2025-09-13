@@ -139,7 +139,7 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     formData.append('valor_pedido', body.valor_pedido);
     formData.append('taxa', body.taxa);
     formData.append('valor_descontar', body.valor_descontar);
-    formData.append('mes', body.mes_corrente || '');
+    formData.append('mes_corrente', body.mes_corrente || '');
     formData.append('chave_pix', body.chave_pix);
     formData.append('id', (body.id || 0).toString());
     formData.append('id_divisao', (body.id_divisao || 0).toString());
