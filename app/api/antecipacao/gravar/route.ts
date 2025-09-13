@@ -17,11 +17,16 @@ export async function POST(request: NextRequest) {
     const chaveUnica = `${body.matricula}_${body.empregador}_${body.valor_pedido}_${body.mes_corrente}`;
     const agora = Date.now();
     
+    console.log(`🔑 [API] Chave única gerada: ${chaveUnica}`);
+    console.log(`⏰ [API] Timestamp atual: ${agora}`);
+    console.log(`📋 [API] Cache rate limiting atual:`, Array.from(ultimasRequisicoes.entries()));
+    console.log(`🔄 [API] Requisições em andamento:`, Array.from(requestsEmAndamento.keys()));
+    
     // 1. VERIFICAR RATE LIMITING (30 segundos - mais flexível)
     const ultimaRequisicao = ultimasRequisicoes.get(chaveUnica);
     if (ultimaRequisicao && (agora - ultimaRequisicao) < 30000) { // 30 segundos
       const tempoRestante = Math.ceil((30000 - (agora - ultimaRequisicao)) / 1000);
-      console.log(`⏰ Rate limit ativo para ${chaveUnica}. Tempo restante: ${tempoRestante}s`);
+      console.log(`⏰ [API] Rate limit ativo para ${chaveUnica}. Última: ${ultimaRequisicao}, Agora: ${agora}, Diferença: ${agora - ultimaRequisicao}ms, Tempo restante: ${tempoRestante}s`);
       
       return NextResponse.json({
         success: false,
@@ -29,6 +34,8 @@ export async function POST(request: NextRequest) {
         rate_limited: true,
         tempo_restante: tempoRestante
       }, { status: 429 });
+    } else {
+      console.log(`✅ [API] Rate limiting OK para ${chaveUnica}. Última requisição: ${ultimaRequisicao ? new Date(ultimaRequisicao).toISOString() : 'nunca'}`);
     }
     
     // 2. VERIFICAR SE JÁ EXISTE REQUISIÇÃO EM ANDAMENTO
@@ -47,10 +54,12 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // 3. MARCAR RATE LIMITING ANTES DE PROCESSAR
+    // 3. MARCAR RATE LIMITING ANTES DE PROCESSAR (CRÍTICO PARA EVITAR DUPLICAÇÃO)
+    console.log(`🔒 [API] Marcando rate limiting ANTES do processamento para ${chaveUnica} em ${agora}`);
     ultimasRequisicoes.set(chaveUnica, agora);
     
     // 4. CRIAR PROMISE PARA ESTA REQUISIÇÃO
+    console.log(`🚀 [API] Criando promise de processamento para ${chaveUnica}`);
     const promiseRequisicao = processarSolicitacao(body, chaveUnica);
     requestsEmAndamento.set(chaveUnica, promiseRequisicao);
     
