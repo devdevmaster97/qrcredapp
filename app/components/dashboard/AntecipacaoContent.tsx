@@ -232,7 +232,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     }
     
     try {
-      setLoading(true);
+      // NÃO alterar loading aqui para evitar conflito com submissão de antecipação
       setErro("");
       
       // 1. Validar se temos id_divisao do associado
@@ -286,7 +286,10 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         setErro('Não foi possível carregar seus dados. Tente novamente.');
       }
     } finally {
-      setLoading(false);
+      // Só alterar loading se não estivermos em uma submissão ativa
+      if (!submissoesEmAndamento.size) {
+        setLoading(false);
+      }
       setIsInitialLoading(false);
     }
   }, [cartao, associadoData, fetchMesCorrente, fetchConta]);
