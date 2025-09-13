@@ -51,8 +51,9 @@ interface SolicitacaoAntecipacao {
   status: string | boolean | null;
 }
 
-// Adicione essa variável fora do componente para compartilhar entre renderizações
-let isSubmitting = false;
+// Cache global para controlar submissões em andamento
+const submissoesEmAndamento = new Map<string, boolean>();
+const ultimaSubmissao = new Map<string, number>();
 
 export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoProps) {
   const { data: session } = useSession({ required: false });
@@ -420,15 +421,28 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
   };
 
   // Manipular envio do formulário
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: any) => {
+    if (e) e.preventDefault();
+    
+    // Criar chave única para controle de duplicação
+    const chaveUnica = `${associadoData?.matricula}_${associadoData?.empregador}_${valorSolicitado}_${saldoData?.mesCorrente}`;
+    const agora = Date.now();
     
     // Gerar ID único para esta solicitação
     const requestId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    console.log(`🚀 [${requestId}] Iniciando nova solicitação de antecipação`);
+    console.log(`🚀 [${requestId}] Iniciando nova solicitação de antecipação - Chave: ${chaveUnica}`);
     
-    // Prevenir duplo clique/envio
-    if (isSubmitting) {
+    // 1. VERIFICAR RATE LIMITING FRONTEND (30 segundos)
+    const ultimaSubmissaoTime = ultimaSubmissao.get(chaveUnica);
+    if (ultimaSubmissaoTime && (agora - ultimaSubmissaoTime) < 30000) {
+      const tempoRestante = Math.ceil((30000 - (agora - ultimaSubmissaoTime)) / 1000);
+      console.log(`⏰ [${requestId}] Rate limit frontend ativo. Tempo restante: ${tempoRestante}s`);
+      setErro(`Aguarde ${tempoRestante} segundos antes de tentar novamente`);
+      return;
+    }
+    
+    // 2. VERIFICAR SE JÁ ESTÁ PROCESSANDO
+    if (submissoesEmAndamento.get(chaveUnica)) {
       console.log(`⚠️ [${requestId}] Solicitação já está sendo processada, ignorando nova tentativa`);
       return;
     }
@@ -448,8 +462,9 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       return;
     }
 
-    // Marcar como enviando
-    isSubmitting = true;
+    // 3. MARCAR COMO PROCESSANDO
+    ultimaSubmissao.set(chaveUnica, agora);
+    submissoesEmAndamento.set(chaveUnica, true);
     setLoading(true);
     
     console.log(`📤 [${requestId}] Preparando dados para envio:`, {
@@ -631,7 +646,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       console.log(`🏁 [${requestId}] Finalizando solicitação - liberando flags`);
       setLoading(false);
       // Liberar flag de submissão
-      isSubmitting = false;
+      submissoesEmAndamento.delete(chaveUnica);
     }
   };
 
@@ -885,7 +900,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
           </div>
         ) : (
           /* Formulário de Solicitação */
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={(e) => e.preventDefault()}>
             {/* Campo de Valor */}
             <div className="mb-4">
               <label htmlFor="valor" className="block text-sm font-medium text-gray-700 mb-1">
@@ -980,22 +995,14 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
             
             {/* Botão de Envio */}
             <button
-              type="submit"
+              type="button"
               className={`w-full p-3 ${
-                loading || isSubmitting
+                loading
                   ? 'bg-gray-400 cursor-not-allowed' 
                   : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
               } text-white rounded-lg transition-colors font-medium`}
-              disabled={loading || isSubmitting}
-              onClick={(e) => {
-                // Verificação extra para prevenir múltiplos cliques
-                if (loading || isSubmitting) {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  console.log('⚠️ Botão bloqueado - já processando solicitação');
-                  return false;
-                }
-              }}
+              disabled={loading}
+              onClick={handleSubmit}
             >
               {loading ? (
                 <span className="flex items-center justify-center">
