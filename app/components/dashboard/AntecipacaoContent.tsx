@@ -676,6 +676,44 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     }
   };
 
+  // Função para obter classes CSS baseadas no status
+  const getStatusClass = (status: string | boolean | null | undefined): string => {
+    try {
+      // Se for booleano
+      if (typeof status === 'boolean') {
+        return status 
+          ? 'bg-green-50 border-green-200' 
+          : 'bg-red-50 border-red-200';
+      }
+      
+      // Se for nulo ou indefinido, retornar pendente
+      if (status === null || status === undefined) {
+        return 'bg-yellow-50 border-yellow-200';
+      }
+      
+      // Se for string, verificar os valores
+      if (typeof status === 'string') {
+        if (isStringInArray(status, ['aprovado', 'aprovada', 's', 'sim'])) {
+          return 'bg-green-50 border-green-200';
+        }
+        
+        if (isStringInArray(status, ['recusado', 'recusada', 'n', 'nao', 'não'])) {
+          return 'bg-red-50 border-red-200';
+        }
+        
+        if (isStringInArray(status, ['pendente', 'analise', 'análise'])) {
+          return 'bg-yellow-50 border-yellow-200';
+        }
+      }
+      
+      // Padrão para qualquer outro valor
+      return 'bg-yellow-50 border-yellow-200';
+    } catch (error) {
+      console.error('⚠️ Erro em getStatusClass:', error, { status });
+      return 'bg-gray-50 border-gray-200';
+    }
+  };
+
   // Formatar status para exibição amigável
   const formatarStatus = (status: string | boolean | null | undefined) => {
     try {
