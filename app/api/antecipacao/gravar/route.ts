@@ -282,7 +282,20 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     
     console.log(`📥 [RESPOSTA PHP] RequestID: ${requestId} - Status: ${response.status} - Tempo: ${tempoProcessamento}ms`);
     console.log(`📋 [DADOS RESPOSTA] RequestID: ${requestId} - Data:`, response.data);
-    console.log(`✅ [CRÍTICO] CHAMADA PHP CONCLUÍDA - RequestID: ${requestId} - Chave: ${chaveUnica} - Timestamp: ${timestampResposta}`);
+    console.log(`🔍 [ANÁLISE PHP] RequestID: ${requestId} - Headers:`, response.headers);
+    
+    // Log detalhado da resposta PHP para análise
+    if (response.data) {
+      console.log(`📊 [PHP DETALHADO] RequestID: ${requestId} - Tipo resposta:`, typeof response.data);
+      console.log(`📊 [PHP DETALHADO] RequestID: ${requestId} - Conteúdo completo:`, JSON.stringify(response.data, null, 2));
+    }
+
+    debugInfo.etapas_executadas.push('resposta_php_recebida');
+    debugInfo.php_response_status = response.status;
+    debugInfo.php_response_data = response.data;
+    debugInfo.php_response_headers = response.headers;
+    debugInfo.tempo_processamento_php = tempoProcessamento;
+    debugInfo.php_response_type = typeof response.data;
     
     // Verificar se houve erro (incluindo erros de duplicata da trigger)
     const temErro = response.status >= 400 ||
@@ -342,12 +355,16 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     
     if (isSuccess) {
       console.log(`✅ [${chaveUnica}] Antecipação gravada com sucesso`);
+      console.log(`✅ [SUCESSO FINAL] RequestID: ${requestId} - Retornando sucesso com debug_info completo`);
+      console.log(`📊 [DEBUG_INFO FINAL] RequestID: ${requestId}:`, JSON.stringify(debugInfo, null, 2));
+      
       return NextResponse.json({
         success: true,
         data: response.data,
         message: response.data.message || 'Solicitação processada com sucesso',
         id: response.data.id,
-        duplicate_prevented: response.data.duplicate_prevented
+        duplicate_prevented: response.data.duplicate_prevented,
+        debug_info: debugInfo
       }, {
         headers: {
           'Cache-Control': 'no-cache, no-store, must-revalidate',
