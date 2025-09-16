@@ -134,6 +134,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
   const [ultimasSolicitacoes, setUltimasSolicitacoes] = useState<SolicitacaoAntecipacao[]>([]);
   const [loadingHistorico, setLoadingHistorico] = useState(false);
   const [mostrarTodasSolicitacoes, setMostrarTodasSolicitacoes] = useState(false);
+  const [historicoApiDisponivel, setHistoricoApiDisponivel] = useState(true);
   
   // Valores para exibição após a solicitação ser enviada
   const [valorConfirmado, setValorConfirmado] = useState("");
@@ -411,7 +412,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
 
   // Função para buscar o histórico de solicitações
   const fetchHistoricoSolicitacoes = useCallback(async () => {
-    if (!associadoData?.matricula) return;
+    if (!associadoData?.matricula || !historicoApiDisponivel) return;
     
     try {
       setLoadingHistorico(true);
@@ -434,11 +435,18 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       }
     } catch (error) {
       console.error('Erro ao buscar histórico de solicitações:', error);
+      // Se for erro 403, marcar API como indisponível
+      if (axios.isAxiosError(error) && error.response?.status === 403) {
+        console.log('🚫 API de histórico retornou 403 - marcando como indisponível');
+        setHistoricoApiDisponivel(false);
+        setUltimasSolicitacoes([]);
+        return;
+      }
       setUltimasSolicitacoes([]);
     } finally {
       setLoadingHistorico(false);
     }
-  }, [associadoData]);
+  }, [associadoData, historicoApiDisponivel]);
 
   // Carregar o cartão do usuário - apenas uma vez
   useEffect(() => {
@@ -488,7 +496,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       }
       fetchHistoricoSolicitacoes();
     }
-  }, [associadoData, loadSaldoData, isInitialLoading, fetchHistoricoSolicitacoes]);
+  }, [associadoData, loadSaldoData, isInitialLoading]);
 
   // Função para forçar atualização do saldo (útil quando mês corrente muda)
   const atualizarSaldo = useCallback(async () => {
@@ -906,9 +914,16 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
                 <FaClockRotateLeft className="mr-1" /> Status de Solicitações
               </h3>
               <button 
-                onClick={() => fetchHistoricoSolicitacoes()}
+                onClick={() => {
+                  if (!historicoApiDisponivel) {
+                    setHistoricoApiDisponivel(true);
+                    fetchHistoricoSolicitacoes();
+                  } else {
+                    fetchHistoricoSolicitacoes();
+                  }
+                }}
                 className="text-blue-600 p-1 rounded hover:bg-blue-50"
-                title="Atualizar histórico"
+                title={historicoApiDisponivel ? "Atualizar histórico" : "Reativar API de histórico"}
                 disabled={loadingHistorico}
                 type="button"
               >
@@ -917,7 +932,12 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
             </div>
             
             <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-              {loadingHistorico ? (
+              {!historicoApiDisponivel ? (
+                <div className="text-center py-4">
+                  <p className="text-orange-600 font-medium mb-2">⚠️ API de histórico indisponível</p>
+                  <p className="text-gray-500 text-sm">Clique no botão de atualizar para tentar novamente</p>
+                </div>
+              ) : loadingHistorico ? (
                 <div className="flex justify-center py-4">
                   <FaSpinner className="animate-spin text-blue-600" />
                 </div>
