@@ -17,13 +17,13 @@ export async function POST(request: NextRequest) {
     
     console.log(`📥 [${requestId}] API Antecipação - Dados recebidos:`, {
       matricula: body.matricula,
-      valor_pedido: body.valor_pedido,
+      valor: body.valor,
       request_id: body.request_id,
       frontend_request_id: requestId
     });
     
     // Criar chave única para esta solicitação
-    const chaveUnica = `${body.matricula}_${body.empregador}_${body.valor_pedido}_${body.mes_corrente}`;
+    const chaveUnica = `${body.matricula}_${body.valor}_${body.request_id}`;
     
     const agora = Date.now();
     console.log(`🔑 [API] Chave única gerada: ${chaveUnica}`);
