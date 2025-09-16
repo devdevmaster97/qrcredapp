@@ -17,17 +17,13 @@ export async function POST(request: NextRequest) {
     
     // Criar chave única para esta solicitação
     const chaveUnica = `${body.matricula}_${body.empregador}_${body.valor_pedido}_${body.mes_corrente}`;
-    const agora = Date.now();
     
     console.log(`🔑 [API] Chave única gerada: ${chaveUnica}`);
-    console.log(`⏰ [API] Timestamp atual: ${agora}`);
-    console.log(`📋 [API] Cache rate limiting atual:`, Array.from(ultimasRequisicoes.entries()));
-    console.log(`🔄 [API] Requisições em andamento:`, Array.from(requestsEmAndamento.keys()));
     console.log(`🔒 [API] Controle execução única:`, Array.from(execucaoUnica.entries()));
     
-    // 0. VERIFICAÇÃO CRÍTICA DE EXECUÇÃO ÚNICA (PRIMEIRA LINHA DE DEFESA)
-    if (execucaoUnica.get(chaveUnica) === true) {
-      console.log(`🚨 [EXECUÇÃO ÚNICA] Bloqueando - solicitação ${chaveUnica} já está sendo executada`);
+    // 0. VERIFICAÇÃO CRÍTICA DE EXECUÇÃO ÚNICA (PRIMEIRA LINHA DE DEFESA - ANTES DE TUDO)
+    if (execucaoUnica.has(chaveUnica)) {
+      console.log(`🚨 [EXECUÇÃO ÚNICA] BLOQUEIO IMEDIATO - solicitação ${chaveUnica} já está sendo executada`);
       return NextResponse.json({
         success: false,
         error: 'Solicitação já está sendo processada. Aguarde a conclusão.',
@@ -35,9 +31,14 @@ export async function POST(request: NextRequest) {
       }, { status: 409 });
     }
     
-    // Marcar imediatamente como em execução
+    // Marcar IMEDIATAMENTE como em execução (ANTES de qualquer outra operação)
     execucaoUnica.set(chaveUnica, true);
-    console.log(`🔐 [EXECUÇÃO ÚNICA] Marcado como em execução: ${chaveUnica}`);
+    console.log(`🔐 [EXECUÇÃO ÚNICA] MARCADO IMEDIATAMENTE como em execução: ${chaveUnica}`);
+    
+    const agora = Date.now();
+    console.log(`⏰ [API] Timestamp atual: ${agora}`);
+    console.log(`📋 [API] Cache rate limiting atual:`, Array.from(ultimasRequisicoes.entries()));
+    console.log(`🔄 [API] Requisições em andamento:`, Array.from(requestsEmAndamento.keys()));
     
     // 1. VERIFICAR RATE LIMITING (60 segundos - mais rigoroso para evitar duplicação)
     const ultimaRequisicao = ultimasRequisicoes.get(chaveUnica);
