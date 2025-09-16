@@ -533,47 +533,12 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
   const handleSubmit = async (e?: any) => {
     if (e) e.preventDefault();
     
-    const agora = Date.now();
-    
-    // PROTEÇÃO UNIVERSAL - APLICADA A TODOS OS DISPOSITIVOS
-    if (protecaoUniversal) {
-      addDebugLog(`🚫 PROTEÇÃO ATIVA - Ignorando onClick`);
+    // Verificar se já está processando
+    if (loading) {
       return;
     }
     
-    addDebugLog(`🔒 onClick EXECUTANDO - Dispositivo: ${isMobile ? 'MOBILE' : 'DESKTOP'}`);
-    
-    // Criar chave única para controle de duplicação
-    const chaveUnica = `${associadoData?.matricula}_${associadoData?.empregador}_${valorSolicitado}_${saldoData?.mesCorrente}`;
-    
-    // Gerar ID único para esta solicitação
-    const requestId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    addDebugLog(`🚀 INICIANDO SOLICITAÇÃO - ID: ${requestId.slice(-6)}`);
-    
-    // 1. VERIFICAR RATE LIMITING DUPLO (Memória + localStorage)
-    const rateLimitTime = isMobile ? 30000 : 15000; // 30s para mobile, 15s para desktop
-    
-    // Verificar no cache em memória
-    const ultimaSubmissaoTime = ultimaSubmissao.get(chaveUnica);
-    const temMemoria = ultimaSubmissaoTime && (agora - ultimaSubmissaoTime) < rateLimitTime;
-    
-    // Verificar no localStorage (funciona em PWA e navegador)
-    const temLocalStorage = verificarProtecaoLocalStorage(chaveUnica, rateLimitTime);
-    
-    if (temMemoria || temLocalStorage) {
-      const tempoRestanteMemoria = ultimaSubmissaoTime ? Math.ceil((rateLimitTime - (agora - ultimaSubmissaoTime)) / 1000) : 0;
-      const tempoRestante = Math.max(tempoRestanteMemoria, 15); // Mínimo 15s
-      addDebugLog(`⏰ PROTEÇÃO DUPLA ATIVA - Memória:${temMemoria} LocalStorage:${temLocalStorage} - Restam ${tempoRestante}s`);
-      setErro(`Aguarde ${tempoRestante} segundos antes de tentar novamente`);
-      return;
-    }
-    
-    // 2. VERIFICAR SE JÁ ESTÁ PROCESSANDO
-    if (submissoesEmAndamento.get(chaveUnica)) {
-      addDebugLog(`⚠️ JÁ PROCESSANDO - Ignorando nova tentativa`);
-      return;
-    }
-    
+    // Validações básicas
     if (!valorSolicitado || parseFloat(valorSolicitado) / 100 <= 0) {
       setErro("Digite o valor desejado");
       return;
@@ -589,25 +554,8 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       return;
     }
 
-    // 3. MARCAR COMO EM ANDAMENTO ANTES DE PROCESSAR (Dupla proteção)
-    submissoesEmAndamento.set(chaveUnica, true);
-    ultimaSubmissao.set(chaveUnica, agora);
-    
-    // Salvar também no localStorage para PWA/navegador
-    salvarProtecaoLocalStorage(chaveUnica, agora);
-    
-    // Limpar proteções antigas para não acumular dados
-    limparProtecoesAntigas();
-    
-    addDebugLog(`🛡️ PROTEÇÃO DUPLA ATIVADA - Memória + LocalStorage - ID: ${requestId.slice(-6)}`);
-
     setLoading(true);
     setErro("");
-
-    // PROTEÇÃO ADICIONAL: Desabilitar botão visualmente para mobile
-    if (isMobile) {
-      console.log(` [MOBILE] Botão desabilitado durante processamento`);
-    }
     
     try {
       const valorNumerico = parseFloat(valorSolicitado) / 100;
@@ -623,150 +571,50 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         chave_pix: chavePix,
         id: associadoData?.id,
         id_divisao: associadoData?.id_divisao,
-        request_id: requestId
       };
 
-      addDebugLog(` ENVIANDO PARA API - Valor: R$${valorNumerico.toFixed(2)}`);
-
-      const response = await axios.post('/api/antecipacao/gravar', payload, {
+      const response = await fetch('/api/antecipacao/gravar', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
+          'Cache-Control': 'no-cache',
         },
-        timeout: 15000
+        body: JSON.stringify(payload),
       });
 
-      addDebugLog(` RESPOSTA API - Status: ${response.status} Success: ${response.data.success}`);
+      const data = await response.json();
 
-      // Verificar se houve erro (status HTTP erro OU success === false OU mensagem de erro)
-      const temErro = response.status >= 400 ||
-                     response.data.success === false || 
-                     (response.data.message && (
-                       response.data.message.toLowerCase().includes("erro") ||
-                       response.data.message.toLowerCase().includes("senha") ||
-                       response.data.message.toLowerCase().includes("incorreta") ||
-                       response.data.message.toLowerCase().includes("inválida") ||
-                       response.data.message.toLowerCase().includes("falhou") ||
-                       response.data.message.toLowerCase().includes("negado")
-                     ));
-
-      if (temErro) {
-        // Verificar especificamente se é um erro de senha
-        const mensagem = response.data.message || '';
-        const isErroSenha = mensagem.toLowerCase().includes("senha") || 
-                           mensagem.toLowerCase().includes("password") ||
-                           mensagem.toLowerCase().includes("incorreta") ||
-                           mensagem.toLowerCase().includes("inválida") ||
-                           mensagem.toLowerCase().includes("authentication") ||
-                           mensagem.toLowerCase().includes("login");
+      if (data.success) {
+        // Sucesso - mostrar dados da solicitação
+        setSolicitado(true);
+        setValorConfirmado(formatarValor(valorNumerico));
+        setTaxaConfirmada(taxa);
+        setTotalConfirmado(valorTotal);
+        setSolicitacaoData(new Date().toLocaleDateString('pt-BR'));
         
-        if (isErroSenha) {
-          console.log(`🔒 [${requestId}] Erro de senha detectado:`, mensagem);
-          setErro("❌ Senha incorreta! Use a mesma senha que você utiliza para acessar o aplicativo.");
-          
-          // Destacar visualmente o campo de senha
-          const senhaInput = document.getElementById('senha');
-          if (senhaInput) {
-            senhaInput.classList.add('border-red-500', 'bg-red-50');
-            setTimeout(() => {
-              senhaInput.classList.remove('border-red-500', 'bg-red-50');
-            }, 3000);
-          }
-          
-          // Limpar apenas o campo de senha para nova tentativa
-          setSenha("");
-          
-          setLoading(false);
-          return;
-        }
-        console.log(`❌ [${requestId}] Erro na solicitação:`, mensagem);
-        setErro(mensagem || 'Erro ao processar solicitação');
+        // Limpar formulário
+        setValorSolicitado("");
+        setValorFormatado("");
+        setTaxa(0);
+        setValorTotal(0);
+        setChavePix("");
+        setSenha("");
+        
+        // Atualizar histórico
+        fetchHistoricoSolicitacoes();
+        
+        // Atualizar saldo
+        loadSaldoData();
       } else {
-        // Verificar se realmente foi um sucesso
-        const isRealSuccess = response.data.success === true || 
-                             response.data.success === "true" ||
-                             response.data.id || 
-                             response.data.data?.id ||
-                             (response.data.message && (
-                               response.data.message.toLowerCase().includes("sucesso") ||
-                               response.data.message.toLowerCase().includes("inseridos") ||
-                               response.data.message.toLowerCase().includes("processada") ||
-                               response.data.message.toLowerCase().includes("enviada")
-                             ));
-        
-        if (isRealSuccess) {
-          console.log(`✅ [${requestId}] Solicitação processada com sucesso!`, {
-            duplicate_prevented: response.data.duplicate_prevented,
-            id: response.data.id
-          });
-          
-          // Salvar os valores confirmados antes de limpar o formulário
-          setValorConfirmado(valorFormatado);
-          setTaxaConfirmada(taxa);
-          setTotalConfirmado(valorTotal);
-          
-          // Sucesso na solicitação
-          setSolicitado(true);
-          setSolicitacaoData(format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }));
-          toast.success("Solicitação enviada para análise!");
-          
-          // Limpar apenas o formulário para novas entradas
-          setValorSolicitado("");
-          setChavePix("");
-          setSenha("");
-          setErro("");
-          
-          // Atualizar o histórico de solicitações (sem bloquear o fluxo)
-          try {
-            await fetchHistoricoSolicitacoes();
-            console.log('✅ Histórico de solicitações atualizado');
-          } catch (error) {
-            console.warn('⚠️ Erro ao atualizar histórico (não crítico):', error);
-          }
-          
-          // Recalcular o saldo disponível após a solicitação (sem bloquear o fluxo)
-          try {
-            console.log('🔄 Recalculando saldo disponível após nova solicitação...');
-            await loadSaldoData();
-            console.log('✅ Saldo recalculado com sucesso');
-          } catch (error) {
-            console.warn('⚠️ Erro ao recalcular saldo (não crítico):', error);
-          }
-        } else {
-          // Não é um sucesso real - tratar como erro
-          console.log(`❌ [${requestId}] Resposta ambígua tratada como erro:`, response.data);
-          const mensagem = response.data.message || 'Erro ao processar solicitação';
-          if (mensagem.toLowerCase().includes("senha") || 
-              mensagem.toLowerCase().includes("incorreta") ||
-              mensagem.toLowerCase().includes("inválida")) {
-            setErro("❌ Senha incorreta! Use a mesma senha que você utiliza para acessar o aplicativo.");
-            setSenha("");
-          } else {
+        setErro(data.error || 'Erro ao processar solicitação');
       }
-          const senhaInput = document.getElementById('senha');
-          if (senhaInput) {
-            senhaInput.classList.add('border-red-500', 'bg-red-50');
-            setTimeout(() => {
-              senhaInput.classList.remove('border-red-500', 'bg-red-50');
-            }, 3000);
-          }
-          
-          setLoading(false);
-          return;
-        }
-      }
-      
-      setErro('Não foi possível processar sua solicitação. Tente novamente.');
+    } catch (error) {
+      console.error('Erro na solicitação:', error);
+      setErro('Erro de conexão. Tente novamente.');
     } finally {
-      console.log(`🏁 [${requestId}] Finalizando solicitação - liberando flags`);
       setLoading(false);
-      // Liberar flag de submissão
-      submissoesEmAndamento.delete(chaveUnica);
     }
   };
-
   // Função para obter classes CSS baseadas no status
   const getStatusClass = (status: string | boolean | null | undefined): string => {
     try {
@@ -784,15 +632,16 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       
       // Se for string, verificar os valores
       if (typeof status === 'string') {
-        if (isStringInArray(status, ['aprovado', 'aprovada', 's', 'sim'])) {
+        const statusLower = status.toLowerCase();
+        if (['aprovado', 'aprovada', 's', 'sim'].includes(statusLower)) {
           return 'bg-green-50 border-green-200';
         }
         
-        if (isStringInArray(status, ['recusado', 'recusada', 'n', 'nao', 'não'])) {
+        if (['recusado', 'recusada', 'n', 'nao', 'não'].includes(statusLower)) {
           return 'bg-red-50 border-red-200';
         }
         
-        if (isStringInArray(status, ['pendente', 'analise', 'análise'])) {
+        if (['pendente', 'analise', 'análise'].includes(statusLower)) {
           return 'bg-yellow-50 border-yellow-200';
         }
       }
@@ -822,15 +671,16 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       
       // Se for string, verificar os valores
       if (typeof status === 'string') {
-        if (isStringInArray(status, ['aprovado', 'aprovada', 's', 'sim'])) {
+        const statusLower = status.toLowerCase();
+        if (['aprovado', 'aprovada', 's', 'sim'].includes(statusLower)) {
           return <span className="text-green-600 font-medium">Aprovada</span>;
         }
         
-        if (isStringInArray(status, ['recusado', 'recusada', 'n', 'nao', 'não'])) {
+        if (['recusado', 'recusada', 'n', 'nao', 'não'].includes(statusLower)) {
           return <span className="text-red-600 font-medium">Recusada</span>;
         }
         
-        if (isStringInArray(status, ['pendente', 'analise', 'análise'])) {
+        if (['pendente', 'analise', 'análise'].includes(statusLower)) {
           return <span className="text-yellow-600 font-medium">Em análise</span>;
         }
       }
@@ -1123,40 +973,6 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
               </div>
             )}
             
-            {/* Botão de Debug (apenas para mobile) */}
-            {isMobile && (
-              <button
-                type="button"
-                onClick={() => setMostrarDebug(!mostrarDebug)}
-                className="w-full mb-3 py-2 px-4 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm"
-              >
-                {mostrarDebug ? '🔍 Ocultar Debug' : '🔍 Mostrar Debug'}
-              </button>
-            )}
-
-            {/* Painel de Debug */}
-            {mostrarDebug && (
-              <div className="mb-4 p-3 bg-black text-green-400 rounded-lg text-xs font-mono max-h-60 overflow-y-auto">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-green-300 font-bold">🔍 DEBUG LOGS</span>
-                  <button
-                    onClick={() => setDebugLogs([])}
-                    className="text-red-400 hover:text-red-300 text-xs"
-                  >
-                    Limpar
-                  </button>
-                </div>
-                {debugLogs.length === 0 ? (
-                  <div className="text-gray-500">Nenhum log ainda...</div>
-                ) : (
-                  debugLogs.map((log, index) => (
-                    <div key={index} className="mb-1 break-words">
-                      {log}
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
 
             {/* Botão de Envio */}
             <button
@@ -1168,30 +984,6 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
               } text-white rounded-lg transition-colors font-medium`}
               disabled={loading}
               onClick={handleSubmit}
-              onTouchStart={(e) => {
-                addDebugLog(`👆 [TOUCH] Touch detectado - Estado atual: ${protecaoUniversal ? 'PROTEGIDO' : 'LIVRE'}`);
-                
-                // PROTEÇÃO RADICAL: Bloquear touches subsequentes
-                if (protecaoUniversal) {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  addDebugLog(`🚫 [TOUCH] PROTEÇÃO ATIVA - Touch ignorado`);
-                  return;
-                }
-                
-                // Ativar proteção IMEDIATAMENTE para próximos touches
-                setProtecaoUniversal(true);
-                addDebugLog(`🔒 [TOUCH] PROTEÇÃO ATIVADA - Próximos touches bloqueados por 60s`);
-                
-                // NÃO EXECUTAR handleSubmit aqui - deixar apenas o onClick executar
-                addDebugLog(`✅ [TOUCH] Primeiro touch permitido - onClick será executado`);
-                
-                // Desativar proteção após 60 segundos
-                setTimeout(() => {
-                  setProtecaoUniversal(false);
-                  addDebugLog(`🔓 [TOUCH] PROTEÇÃO DESATIVADA - Botão liberado`);
-                }, 60000);
-              }}
             >
               {loading ? (
                 <span className="flex items-center justify-center">
