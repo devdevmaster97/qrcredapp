@@ -289,6 +289,11 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     if (response.data) {
       console.log(`📊 [PHP DETALHADO] RequestID: ${requestId} - Tipo resposta:`, typeof response.data);
       console.log(`📊 [PHP DETALHADO] RequestID: ${requestId} - Conteúdo completo:`, JSON.stringify(response.data, null, 2));
+      
+      // Log específico da verificação de gravação
+      if (response.data.debug_info && response.data.debug_info.verificacao_gravacao) {
+        console.log(`🔍 [VERIFICAÇÃO GRAVAÇÃO] RequestID: ${requestId}:`, response.data.debug_info.verificacao_gravacao);
+      }
     }
 
     debugInfo.etapas_executadas.push('resposta_php_recebida');

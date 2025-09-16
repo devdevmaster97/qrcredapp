@@ -215,6 +215,19 @@ try {
             ) VALUES (?, ?, ?, CURRENT_DATE, ?, true, ?, ?, ?, ?, ?, ?, CURRENT_TIME)
         ");
 
+        logDebug("🔄 [SQL] Executando INSERT antecipacao", [
+            'matricula' => $matricula,
+            'empregador' => $empregador,
+            'mes_corrente' => $mes_corrente,
+            'valor' => $valor,
+            'celular' => $celular,
+            'taxa' => $taxa,
+            'valor_descontar' => $valor_descontar,
+            'chave_pix' => $chave_pix,
+            'id_divisao' => $id_divisao,
+            'id_associado' => $id_associado
+        ]);
+
         $resultado_antecipacao = $stmt->execute([
             $matricula,           // matricula
             $empregador,          // empregador
@@ -226,6 +239,12 @@ try {
             $chave_pix,           // chave_pix
             $id_divisao,          // divisao
             $id_associado         // id_associado
+        ]);
+
+        logDebug("🔍 [SQL] Resultado execute antecipacao", [
+            'resultado' => $resultado_antecipacao,
+            'error_info' => $stmt->errorInfo(),
+            'row_count' => $stmt->rowCount()
         ]);
 
         if (!$resultado_antecipacao) {
@@ -252,6 +271,18 @@ try {
             ) VALUES (?, ?, ?, CURRENT_DATE, CURRENT_TIME, ?, ?, ?, ?, ?, ?)
         ");
 
+        logDebug("🔄 [SQL] Executando INSERT conta", [
+            'associado' => $matricula,
+            'convenio' => $convenio,
+            'valor' => $valor,
+            'descricao' => 'Antecipação salarial',
+            'mes' => $mes_corrente,
+            'empregador' => $empregador,
+            'tipo' => 'ANTECIPACAO',
+            'divisao' => $id_divisao,
+            'id_associado' => $id_associado
+        ]);
+
         $resultado_conta = $stmt_conta->execute([
             $matricula,                    // associado
             $convenio,                     // convenio
@@ -264,6 +295,12 @@ try {
             $id_associado                  // id_associado
         ]);
 
+        logDebug("🔍 [SQL] Resultado execute conta", [
+            'resultado' => $resultado_conta,
+            'error_info' => $stmt_conta->errorInfo(),
+            'row_count' => $stmt_conta->rowCount()
+        ]);
+
         if (!$resultado_conta) {
             throw new Exception('Erro ao inserir na tabela conta: ' . implode(', ', $stmt_conta->errorInfo()));
         }
@@ -274,6 +311,22 @@ try {
         // COMMIT DA TRANSAÇÃO
         $pdo->commit();
         logDebug("✅ [TRANSAÇÃO] Confirmada com sucesso - Request ID: $request_id");
+
+        // Verificar se realmente foi inserido
+        $stmt_verificacao = $pdo->prepare("SELECT COUNT(*) as total FROM sind.antecipacao WHERE id = ?");
+        $stmt_verificacao->execute([$antecipacao_id]);
+        $verificacao_antecipacao = $stmt_verificacao->fetch(PDO::FETCH_ASSOC);
+        
+        $stmt_verificacao_conta = $pdo->prepare("SELECT COUNT(*) as total FROM sind.conta WHERE lancamento = ?");
+        $stmt_verificacao_conta->execute([$conta_id]);
+        $verificacao_conta = $stmt_verificacao_conta->fetch(PDO::FETCH_ASSOC);
+        
+        logDebug("🔍 [VERIFICAÇÃO] Registros inseridos", [
+            'antecipacao_existe' => $verificacao_antecipacao['total'],
+            'conta_existe' => $verificacao_conta['total'],
+            'antecipacao_id' => $antecipacao_id,
+            'conta_id' => $conta_id
+        ]);
 
         // Resposta de sucesso
         echo json_encode([
@@ -288,8 +341,11 @@ try {
                 'empregador' => $empregador,
                 'mes' => $mes_corrente,
                 'timestamp' => date('Y-m-d H:i:s'),
+                'verificacao_gravacao' => [
+                    'antecipacao_inserida' => $verificacao_antecipacao['total'] > 0,
+                    'conta_inserida' => $verificacao_conta['total'] > 0
+                ],
                 'protecoes_aplicadas' => [
-                    'request_id_unico' => true,
                     'duplicacao_temporal' => true,
                     'verificacao_senha' => true,
                     'transacao_atomica' => true
