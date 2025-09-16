@@ -643,6 +643,14 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         }
       }
       
+      // Mostrar debug_info se disponível (sucesso ou erro)
+      if (data.debug_info && data.debug_info !== 'N/A') {
+        addDebugLog(`🔍 [${requestId}] DEBUG INFO DISPONÍVEL:`);
+        addDebugLog(`📋 Etapas: ${data.debug_info.etapas_executadas?.join(' → ') || 'N/A'}`);
+        addDebugLog(`📋 PHP Request ID: ${data.debug_info.php_request_id || 'N/A'}`);
+        addDebugLog(`📋 Status PHP: ${data.debug_info.php_response_status || 'N/A'}`);
+      }
+      
       console.log(`📥 [${requestId}] Resposta da API:`, {
         success: data.success,
         status: response.status,
