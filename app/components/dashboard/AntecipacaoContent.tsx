@@ -1043,16 +1043,6 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
               } text-white rounded-lg transition-colors font-medium`}
               disabled={loading}
               onClick={handleSubmit}
-              onTouchStart={(e) => {
-                // Prevenir comportamentos indesejados no mobile
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-              onTouchEnd={(e) => {
-                // Prevenir comportamentos indesejados no mobile
-                e.preventDefault();
-                e.stopPropagation();
-              }}
               style={{ touchAction: 'manipulation' }}
             >
               {loading ? (
