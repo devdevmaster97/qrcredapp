@@ -1161,47 +1161,6 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
             </button>
           </form>
         )}
-        
-        {/* Tela de logs visível para mobile */}
-        {typeof window !== 'undefined' && /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) && (
-          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex justify-between items-center mb-2">
-              <div className="font-medium text-blue-800">📱 Logs de Debug - Mobile</div>
-              <button 
-                onClick={() => setDebugLogs([])}
-                className="text-xs bg-red-500 text-white px-2 py-1 rounded"
-              >
-                Limpar
-              </button>
-            </div>
-            
-            <div className="space-y-1 text-blue-700 text-xs">
-              <div>Loading: {loading ? '🔄 SIM' : '✅ NÃO'}</div>
-              <div>Submissões ativas: {submissoesEmAndamento.size}</div>
-              <div>Última submissão: {ultimaSubmissao.size > 0 ? 'Registrada' : 'Nenhuma'}</div>
-              <div className="text-red-600 font-bold">⚠️ DUPLICAÇÃO COM 1 CLIQUE!</div>
-              <div className="text-green-600 font-bold">🔍 API LOGS VISÍVEIS ABAIXO</div>
-            </div>
-            
-            {/* Área de logs em tempo real */}
-            <div className="mt-3 bg-black text-green-400 p-2 rounded text-xs font-mono max-h-64 overflow-y-auto">
-              <div className="text-white mb-1">📋 LOGS EM TEMPO REAL:</div>
-              {debugLogs.length === 0 ? (
-                <div className="text-gray-400">Aguardando logs...</div>
-              ) : (
-                debugLogs.map((log, index) => (
-                  <div key={index} className="mb-1 break-words">
-                    {log}
-                  </div>
-                ))
-              )}
-            </div>
-            
-            <div className="mt-2 text-xs text-blue-600">
-              💡 Faça uma solicitação e observe os logs acima para identificar duplicação
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
