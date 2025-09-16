@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, ChangeEvent, FormEvent, useCallback } from 'react';
+import { useState, useEffect, ChangeEvent, FormEvent, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { useSession } from 'next-auth/react';
 import toast from 'react-hot-toast';
@@ -529,24 +529,24 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     }
   };
 
+  // Ref para controle de execução única
+  const isSubmittingRef = useRef(false);
+
   // Manipular envio do formulário
   const handleSubmit = async (e?: any) => {
     if (e) e.preventDefault();
-    
-    // PROTEÇÃO CRÍTICA: Verificar se já está processando (primeira linha de defesa)
-    if (loading) {
-      console.log('🚫 Já está processando, ignorando clique');
-      return;
-    }
-    
-    // PROTEÇÃO ADICIONAL: Marcar como loading imediatamente para evitar dupla execução
-    setLoading(true);
     
     // Proteção específica para mobile - evitar cliques duplos rápidos
     const agora = Date.now();
     const chaveProtecao = `${associadoData?.matricula}_${valorSolicitado}_${chavePix}`;
     
-    // Verificar se houve submissão muito recente (menos de 3 segundos)
+    // PROTEÇÃO CRÍTICA 1: Verificar se já está processando (primeira linha de defesa)
+    if (loading || isSubmittingRef.current) {
+      console.log('🚫 Já está processando, ignorando clique');
+      return;
+    }
+    
+    // PROTEÇÃO CRÍTICA 2: Verificar se houve submissão muito recente (menos de 3 segundos)
     if (ultimaSubmissao.has(chaveProtecao)) {
       const ultimoTempo = ultimaSubmissao.get(chaveProtecao)!;
       if (agora - ultimoTempo < 3000) {
@@ -555,35 +555,42 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       }
     }
     
-    // Verificar se já existe submissão em andamento para esta combinação
+    // PROTEÇÃO CRÍTICA 3: Verificar se já existe submissão em andamento para esta combinação
     if (submissoesEmAndamento.has(chaveProtecao)) {
       console.log('🚫 Submissão já em andamento para esta combinação');
-      setLoading(false); // Reset loading se bloqueou
       return;
     }
     
-    // Validações básicas ANTES de marcar como em andamento
+    // MARCAR TODAS AS PROTEÇÕES DE UMA VEZ (ATÔMICO)
+    isSubmittingRef.current = true;
+    setLoading(true);
+    submissoesEmAndamento.set(chaveProtecao, true);
+    ultimaSubmissao.set(chaveProtecao, agora);
+    
+    // Validações básicas APÓS marcar proteções
     if (!valorSolicitado || parseFloat(valorSolicitado) / 100 <= 0) {
       setErro("Digite o valor desejado");
       setLoading(false);
+      isSubmittingRef.current = false;
+      submissoesEmAndamento.delete(chaveProtecao);
       return;
     }
     
     if (!chavePix) {
       setErro("Digite a chave PIX para receber o valor");
       setLoading(false);
+      isSubmittingRef.current = false;
+      submissoesEmAndamento.delete(chaveProtecao);
       return;
     }
 
     if (!senha) {
       setErro("Digite sua senha para confirmar");
       setLoading(false);
+      isSubmittingRef.current = false;
+      submissoesEmAndamento.delete(chaveProtecao);
       return;
     }
-
-    // Marcar submissão como em andamento APENAS após validações
-    submissoesEmAndamento.set(chaveProtecao, true);
-    ultimaSubmissao.set(chaveProtecao, agora);
 
     // Gerar ID único para esta requisição específica
     const requestId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -697,6 +704,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       setErro('Erro de conexão. Tente novamente.');
     } finally {
       setLoading(false);
+      isSubmittingRef.current = false;
       // Liberar proteção após processamento
       submissoesEmAndamento.delete(chaveProtecao);
       addDebugLog(`🏁 [${requestId}] Submissão finalizada`);
