@@ -79,6 +79,10 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
   const [valorConfirmado, setValorConfirmado] = useState("");
   const [taxaConfirmada, setTaxaConfirmada] = useState(0);
   const [totalConfirmado, setTotalConfirmado] = useState(0);
+  
+  // Controle específico para dispositivos móveis
+  const [ultimoClickMobile, setUltimoClickMobile] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Função segura para verificar se uma string está em um array
   const isStringInArray = (str: any, arr: string[]): boolean => {
@@ -91,6 +95,18 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       return false;
     }
   };
+
+  // Detectar dispositivo móvel
+  useEffect(() => {
+    const checkMobile = () => {
+      const userAgent = typeof window !== 'undefined' ? window.navigator.userAgent : '';
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+      setIsMobile(isMobileDevice);
+      console.log(`📱 Dispositivo detectado: ${isMobileDevice ? 'MOBILE' : 'DESKTOP'}`);
+    };
+    
+    checkMobile();
+  }, []);
 
   // Verificar se há saldo disponível para antecipação
   const temSaldoDisponivel = (): boolean => {
@@ -434,18 +450,30 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
   const handleSubmit = async (e?: any) => {
     if (e) e.preventDefault();
     
+    const agora = Date.now();
+    
+    // PROTEÇÃO ESPECÍFICA PARA MOBILE: Verificar cliques muito próximos
+    if (isMobile) {
+      if (ultimoClickMobile && (agora - ultimoClickMobile) < 2000) { // 2 segundos para mobile
+        console.log(`📱 [MOBILE] Bloqueando clique muito próximo: ${agora - ultimoClickMobile}ms`);
+        return;
+      }
+      setUltimoClickMobile(agora);
+      console.log(`📱 [MOBILE] Click registrado em: ${agora}`);
+    }
+    
     // Criar chave única para controle de duplicação
     const chaveUnica = `${associadoData?.matricula}_${associadoData?.empregador}_${valorSolicitado}_${saldoData?.mesCorrente}`;
-    const agora = Date.now();
     
     // Gerar ID único para esta solicitação
     const requestId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    console.log(`🚀 [${requestId}] Iniciando nova solicitação de antecipação - Chave: ${chaveUnica}`);
+    console.log(`🚀 [${requestId}] Iniciando nova solicitação de antecipação - Chave: ${chaveUnica} - Dispositivo: ${isMobile ? 'MOBILE' : 'DESKTOP'}`);
     
-    // 1. VERIFICAR RATE LIMITING FRONTEND (10 segundos - mais flexível)
+    // 1. VERIFICAR RATE LIMITING FRONTEND (ajustado para mobile)
+    const rateLimitTime = isMobile ? 15000 : 10000; // 15s para mobile, 10s para desktop
     const ultimaSubmissaoTime = ultimaSubmissao.get(chaveUnica);
-    if (ultimaSubmissaoTime && (agora - ultimaSubmissaoTime) < 10000) {
-      const tempoRestante = Math.ceil((10000 - (agora - ultimaSubmissaoTime)) / 1000);
+    if (ultimaSubmissaoTime && (agora - ultimaSubmissaoTime) < rateLimitTime) {
+      const tempoRestante = Math.ceil((rateLimitTime - (agora - ultimaSubmissaoTime)) / 1000);
       console.log(`⏰ [${requestId}] Rate limit frontend ativo. Tempo restante: ${tempoRestante}s`);
       setErro(`Aguarde ${tempoRestante} segundos antes de tentar novamente`);
       return;
@@ -1036,13 +1064,22 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
             {/* Botão de Envio */}
             <button
               type="button"
-              className={`w-full p-3 ${
+              className={`w-full py-3 px-4 ${
                 loading
                   ? 'bg-gray-400 cursor-not-allowed' 
                   : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
               } text-white rounded-lg transition-colors font-medium`}
               disabled={loading}
               onClick={handleSubmit}
+              onTouchStart={isMobile ? (e) => {
+                e.preventDefault();
+                const agora = Date.now();
+                if (ultimoClickMobile && (agora - ultimoClickMobile) < 2000) {
+                  console.log(`📱 [TOUCH] Bloqueando touch muito próximo: ${agora - ultimoClickMobile}ms`);
+                  return;
+                }
+                console.log(`📱 [TOUCH] Touch registrado, aguardando onClick`);
+              } : undefined}
             >
               {loading ? (
                 <span className="flex items-center justify-center">
