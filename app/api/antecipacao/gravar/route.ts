@@ -23,10 +23,10 @@ export async function POST(request: NextRequest) {
     console.log(`📋 [API] Cache rate limiting atual:`, Array.from(ultimasRequisicoes.entries()));
     console.log(`🔄 [API] Requisições em andamento:`, Array.from(requestsEmAndamento.keys()));
     
-    // 1. VERIFICAR RATE LIMITING (30 segundos - mais flexível)
+    // 1. VERIFICAR RATE LIMITING (60 segundos - mais rigoroso para evitar duplicação)
     const ultimaRequisicao = ultimasRequisicoes.get(chaveUnica);
-    if (ultimaRequisicao && (agora - ultimaRequisicao) < 30000) { // 30 segundos
-      const tempoRestante = Math.ceil((30000 - (agora - ultimaRequisicao)) / 1000);
+    if (ultimaRequisicao && (agora - ultimaRequisicao) < 60000) { // 60 segundos
+      const tempoRestante = Math.ceil((60000 - (agora - ultimaRequisicao)) / 1000);
       console.log(`⏰ [API] Rate limit ativo para ${chaveUnica}. Última: ${ultimaRequisicao}, Agora: ${agora}, Diferença: ${agora - ultimaRequisicao}ms, Tempo restante: ${tempoRestante}s`);
       
       return NextResponse.json({
@@ -39,20 +39,15 @@ export async function POST(request: NextRequest) {
       console.log(`✅ [API] Rate limiting OK para ${chaveUnica}. Última requisição: ${ultimaRequisicao ? new Date(ultimaRequisicao).toISOString() : 'nunca'}`);
     }
     
-    // 2. VERIFICAR SE JÁ EXISTE REQUISIÇÃO EM ANDAMENTO
+    // 2. VERIFICAR SE JÁ EXISTE REQUISIÇÃO EM ANDAMENTO (CRÍTICO PARA EVITAR DUPLICAÇÃO)
     if (requestsEmAndamento.has(chaveUnica)) {
-      console.log(`🔄 Requisição já em andamento para ${chaveUnica}. Aguardando...`);
+      console.log(`🔄 [ANTI-DUPLICAÇÃO] Requisição já em andamento para ${chaveUnica}. Bloqueando requisição duplicada.`);
       
-      try {
-        // Aguardar a requisição em andamento
-        const resultado = await requestsEmAndamento.get(chaveUnica);
-        console.log(`✅ Retornando resultado da requisição em andamento para ${chaveUnica}`);
-        return resultado;
-      } catch (error) {
-        console.log(`❌ Erro na requisição em andamento para ${chaveUnica}:`, error);
-        // Se deu erro, remover do cache e continuar
-        requestsEmAndamento.delete(chaveUnica);
-      }
+      return NextResponse.json({
+        success: false,
+        error: 'Solicitação já está sendo processada. Aguarde a conclusão.',
+        duplicate_blocked: true
+      }, { status: 409 }); // 409 Conflict
     }
     
     // 3. MARCAR RATE LIMITING ANTES DE PROCESSAR (CRÍTICO PARA EVITAR DUPLICAÇÃO)
@@ -91,12 +86,22 @@ export async function POST(request: NextRequest) {
 
 async function processarSolicitacao(body: any, chaveUnica: string) {
   try {
-    console.log(`🚀 Processando solicitação ${chaveUnica}`);
+    console.log(`🚀 [ANTI-DUPLICAÇÃO] Processando solicitação ${chaveUnica} - Verificação rigorosa ativa`);
     
-    console.log(`🔍 [${chaveUnica}] Processando solicitação (verificação de duplicata removida temporariamente)`);
+    // VERIFICAÇÃO ADICIONAL: Se por algum motivo chegou até aqui, verificar novamente
+    const agora = Date.now();
+    const ultimaRequisicao = ultimasRequisicoes.get(chaveUnica);
     
-    // NOTA: Verificação de duplicata no banco removida temporariamente devido a incompatibilidade
-    // com o PHP original do servidor. As proteções de rate limiting em memória continuam ativas.
+    if (ultimaRequisicao && (agora - ultimaRequisicao) < 5000) { // 5 segundos de proteção adicional
+      console.log(`🚨 [ANTI-DUPLICAÇÃO] Bloqueando processamento - requisição muito recente (${agora - ultimaRequisicao}ms)`);
+      return NextResponse.json({
+        success: false,
+        error: 'Solicitação duplicada detectada e bloqueada',
+        duplicate_prevented: true
+      }, { status: 409 });
+    }
+    
+    console.log(`🔍 [${chaveUnica}] Processando solicitação com proteção anti-duplicação ativa`);
     
     // Validar campos obrigatórios
     const camposObrigatorios = ['matricula', 'pass', 'empregador', 'valor_pedido', 'taxa', 'valor_descontar', 'mes_corrente', 'chave_pix'];
@@ -145,6 +150,22 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     formData.append('id_divisao', (body.id_divisao || 0).toString());
     
     console.log(`🌐 [${chaveUnica}] Enviando para PHP grava_antecipacao_app.php:`, Object.fromEntries(formData));
+    
+    // VERIFICAÇÃO FINAL ANTES DE ENVIAR PARA O PHP
+    const verificacaoFinal = Date.now();
+    const ultimaVerificacao = ultimasRequisicoes.get(chaveUnica);
+    if (ultimaVerificacao && (verificacaoFinal - ultimaVerificacao) < 2000) { // 2 segundos de proteção final
+      console.log(`🚨 [ANTI-DUPLICAÇÃO FINAL] Bloqueando envio para PHP - muito próximo da última requisição (${verificacaoFinal - ultimaVerificacao}ms)`);
+      return NextResponse.json({
+        success: false,
+        error: 'Solicitação duplicada detectada antes do envio ao servidor',
+        duplicate_prevented_final: true
+      }, { status: 409 });
+    }
+    
+    // Atualizar timestamp antes do envio
+    ultimasRequisicoes.set(chaveUnica, verificacaoFinal);
+    console.log(`🔒 [ANTI-DUPLICAÇÃO] Timestamp atualizado antes do envio: ${verificacaoFinal}`);
     
     // Fazer chamada para o PHP
     const response = await axios.post(
