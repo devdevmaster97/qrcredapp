@@ -263,7 +263,7 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     debugInfo.php_timestamp = timestampEnvio;
     
     const response = await axios.post(
-      'https://sas.makecard.com.br/grava_antecipacao_app.php',
+      'https://sas.makecard.com.br/grava_antecipacao_app_debug.php',
       formData,
       {
         headers: {
@@ -272,7 +272,6 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
           'Pragma': 'no-cache',
           'Expires': '0',
           'X-Request-ID': requestId, // ID único para rastrear no PHP
-          'X-Chave-Unica': chaveUnica // Chave única para debug
         },
         timeout: 30000,
       }
