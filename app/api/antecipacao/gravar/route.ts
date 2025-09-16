@@ -167,9 +167,18 @@ export async function POST(request: NextRequest) {
 }
 
 async function processarSolicitacao(body: any, chaveUnica: string) {
+  const debugInfo: any = {
+    etapa: 'inicio',
+    timestamp: new Date().toISOString(),
+    chave_unica: chaveUnica,
+    etapas_executadas: []
+  };
+  
   try {
+    debugInfo.etapas_executadas.push('inicio_processamento');
     console.log(`🚀 [ANTI-DUPLICAÇÃO] Processando solicitação ${chaveUnica} - Verificação rigorosa ativa`);
     
+    debugInfo.etapas_executadas.push('log_inicial');
     console.log(`🔍 [${chaveUnica}] Processando solicitação com proteção anti-duplicação ativa`);
     
     // Validar campos obrigatórios
@@ -186,8 +195,11 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
       chave_pix: body.chave_pix
     });
     
+    debugInfo.etapas_executadas.push('validacao_campos');
     for (const campo of camposObrigatorios) {
       if (!body[campo] && body[campo] !== 0) { // Permitir valor 0 para campos numéricos
+        debugInfo.etapa = 'erro_validacao_campo';
+        debugInfo.campo_ausente = campo;
         console.log(`❌ [${chaveUnica}] Campo obrigatório ausente: ${campo} (valor: ${body[campo]})`);
         return NextResponse.json({
           success: false,
@@ -201,7 +213,8 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
             valores_recebidos: camposObrigatorios.reduce((acc, c) => {
               acc[c] = body[c] || 'AUSENTE';
               return acc;
-            }, {} as any)
+            }, {} as any),
+            etapas_executadas: debugInfo.etapas_executadas
           }
         }, { 
           status: 400,
@@ -214,7 +227,10 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
       }
     }
     
+    debugInfo.etapas_executadas.push('validacao_concluida');
+    
     // Preparar dados para envio ao PHP
+    debugInfo.etapas_executadas.push('preparando_dados_php');
     const formData = new URLSearchParams();
     formData.append('matricula', body.matricula || '');
     formData.append('pass', body.pass);
@@ -227,6 +243,8 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     formData.append('id', (body.id || 0).toString());
     formData.append('id_divisao', (body.id_divisao || 0).toString());
     
+    debugInfo.etapas_executadas.push('dados_php_preparados');
+    
     console.log(`🌐 [${chaveUnica}] Enviando para PHP grava_antecipacao_app.php:`, Object.fromEntries(formData));
     
     console.log(`🔒 [ANTI-DUPLICAÇÃO] Enviando para PHP com proteção ativa`);
@@ -236,11 +254,14 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     const requestId = body.request_id || `${timestampEnvio}_${Math.random().toString(36).substr(2, 9)}`;
     console.log(`🚨 [CRÍTICO] INICIANDO CHAMADA PHP - RequestID: ${requestId} - Chave: ${chaveUnica} - Timestamp: ${timestampEnvio}`);
     console.log(`📋 [DADOS PHP] RequestID: ${requestId} - Dados enviados:`, Object.fromEntries(formData));
-    
     // Adicionar request_id aos dados enviados para o PHP
     formData.append('request_id', requestId);
     
     // Fazer chamada para o PHP com ID único
+    debugInfo.etapas_executadas.push('iniciando_chamada_php');
+    debugInfo.php_request_id = requestId;
+    debugInfo.php_timestamp = timestampEnvio;
+    
     const response = await axios.post(
       'https://sas.makecard.com.br/grava_antecipacao_app.php',
       formData,
@@ -253,8 +274,7 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
           'X-Request-ID': requestId, // ID único para rastrear no PHP
           'X-Chave-Unica': chaveUnica // Chave única para debug
         },
-        timeout: 15000,
-        validateStatus: () => true // Não rejeitar por status HTTP
+        timeout: 30000,
       }
     );
     
@@ -371,14 +391,17 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
         statusCode = error.response.status || 500;
-      } else if (error.message) {
-        errorMessage = error.message;
       }
     }
     
+    debugInfo.etapa = 'erro_catch';
+    debugInfo.error_message = errorMessage;
+    debugInfo.error_status = statusCode;
+    
     return NextResponse.json({
       success: false,
-      error: errorMessage
+      error: errorMessage,
+      debug_info: debugInfo
     }, { 
       status: statusCode,
       headers: {
