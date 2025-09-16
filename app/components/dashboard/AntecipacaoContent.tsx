@@ -669,33 +669,13 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
           // Não é um sucesso real - tratar como erro
           console.log(`❌ [${requestId}] Resposta ambígua tratada como erro:`, response.data);
           const mensagem = response.data.message || 'Erro ao processar solicitação';
-          
-          // Verificar se é erro de senha
           if (mensagem.toLowerCase().includes("senha") || 
               mensagem.toLowerCase().includes("incorreta") ||
               mensagem.toLowerCase().includes("inválida")) {
             setErro("❌ Senha incorreta! Use a mesma senha que você utiliza para acessar o aplicativo.");
             setSenha("");
           } else {
-            setErro(mensagem);
-          }
-        }
       }
-    } catch (error) {
-      console.error(`💥 [${requestId}] Erro ao enviar solicitação:`, error);
-      
-      // Verificar se o erro está relacionado à senha
-      if (axios.isAxiosError(error) && error.response?.data) {
-        const errorData = error.response.data;
-        if (errorData.message && 
-            (errorData.message.toLowerCase().includes("senha") || 
-             errorData.message.toLowerCase().includes("password"))) {
-          setErro("Senha incorreta! Use a mesma senha que você utiliza para acessar o aplicativo.");
-          
-          // Limpar apenas o campo de senha para nova tentativa
-          setSenha("");
-          
-          // Destacar visualmente o campo de senha
           const senhaInput = document.getElementById('senha');
           if (senhaInput) {
             senhaInput.classList.add('border-red-500', 'bg-red-50');
