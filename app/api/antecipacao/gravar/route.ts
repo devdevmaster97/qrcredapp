@@ -121,19 +121,21 @@ export async function POST(request: NextRequest) {
     }
     
     // 5. CRIAR PROMISE PARA ESTA REQUISIÇÃO
-    console.log(`🚀 [API] Criando promise de processamento para ${chaveUnica}`);
+    console.log(`🚀 [${requestId}] [API] Criando promise de processamento para ${chaveUnica}`);
     const promiseRequisicao = processarSolicitacao(body, chaveUnica);
     requestsEmAndamento.set(chaveUnica, promiseRequisicao);
     
     try {
+      console.log(`⏳ [${requestId}] [API] Aguardando processamento da solicitação ${chaveUnica}`);
       const resultado = await promiseRequisicao;
+      console.log(`✅ [${requestId}] [API] Processamento concluído para ${chaveUnica}`);
       return resultado;
     } finally {
       // Limpar cache após processamento
       requestsEmAndamento.delete(chaveUnica);
       execucaoUnica.delete(chaveUnica);
       timestampExecucao.delete(chaveUnica);
-      console.log(`🧹 [LIMPEZA FINAL] Removido todos os controles para ${chaveUnica}`);
+      console.log(`🧹 [${requestId}] [LIMPEZA FINAL] Removido todos os controles para ${chaveUnica}`);
     }
     
   } catch (error) {
