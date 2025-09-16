@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
       request_id: body.request_id,
       frontend_request_id: requestId
     });
-    
+    //teste
     // Criar chave única para esta solicitação
     const chaveUnica = `${body.matricula}_${body.valor_pedido}_${body.request_id}`;
     
