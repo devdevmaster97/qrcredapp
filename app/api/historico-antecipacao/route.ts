@@ -21,8 +21,26 @@ export async function POST(request: NextRequest) {
 
     // Verificar parâmetros obrigatórios
     if (!matricula || !empregador) {
+      console.error('❌ Parâmetros obrigatórios ausentes:', { matricula, empregador });
       return NextResponse.json(
         { error: 'Matrícula e empregador são obrigatórios' },
+        { status: 400 }
+      );
+    }
+    
+    // Validar formato dos parâmetros
+    if (typeof matricula !== 'string' || matricula.trim() === '') {
+      console.error('❌ Matrícula inválida:', matricula);
+      return NextResponse.json(
+        { error: 'Matrícula deve ser uma string não vazia' },
+        { status: 400 }
+      );
+    }
+    
+    if (isNaN(Number(empregador)) || Number(empregador) <= 0) {
+      console.error('❌ Empregador inválido:', empregador);
+      return NextResponse.json(
+        { error: 'Empregador deve ser um número válido' },
         { status: 400 }
       );
     }
@@ -32,10 +50,23 @@ export async function POST(request: NextRequest) {
     formData.append('matricula', matricula);
     formData.append('empregador', empregador);
     
-    console.log('Enviando requisição para o backend com matrícula:', matricula, 'e empregador:', empregador);
+    console.log('📤 Preparando requisição para o backend:');
+    console.log('   - Matrícula:', matricula, '(tipo:', typeof matricula, ')');
+    console.log('   - Empregador:', empregador, '(tipo:', typeof empregador, ')');
+    console.log('   - URL:', 'https://sas.makecard.com.br/historico_antecipacao_app.php');
+    
+    // Teste de conectividade básica
+    console.log('🔍 Testando conectividade com o servidor...');
+    try {
+      const testResponse = await axios.get('https://sas.makecard.com.br/', { timeout: 5000 });
+      console.log('✅ Servidor acessível - Status:', testResponse.status);
+    } catch (testError) {
+      console.log('⚠️ Servidor pode estar inacessível:', testError instanceof Error ? testError.message : 'Erro desconhecido');
+    }
     
     // Fazer a requisição para o endpoint do backend
     console.log('🔍 Enviando requisição para histórico de antecipações...');
+    
     const response = await axios.post(
       'https://sas.makecard.com.br/historico_antecipacao_app.php',
       formData,
@@ -46,6 +77,13 @@ export async function POST(request: NextRequest) {
         timeout: 10000, // 10 segundos
       }
     );
+    
+    console.log('✅ Resposta recebida do backend:', {
+      status: response.status,
+      statusText: response.statusText,
+      dataType: typeof response.data,
+      isArray: Array.isArray(response.data)
+    });
     
     console.log('Resposta do backend:', response.data);
     
