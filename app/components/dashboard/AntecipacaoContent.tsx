@@ -141,14 +141,14 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
   
   // Sistema de logs visível no celular
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
-  const [mostrarDebug, setMostrarDebug] = useState(false);
+  const [mostrarDebug, setMostrarDebug] = useState(true); // Sempre mostrar no mobile
 
   // Função para adicionar logs visíveis no debug
   const addDebugLog = (message: string) => {
     const timestamp = new Date().toLocaleTimeString();
     const logMessage = `[${timestamp}] ${message}`;
+    setDebugLogs(prev => [...prev.slice(-19), logMessage]); // Manter últimos 20 logs
     console.log(logMessage);
-    setDebugLogs(prev => [...prev.slice(-19), logMessage]); // Manter apenas os últimos 20 logs
   };
 
   // Função segura para verificar se uma string está em um array
@@ -584,6 +584,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     // Gerar ID único para esta requisição específica
     const requestId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
+    addDebugLog(`🚀 [${requestId}] Iniciando submissão - Chave: ${chaveProtecao}`);
     console.log(`🚀 [${requestId}] Iniciando submissão - Chave: ${chaveProtecao}`);
     setLoading(true);
     setErro("");
@@ -605,6 +606,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         request_id: requestId, // Adicionar ID único
       };
 
+      addDebugLog(`📤 [${requestId}] Enviando para API - Valor: ${payload.valor_pedido}`);
       console.log(`📤 [${requestId}] Enviando para API:`, {
         matricula: payload.matricula,
         valor: payload.valor_pedido,
@@ -625,6 +627,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
 
       const data = await response.json();
 
+      addDebugLog(`📥 [${requestId}] Resposta da API - Status: ${response.status} Success: ${data.success}`);
       console.log(`📥 [${requestId}] Resposta da API:`, {
         success: data.success,
         status: response.status,
@@ -632,6 +635,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       });
 
       if (data.success) {
+        addDebugLog(`✅ [${requestId}] Sucesso confirmado`);
         console.log(`✅ [${requestId}] Sucesso confirmado`);
         // Sucesso - mostrar dados da solicitação
         setSolicitado(true);
@@ -654,16 +658,19 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         // Atualizar saldo
         loadSaldoData();
       } else {
+        addDebugLog(`❌ [${requestId}] Erro na resposta: ${data.error}`);
         console.log(`❌ [${requestId}] Erro na resposta:`, data.error);
         setErro(data.error || 'Erro ao processar solicitação');
       }
     } catch (error) {
+      addDebugLog(`💥 [${requestId}] Erro de conexão: ${error}`);
       console.error('Erro na solicitação:', error);
       setErro('Erro de conexão. Tente novamente.');
     } finally {
       setLoading(false);
       // Liberar proteção após processamento
       submissoesEmAndamento.delete(chaveProtecao);
+      addDebugLog(`🏁 [${requestId}] Submissão finalizada`);
       console.log(`🏁 Submissão finalizada - Chave: ${chaveProtecao}`);
     }
   };
@@ -1060,17 +1067,42 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
           </form>
         )}
         
-        {/* Debug temporário para mobile - remover após testes */}
+        {/* Tela de logs visível para mobile */}
         {typeof window !== 'undefined' && /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) && (
-          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs">
-            <div className="font-medium text-yellow-800 mb-2">🔍 Debug Mobile - 1 Clique:</div>
-            <div className="space-y-1 text-yellow-700">
-              <div>Loading: {loading ? 'SIM' : 'NÃO'}</div>
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex justify-between items-center mb-2">
+              <div className="font-medium text-blue-800">📱 Logs de Debug - Mobile</div>
+              <button 
+                onClick={() => setDebugLogs([])}
+                className="text-xs bg-red-500 text-white px-2 py-1 rounded"
+              >
+                Limpar
+              </button>
+            </div>
+            
+            <div className="space-y-1 text-blue-700 text-xs">
+              <div>Loading: {loading ? '🔄 SIM' : '✅ NÃO'}</div>
               <div>Submissões ativas: {submissoesEmAndamento.size}</div>
               <div>Última submissão: {ultimaSubmissao.size > 0 ? 'Registrada' : 'Nenhuma'}</div>
-              <div>User Agent: {typeof window !== 'undefined' ? navigator.userAgent.substring(0, 50) + '...' : 'N/A'}</div>
-              <div className="text-red-600 font-bold">⚠️ ATENÇÃO: Duplicação com 1 clique apenas!</div>
-              <div className="text-blue-600">📱 Verifique console do navegador para logs detalhados</div>
+              <div className="text-red-600 font-bold">⚠️ DUPLICAÇÃO COM 1 CLIQUE!</div>
+            </div>
+            
+            {/* Área de logs em tempo real */}
+            <div className="mt-3 bg-black text-green-400 p-2 rounded text-xs font-mono max-h-64 overflow-y-auto">
+              <div className="text-white mb-1">📋 LOGS EM TEMPO REAL:</div>
+              {debugLogs.length === 0 ? (
+                <div className="text-gray-400">Aguardando logs...</div>
+              ) : (
+                debugLogs.map((log, index) => (
+                  <div key={index} className="mb-1 break-words">
+                    {log}
+                  </div>
+                ))
+              )}
+            </div>
+            
+            <div className="mt-2 text-xs text-blue-600">
+              💡 Faça uma solicitação e observe os logs acima para identificar duplicação
             </div>
           </div>
         )}
