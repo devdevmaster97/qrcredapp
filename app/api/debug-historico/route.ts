@@ -51,8 +51,14 @@ export async function POST(request: NextRequest) {
       {
         headers: {
           'Content-Type': 'multipart/form-data',
+          'User-Agent': 'SasApp/1.0',
+          'Accept': 'application/json, text/plain, */*',
         },
         timeout: 30000,
+        validateStatus: function (status) {
+          // Aceitar qualquer status para capturar detalhes do erro 403
+          return status >= 200 && status < 600;
+        }
       }
     );
     
@@ -71,6 +77,34 @@ export async function POST(request: NextRequest) {
       }
     } else if (typeof response.data === 'object' && response.data !== null) {
       console.log('🧪 DEBUG HISTÓRICO - Resposta é objeto com campos:', Object.keys(response.data));
+    }
+    
+    // Se for erro 403, retornar detalhes específicos
+    if (response.status === 403) {
+      console.log('🚨 DEBUG HISTÓRICO - ERRO 403 DETECTADO!');
+      console.log('🚨 DEBUG HISTÓRICO - Mensagem de erro:', response.data);
+      
+      return NextResponse.json({
+        success: false,
+        error: 'Erro 403 - Acesso negado pela API PHP',
+        debug_info: {
+          parametros_enviados: {
+            matricula,
+            empregador,
+            id_associado,
+            divisao
+          },
+          formdata_enviado: formDataEntries,
+          erro_403: {
+            status: response.status,
+            headers: response.headers,
+            data_type: typeof response.data,
+            data_size: response.data ? JSON.stringify(response.data).length : 0,
+            mensagem_erro: response.data,
+            possivel_causa: 'API PHP pode estar bloqueando requisições ou exigindo autenticação específica'
+          }
+        }
+      }, { status: 403 });
     }
     
     return NextResponse.json({

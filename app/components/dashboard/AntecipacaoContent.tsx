@@ -417,26 +417,21 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     try {
       setLoadingHistorico(true);
       
-      const formData = new FormData();
-      formData.append('matricula', associadoData.matricula);
-      formData.append('empregador', associadoData.empregador.toString());
-      formData.append('id_associado', associadoData.id.toString());
-      formData.append('divisao', associadoData.id_divisao.toString());
+      // FormData não é mais necessário para GET, mas mantendo para referência
       
-      // Temporariamente usando debug-historico para investigar dados
-      const debugData = {
+      // Usar GET diretamente na API PHP que funciona
+      const params = new URLSearchParams({
         matricula: associadoData.matricula,
-        empregador: associadoData.empregador,
-        id_associado: associadoData.id,
-        divisao: associadoData.id_divisao
-      };
+        empregador: associadoData.empregador.toString(),
+        id_associado: associadoData.id.toString(),
+        divisao: associadoData.id_divisao.toString()
+      });
       
-      console.log('🔍 FRONTEND - Dados sendo enviados para debug-historico:', debugData);
+      const apiUrl = `https://sas.makecard.com.br/historico_antecipacao_app_get.php?${params.toString()}`;
+      console.log('🔍 FRONTEND - Chamando API diretamente com GET:', apiUrl);
       
-      const response = await axios.post('/api/debug-historico', debugData, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
+      const response = await axios.get(apiUrl, {
+        timeout: 30000
       });
       
       if (Array.isArray(response.data)) {
