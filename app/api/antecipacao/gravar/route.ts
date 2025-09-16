@@ -323,7 +323,8 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
       return NextResponse.json({
         success: false,
         error: mensagem,
-        data: response.data
+        data: response.data,
+        debug_info: debugInfo
       }, { 
         status: response.status >= 400 ? response.status : 400,
         headers: {
@@ -375,12 +376,15 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     } else {
       // Resposta ambígua - tratar como erro
       console.log(`❌ [${chaveUnica}] Resposta ambígua do PHP:`, response.data);
+      
+      // Remover do rate limiting se deu erro para permitir nova tentativa
       ultimasRequisicoes.delete(chaveUnica);
       
       return NextResponse.json({
         success: false,
-        error: response.data.message || 'Resposta inesperada do servidor',
-        data: response.data
+        error: 'Resposta ambígua do servidor',
+        data: response.data,
+        debug_info: debugInfo
       }, { 
         status: 400,
         headers: {
