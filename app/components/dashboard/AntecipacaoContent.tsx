@@ -607,6 +607,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       };
 
       addDebugLog(`📤 [${requestId}] Enviando para API - Valor: ${payload.valor_pedido}`);
+      addDebugLog(`🚀 [${requestId}] CHAMANDO API NEXT.JS /api/antecipacao/gravar`);
       console.log(`📤 [${requestId}] Enviando para API:`, {
         matricula: payload.matricula,
         valor: payload.valor_pedido,
@@ -628,6 +629,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       const data = await response.json();
 
       addDebugLog(`📥 [${requestId}] Resposta da API - Status: ${response.status} Success: ${data.success}`);
+      addDebugLog(`✅ [${requestId}] API NEXT.JS EXECUTADA - Status: ${response.status}`);
       console.log(`📥 [${requestId}] Resposta da API:`, {
         success: data.success,
         status: response.status,
@@ -658,8 +660,9 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         // Atualizar saldo
         loadSaldoData();
       } else {
-        addDebugLog(`❌ [${requestId}] Erro na resposta: ${data.error}`);
-        console.log(`❌ [${requestId}] Erro na resposta:`, data.error);
+        addDebugLog(`❌ [${requestId}] Erro na API: ${data.error || 'Erro desconhecido'}`);
+        addDebugLog(`🔴 [${requestId}] API RETORNOU ERRO - Status: ${response.status}`);
+        console.error(`❌ [${requestId}] Erro na API:`, data);
         setErro(data.error || 'Erro ao processar solicitação');
       }
     } catch (error) {
@@ -1075,6 +1078,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
               <div>Submissões ativas: {submissoesEmAndamento.size}</div>
               <div>Última submissão: {ultimaSubmissao.size > 0 ? 'Registrada' : 'Nenhuma'}</div>
               <div className="text-red-600 font-bold">⚠️ DUPLICAÇÃO COM 1 CLIQUE!</div>
+              <div className="text-green-600 font-bold">🔍 API LOGS VISÍVEIS ABAIXO</div>
             </div>
             
             {/* Área de logs em tempo real */}
