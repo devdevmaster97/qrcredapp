@@ -3,11 +3,15 @@ import axios from 'axios';
 
 export const dynamic = 'force-dynamic';
 
-// Cache para controlar requisições em andamento e rate limiting
-const requestsEmAndamento = new Map<string, Promise<any>>();
+// Cache para controlar requisições// Maps globais para controle de rate limiting e execução única
 const ultimasRequisicoes = new Map<string, number>();
-const execucaoUnica = new Map<string, boolean>(); // Controle de execução única
-const timestampExecucao = new Map<string, number>(); // Timestamp de execução para controle absoluto
+const requestsEmAndamento = new Map<string, boolean>();
+const promisesEmAndamento = new Map<string, Promise<any>>();
+const execucaoUnica = new Map<string, boolean>();
+const timestampExecucao = new Map<string, number>();
+
+// Contador global para rastrear chamadas PHP
+const contadorChamadasPHP = new Map<string, number>(); 
 
 export async function POST(request: NextRequest) {
   const requestId = request.headers.get('X-Request-ID') || `api_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -139,7 +143,8 @@ export async function POST(request: NextRequest) {
     // 5. CRIAR PROMISE PARA ESTA REQUISIÇÃO
     console.log(`🚀 [${requestId}] [API] Criando promise de processamento para ${chaveUnica}`);
     const promiseRequisicao = processarSolicitacao(body, chaveUnica);
-    requestsEmAndamento.set(chaveUnica, promiseRequisicao);
+    requestsEmAndamento.set(chaveUnica, true);
+    promisesEmAndamento.set(chaveUnica, promiseRequisicao);
     
     try {
       console.log(`⏳ [${requestId}] [API] Aguardando processamento da solicitação ${chaveUnica}`);
@@ -149,6 +154,7 @@ export async function POST(request: NextRequest) {
     } finally {
       // Limpar cache após processamento
       requestsEmAndamento.delete(chaveUnica);
+      promisesEmAndamento.delete(chaveUnica);
       execucaoUnica.delete(chaveUnica);
       timestampExecucao.delete(chaveUnica);
       console.log(`🧹 [${requestId}] [LIMPEZA FINAL] Removido todos os controles para ${chaveUnica}`);
@@ -265,9 +271,14 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     // VERIFICAÇÃO CRÍTICA: Marcar que esta requisição está prestes a chamar o PHP
     const timestampEnvio = Date.now();
     const requestId = body.request_id || `${timestampEnvio}_${Math.random().toString(36).substr(2, 9)}`;
+    // Incrementar contador de chamadas PHP
+    const contadorAtual = (contadorChamadasPHP.get(chaveUnica) || 0) + 1;
+    contadorChamadasPHP.set(chaveUnica, contadorAtual);
+    
     console.log(`🚨 [CRÍTICO] INICIANDO CHAMADA PHP - RequestID: ${requestId} - Chave: ${chaveUnica} - Timestamp: ${timestampEnvio}`);
     console.log(`📋 [DADOS PHP] RequestID: ${requestId} - Dados enviados:`, Object.fromEntries(formData));
-    console.log(`🔢 [CONTADOR] Esta é a chamada PHP número 1 para RequestID: ${requestId}`);
+    console.log(`🔢 [CONTADOR CRÍTICO] Esta é a chamada PHP número ${contadorAtual} para chave: ${chaveUnica}`);
+    console.log(`📊 [CONTADOR GLOBAL] Total de chamadas por chave:`, Array.from(contadorChamadasPHP.entries()));
     
     // Fazer chamada para o PHP com ID único
     debugInfo.etapas_executadas.push('iniciando_chamada_php');
@@ -295,7 +306,13 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     console.log(`📥 [RESPOSTA PHP] RequestID: ${requestId} - Status: ${response.status} - Tempo: ${tempoProcessamento}ms`);
     console.log(`📋 [DADOS RESPOSTA] RequestID: ${requestId} - Data:`, response.data);
     console.log(`🔍 [ANÁLISE PHP] RequestID: ${requestId} - Headers:`, response.headers);
-    console.log(`✅ [CONFIRMAÇÃO] Chamada PHP ÚNICA completada para RequestID: ${requestId}`);
+    console.log(`✅ [CONFIRMAÇÃO] Chamada PHP ${contadorAtual} completada para chave: ${chaveUnica}`);
+    
+    // ALERTA CRÍTICO: Se contador > 1, há duplicação
+    if (contadorAtual > 1) {
+      console.log(`🚨 [ALERTA DUPLICAÇÃO] DETECTADA MÚLTIPLA CHAMADA PHP! Chave: ${chaveUnica} - Chamada número: ${contadorAtual}`);
+      console.log(`🔍 [DEBUG DUPLICAÇÃO] Histórico de chamadas:`, Array.from(contadorChamadasPHP.entries()));
+    }
     
     // Log detalhado da resposta PHP para análise
     if (response.data) {
