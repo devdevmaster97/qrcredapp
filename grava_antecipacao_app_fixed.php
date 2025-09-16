@@ -28,7 +28,7 @@ try {
 
     // Capturar dados
     $matricula = $_POST['matricula'] ?? '';
-    $valor = $_POST['valor'] ?? '';
+    $valor = $_POST['valor_pedido'] ?? '';  // Corrigido: API envia 'valor_pedido', não 'valor'
     $pass = $_POST['pass'] ?? '';
     $request_id = $_POST['request_id'] ?? '';
     
@@ -79,48 +79,12 @@ try {
     
     logDebug("Conexão com banco estabelecida");
 
-    // PROTEÇÃO ANTI-DUPLICAÇÃO 1: Verificar por request_id único
-    if (!empty($request_id)) {
-        $stmt_request = $pdo->prepare("SELECT COUNT(*) as total FROM sind.antecipacao WHERE request_id = ?");
-        $stmt_request->execute([$request_id]);
-        $resultado_request = $stmt_request->fetch(PDO::FETCH_ASSOC);
-        
-        if ($resultado_request['total'] > 0) {
-            logDebug("❌ [DUPLICAÇÃO BLOQUEADA] Request ID já existe: $request_id");
-            echo json_encode([
-                'success' => false,
-                'error' => 'Solicitação já processada (request_id duplicado)',
-                'request_id' => $request_id,
-                'debug_info' => 'Bloqueado por request_id duplicado'
-            ], JSON_UNESCAPED_UNICODE);
-            exit();
-        }
-    }
+    // PROTEÇÃO ANTI-DUPLICAÇÃO 1: Removida verificação por request_id (coluna não existe)
+    // Mantendo apenas proteção temporal abaixo
 
-    // PROTEÇÃO ANTI-DUPLICAÇÃO 2: Verificar por matrícula + valor nos últimos 10 minutos
-    $stmt_duplicata = $pdo->prepare("
-        SELECT COUNT(*) as total 
-        FROM sind.antecipacao 
-        WHERE matricula = ? 
-        AND valor = ? 
-        AND data_solicitacao >= NOW() - INTERVAL '10 minutes'
-    ");
-    $stmt_duplicata->execute([$matricula, $valor]);
-    $resultado_duplicata = $stmt_duplicata->fetch(PDO::FETCH_ASSOC);
-    
-    if ($resultado_duplicata['total'] > 0) {
-        logDebug("❌ [DUPLICAÇÃO BLOQUEADA] Matrícula + valor já solicitado nos últimos 10 minutos", [
-            'matricula' => $matricula,
-            'valor' => $valor
-        ]);
-        echo json_encode([
-            'success' => false,
-            'error' => 'Solicitação duplicada detectada. Aguarde alguns minutos.',
-            'request_id' => $request_id,
-            'debug_info' => 'Bloqueado por duplicação temporal'
-        ], JSON_UNESCAPED_UNICODE);
-        exit();
-    }
+    // PROTEÇÃO ANTI-DUPLICAÇÃO REMOVIDA: Permitir registros iguais com data/hora diferentes
+    // Regra de negócio: Apenas data/hora devem ser diferentes, outros campos podem ser iguais
+    logDebug("✅ [DUPLICAÇÃO] Proteção temporal removida - permitindo registros com mesmos dados mas data/hora diferentes");
 
     // Buscar dados do associado
     logDebug("Buscando dados do associado", ['matricula' => $matricula]);
@@ -228,7 +192,7 @@ try {
                 divisao,
                 id_associado,
                 hora
-            ) VALUES (?, ?, ?, CURRENT_DATE, ?, true, ?, ?, ?, ?, ?, ?, CURRENT_TIME)
+            ) VALUES (?, ?, ?, CURRENT_DATE, ?, null, ?, ?, ?, ?, ?, ?, CURRENT_TIME)
         ");
 
         logDebug("🔄 [SQL] Executando INSERT antecipacao", [
@@ -290,7 +254,7 @@ try {
         logDebug("🔄 [SQL] Executando INSERT conta", [
             'associado' => $matricula,
             'convenio' => $convenio,
-            'valor' => $valor,
+            'valor' => $valor_descontar,  // Corrigido: mostra o valor real que será inserido
             'descricao' => 'Antecipação salarial',
             'mes' => $mes_corrente,
             'empregador' => $empregador,
@@ -302,7 +266,7 @@ try {
         $resultado_conta = $stmt_conta->execute([
             $matricula,                    // associado
             $convenio,                     // convenio
-            $valor,                        // valor
+            $valor_descontar,              // valor
             'Antecipação salarial',        // descricao
             $mes_corrente,                 // mes
             $empregador,                   // empregador

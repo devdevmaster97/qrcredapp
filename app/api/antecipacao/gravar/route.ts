@@ -233,7 +233,7 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     debugInfo.etapas_executadas.push('preparando_dados_php');
     const formData = new URLSearchParams();
     formData.append('matricula', body.matricula || '');
-    formData.append('valor', body.valor || body.valor_pedido || ''); // PHP corrigido espera 'valor'
+    formData.append('valor_pedido', body.valor || body.valor_pedido || ''); // PHP espera 'valor_pedido'
     formData.append('pass', body.pass);
     formData.append('empregador', (body.empregador || 0).toString());
     formData.append('mes_corrente', body.mes_corrente || '');
