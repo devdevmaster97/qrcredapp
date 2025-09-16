@@ -486,19 +486,11 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     
     // PROTEÇÃO UNIVERSAL - APLICADA A TODOS OS DISPOSITIVOS
     if (protecaoUniversal) {
-      addDebugLog(`🚫 PROTEÇÃO ATIVA - Ignorando tentativa`);
+      addDebugLog(`🚫 PROTEÇÃO ATIVA - Ignorando onClick`);
       return;
     }
     
-    // Ativar proteção universal imediatamente
-    setProtecaoUniversal(true);
-    addDebugLog(`🔒 PROTEÇÃO ATIVADA - Dispositivo: ${isMobile ? 'MOBILE' : 'DESKTOP'}`);
-    
-    // Desativar proteção após 45 segundos
-    setTimeout(() => {
-      setProtecaoUniversal(false);
-      addDebugLog(`🔓 PROTEÇÃO DESATIVADA após 45s`);
-    }, 45000);
+    addDebugLog(`🔒 onClick EXECUTANDO - Dispositivo: ${isMobile ? 'MOBILE' : 'DESKTOP'}`);
     
     // Criar chave única para controle de duplicação
     const chaveUnica = `${associadoData?.matricula}_${associadoData?.empregador}_${valorSolicitado}_${saldoData?.mesCorrente}`;
@@ -1112,11 +1104,22 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
               onClick={handleSubmit}
               onTouchStart={(e) => {
                 e.preventDefault();
+                
+                // PROTEÇÃO RADICAL: Desabilitar botão IMEDIATAMENTE no primeiro touch
                 if (protecaoUniversal) {
                   addDebugLog(`🚫 [TOUCH] PROTEÇÃO ATIVA - Touch ignorado`);
                   return;
                 }
-                addDebugLog(`👆 [TOUCH] Touch registrado`);
+                
+                // Ativar proteção ANTES de qualquer processamento
+                setProtecaoUniversal(true);
+                addDebugLog(`👆 [TOUCH] Touch registrado - PROTEÇÃO ATIVADA IMEDIATAMENTE`);
+                
+                // Desativar proteção após 60 segundos
+                setTimeout(() => {
+                  setProtecaoUniversal(false);
+                  addDebugLog(`🔓 [TOUCH] PROTEÇÃO DESATIVADA após 60s`);
+                }, 60000);
               }}
             >
               {loading ? (
