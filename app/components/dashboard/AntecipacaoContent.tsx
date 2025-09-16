@@ -535,25 +535,56 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     
     // Verificar se já está processando
     if (loading) {
+      console.log('🚫 Já está processando, ignorando clique');
       return;
     }
+    
+    // Proteção específica para mobile - evitar cliques duplos rápidos
+    const agora = Date.now();
+    const chaveProtecao = `${associadoData?.matricula}_${valorSolicitado}_${chavePix}`;
+    
+    // Verificar se houve submissão muito recente (menos de 3 segundos)
+    if (ultimaSubmissao.has(chaveProtecao)) {
+      const ultimoTempo = ultimaSubmissao.get(chaveProtecao)!;
+      if (agora - ultimoTempo < 3000) {
+        console.log('🚫 Submissão muito recente, ignorando');
+        return;
+      }
+    }
+    
+    // Verificar se já existe submissão em andamento para esta combinação
+    if (submissoesEmAndamento.has(chaveProtecao)) {
+      console.log('🚫 Submissão já em andamento para esta combinação');
+      return;
+    }
+    
+    // Marcar submissão como em andamento
+    submissoesEmAndamento.set(chaveProtecao, true);
+    ultimaSubmissao.set(chaveProtecao, agora);
     
     // Validações básicas
     if (!valorSolicitado || parseFloat(valorSolicitado) / 100 <= 0) {
       setErro("Digite o valor desejado");
+      submissoesEmAndamento.delete(chaveProtecao);
       return;
     }
     
     if (!chavePix) {
       setErro("Digite a chave PIX para receber o valor");
+      submissoesEmAndamento.delete(chaveProtecao);
       return;
     }
 
     if (!senha) {
       setErro("Digite sua senha para confirmar");
+      submissoesEmAndamento.delete(chaveProtecao);
       return;
     }
 
+    // Gerar ID único para esta requisição específica
+    const requestId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    console.log(`🚀 [${requestId}] Iniciando submissão - Chave: ${chaveProtecao}`);
     setLoading(true);
     setErro("");
     
@@ -571,20 +602,37 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         chave_pix: chavePix,
         id: associadoData?.id,
         id_divisao: associadoData?.id_divisao,
+        request_id: requestId, // Adicionar ID único
       };
+
+      console.log(`📤 [${requestId}] Enviando para API:`, {
+        matricula: payload.matricula,
+        valor: payload.valor_pedido,
+        request_id: requestId
+      });
 
       const response = await fetch('/api/antecipacao/gravar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+          'X-Request-ID': requestId, // Header com ID único
         },
         body: JSON.stringify(payload),
       });
 
       const data = await response.json();
 
+      console.log(`📥 [${requestId}] Resposta da API:`, {
+        success: data.success,
+        status: response.status,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+
       if (data.success) {
+        console.log(`✅ [${requestId}] Sucesso confirmado`);
         // Sucesso - mostrar dados da solicitação
         setSolicitado(true);
         setValorConfirmado(formatarValor(valorNumerico));
@@ -606,6 +654,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         // Atualizar saldo
         loadSaldoData();
       } else {
+        console.log(`❌ [${requestId}] Erro na resposta:`, data.error);
         setErro(data.error || 'Erro ao processar solicitação');
       }
     } catch (error) {
@@ -613,6 +662,9 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       setErro('Erro de conexão. Tente novamente.');
     } finally {
       setLoading(false);
+      // Liberar proteção após processamento
+      submissoesEmAndamento.delete(chaveProtecao);
+      console.log(`🏁 Submissão finalizada - Chave: ${chaveProtecao}`);
     }
   };
   // Função para obter classes CSS baseadas no status
@@ -984,6 +1036,17 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
               } text-white rounded-lg transition-colors font-medium`}
               disabled={loading}
               onClick={handleSubmit}
+              onTouchStart={(e) => {
+                // Prevenir comportamentos indesejados no mobile
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onTouchEnd={(e) => {
+                // Prevenir comportamentos indesejados no mobile
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              style={{ touchAction: 'manipulation' }}
             >
               {loading ? (
                 <span className="flex items-center justify-center">
@@ -995,6 +1058,21 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
               )}
             </button>
           </form>
+        )}
+        
+        {/* Debug temporário para mobile - remover após testes */}
+        {typeof window !== 'undefined' && /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) && (
+          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs">
+            <div className="font-medium text-yellow-800 mb-2">🔍 Debug Mobile - 1 Clique:</div>
+            <div className="space-y-1 text-yellow-700">
+              <div>Loading: {loading ? 'SIM' : 'NÃO'}</div>
+              <div>Submissões ativas: {submissoesEmAndamento.size}</div>
+              <div>Última submissão: {ultimaSubmissao.size > 0 ? 'Registrada' : 'Nenhuma'}</div>
+              <div>User Agent: {typeof window !== 'undefined' ? navigator.userAgent.substring(0, 50) + '...' : 'N/A'}</div>
+              <div className="text-red-600 font-bold">⚠️ ATENÇÃO: Duplicação com 1 clique apenas!</div>
+              <div className="text-blue-600">📱 Verifique console do navegador para logs detalhados</div>
+            </div>
+          </div>
         )}
       </div>
     </div>

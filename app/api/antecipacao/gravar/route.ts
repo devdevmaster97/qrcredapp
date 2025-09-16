@@ -11,10 +11,16 @@ const timestampExecucao = new Map<string, number>(); // Timestamp de execução 
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('🚨 API ANTECIPAÇÃO CHAMADA - TIMESTAMP:', new Date().toISOString());
+    const requestId = request.headers.get('X-Request-ID') || `api_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    console.log(`🚨 [${requestId}] API ANTECIPAÇÃO CHAMADA - TIMESTAMP:`, new Date().toISOString());
     const body = await request.json();
     
-    console.log('📥 API Antecipação - Dados recebidos:', body);
+    console.log(`📥 [${requestId}] API Antecipação - Dados recebidos:`, {
+      matricula: body.matricula,
+      valor_pedido: body.valor_pedido,
+      request_id: body.request_id,
+      frontend_request_id: requestId
+    });
     
     // Criar chave única para esta solicitação
     const chaveUnica = `${body.matricula}_${body.empregador}_${body.valor_pedido}_${body.mes_corrente}`;
@@ -27,29 +33,31 @@ export async function POST(request: NextRequest) {
     // 0. VERIFICAÇÃO CRÍTICA BASEADA EM TIMESTAMP (PRIMEIRA LINHA DE DEFESA)
     const ultimoTimestamp = timestampExecucao.get(chaveUnica);
     if (ultimoTimestamp && (agora - ultimoTimestamp) < 5000) { // 5 segundos de proteção absoluta
-      console.log(`🚨 [TIMESTAMP] BLOQUEIO ABSOLUTO - solicitação ${chaveUnica} executada há ${agora - ultimoTimestamp}ms`);
+      console.log(`🚨 [${requestId}] TIMESTAMP BLOQUEIO ABSOLUTO - solicitação ${chaveUnica} executada há ${agora - ultimoTimestamp}ms`);
       return NextResponse.json({
         success: false,
         error: 'Solicitação muito recente. Aguarde alguns segundos.',
         timestamp_blocked: true,
-        tempo_desde_ultima: agora - ultimoTimestamp
+        tempo_desde_ultima: agora - ultimoTimestamp,
+        request_id: requestId
       }, { status: 409 });
     }
     
     // 1. VERIFICAÇÃO DE EXECUÇÃO ÚNICA (SEGUNDA LINHA DE DEFESA)
     if (execucaoUnica.has(chaveUnica)) {
-      console.log(`🚨 [EXECUÇÃO ÚNICA] BLOQUEIO IMEDIATO - solicitação ${chaveUnica} já está sendo executada`);
+      console.log(`🚨 [${requestId}] EXECUÇÃO ÚNICA BLOQUEIO IMEDIATO - solicitação ${chaveUnica} já está sendo executada`);
       return NextResponse.json({
         success: false,
         error: 'Solicitação já está sendo processada. Aguarde a conclusão.',
-        execution_blocked: true
+        execution_blocked: true,
+        request_id: requestId
       }, { status: 409 });
     }
     
     // Marcar IMEDIATAMENTE timestamp e execução (ANTES de qualquer outra operação)
     timestampExecucao.set(chaveUnica, agora);
     execucaoUnica.set(chaveUnica, true);
-    console.log(`🔐 [TIMESTAMP + EXECUÇÃO] MARCADO IMEDIATAMENTE: ${chaveUnica} em ${agora}`);
+    console.log(`🔐 [${requestId}] TIMESTAMP + EXECUÇÃO MARCADO IMEDIATAMENTE: ${chaveUnica} em ${agora}`);
     
     console.log(`📋 [API] Cache rate limiting atual:`, Array.from(ultimasRequisicoes.entries()));
     console.log(`🔄 [API] Requisições em andamento:`, Array.from(requestsEmAndamento.keys()));
