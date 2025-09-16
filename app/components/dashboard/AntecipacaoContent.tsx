@@ -535,6 +535,15 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     // Verificar se o valor excede o saldo disponível
     const saldoDisponivel = saldoData?.saldo || 0;
     const excedeSaldo = valorNumerico > saldoDisponivel;
+    
+    // Debug: Log da validação
+    console.log('🔍 DEBUG VALIDAÇÃO SALDO:', {
+      valorNumerico,
+      saldoDisponivel,
+      excedeSaldo,
+      condicao: `${valorNumerico} > ${saldoDisponivel} = ${excedeSaldo}`
+    });
+    
     setValorExcedeSaldo(excedeSaldo);
     
     // Validar se o valor é válido
@@ -1120,7 +1129,17 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
             )}
             
             {/* Mensagem quando valor excede saldo disponível */}
-            {valorExcedeSaldo && valorSolicitado && parseFloat(valorSolicitado) > 0 ? (
+            {(() => {
+              const shouldShow = valorExcedeSaldo && valorSolicitado && parseFloat(valorSolicitado) > 0;
+              console.log('🔍 DEBUG EXIBIÇÃO MENSAGEM:', {
+                valorExcedeSaldo,
+                valorSolicitado,
+                valorSolicitadoNumerico: parseFloat(valorSolicitado) / 100,
+                shouldShow,
+                saldoAtual: saldoData?.saldo
+              });
+              return shouldShow;
+            })() ? (
               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
                 <div className="flex items-center mb-2">
                   <FaTimesCircle className="text-red-500 text-lg mr-2" />
