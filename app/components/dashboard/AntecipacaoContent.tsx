@@ -423,9 +423,19 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       formData.append('id_associado', associadoData.id.toString());
       formData.append('divisao', associadoData.id_divisao.toString());
       
-      const response = await axios.post('/api/historico-antecipacao-proxy', formData, {
+      // Temporariamente usando debug-historico para investigar dados
+      const debugData = {
+        matricula: associadoData.matricula,
+        empregador: associadoData.empregador,
+        id_associado: associadoData.id,
+        divisao: associadoData.id_divisao
+      };
+      
+      console.log('🔍 FRONTEND - Dados sendo enviados para debug-historico:', debugData);
+      
+      const response = await axios.post('/api/debug-historico', debugData, {
         headers: {
-          'Content-Type': 'multipart/form-data'
+          'Content-Type': 'application/json'
         }
       });
       
