@@ -216,9 +216,12 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     
     // VERIFICAÇÃO CRÍTICA: Marcar que esta requisição está prestes a chamar o PHP
     const timestampEnvio = Date.now();
-    const requestId = `${timestampEnvio}_${Math.random().toString(36).substr(2, 9)}`;
+    const requestId = body.request_id || `${timestampEnvio}_${Math.random().toString(36).substr(2, 9)}`;
     console.log(`🚨 [CRÍTICO] INICIANDO CHAMADA PHP - RequestID: ${requestId} - Chave: ${chaveUnica} - Timestamp: ${timestampEnvio}`);
     console.log(`📋 [DADOS PHP] RequestID: ${requestId} - Dados enviados:`, Object.fromEntries(formData));
+    
+    // Adicionar request_id aos dados enviados para o PHP
+    formData.append('request_id', requestId);
     
     // Fazer chamada para o PHP com ID único
     const response = await axios.post(
