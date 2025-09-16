@@ -475,18 +475,18 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     
     // PROTEÇÃO UNIVERSAL - APLICADA A TODOS OS DISPOSITIVOS
     if (protecaoUniversal) {
-      console.log(`🚫 [UNIVERSAL] PROTEÇÃO ATIVA - Ignorando tentativa`);
+      addDebugLog(`🚫 PROTEÇÃO ATIVA - Ignorando tentativa`);
       return;
     }
     
     // Ativar proteção universal imediatamente
     setProtecaoUniversal(true);
-    console.log(`🔒 [UNIVERSAL] PROTEÇÃO ATIVADA - Dispositivo: ${isMobile ? 'MOBILE' : 'DESKTOP'}`);
+    addDebugLog(`🔒 PROTEÇÃO ATIVADA - Dispositivo: ${isMobile ? 'MOBILE' : 'DESKTOP'}`);
     
     // Desativar proteção após 45 segundos
     setTimeout(() => {
       setProtecaoUniversal(false);
-      console.log(`🔓 [UNIVERSAL] PROTEÇÃO DESATIVADA após 45s`);
+      addDebugLog(`🔓 PROTEÇÃO DESATIVADA após 45s`);
     }, 45000);
     
     // Criar chave única para controle de duplicação
@@ -494,21 +494,21 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     
     // Gerar ID único para esta solicitação
     const requestId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    console.log(`🚀 [${requestId}] Iniciando nova solicitação de antecipação - Chave: ${chaveUnica} - Dispositivo: ${isMobile ? 'MOBILE' : 'DESKTOP'}`);
+    addDebugLog(`🚀 INICIANDO SOLICITAÇÃO - ID: ${requestId.slice(-6)}`);
     
     // 1. VERIFICAR RATE LIMITING FRONTEND (ajustado para mobile)
     const rateLimitTime = isMobile ? 15000 : 10000; // 15s para mobile, 10s para desktop
     const ultimaSubmissaoTime = ultimaSubmissao.get(chaveUnica);
     if (ultimaSubmissaoTime && (agora - ultimaSubmissaoTime) < rateLimitTime) {
       const tempoRestante = Math.ceil((rateLimitTime - (agora - ultimaSubmissaoTime)) / 1000);
-      console.log(`⏰ [${requestId}] Rate limit frontend ativo. Tempo restante: ${tempoRestante}s`);
+      addDebugLog(`⏰ RATE LIMIT ATIVO - Restam ${tempoRestante}s`);
       setErro(`Aguarde ${tempoRestante} segundos antes de tentar novamente`);
       return;
     }
     
     // 2. VERIFICAR SE JÁ ESTÁ PROCESSANDO
     if (submissoesEmAndamento.get(chaveUnica)) {
-      console.log(`⚠️ [${requestId}] Solicitação já está sendo processada, ignorando nova tentativa`);
+      addDebugLog(`⚠️ JÁ PROCESSANDO - Ignorando nova tentativa`);
       return;
     }
     
@@ -554,35 +554,22 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         chave_pix: chavePix,
         id: associadoData?.id,
         id_divisao: associadoData?.id_divisao,
-        request_id: requestId // Adicionar ID único
+        request_id: requestId
       };
-      
-      console.log(`🌐 [${requestId}] Enviando para API interna:`, payload);
-      
-      const response = await axios.post(
-        '/api/antecipacao/gravar',
-        payload,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          },
-          timeout: 15000,
-          // Não rejeitar em caso de status HTTP de erro para poder analisar a resposta
-          validateStatus: () => true
-        }
-      );
-      
-      console.log(`📥 [${requestId}] Resposta recebida:`, {
-        httpStatus: response.status,
-        success: response.data.success,
-        message: response.data.message,
-        duplicate_prevented: response.data.duplicate_prevented,
-        id: response.data.id,
-        responseCompleta: response.data
+
+      addDebugLog(` ENVIANDO PARA API - Valor: R$${valorNumerico.toFixed(2)}`);
+
+      const response = await axios.post('/api/antecipacao/gravar', payload, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        },
+        timeout: 15000
       });
+
+      addDebugLog(` RESPOSTA API - Status: ${response.status} Success: ${response.data.success}`);
 
       // Verificar se houve erro (status HTTP erro OU success === false OU mensagem de erro)
       const temErro = response.status >= 400 ||
@@ -1087,6 +1074,41 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
               </div>
             )}
             
+            {/* Botão de Debug (apenas para mobile) */}
+            {isMobile && (
+              <button
+                type="button"
+                onClick={() => setMostrarDebug(!mostrarDebug)}
+                className="w-full mb-3 py-2 px-4 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm"
+              >
+                {mostrarDebug ? '🔍 Ocultar Debug' : '🔍 Mostrar Debug'}
+              </button>
+            )}
+
+            {/* Painel de Debug */}
+            {mostrarDebug && (
+              <div className="mb-4 p-3 bg-black text-green-400 rounded-lg text-xs font-mono max-h-60 overflow-y-auto">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-green-300 font-bold">🔍 DEBUG LOGS</span>
+                  <button
+                    onClick={() => setDebugLogs([])}
+                    className="text-red-400 hover:text-red-300 text-xs"
+                  >
+                    Limpar
+                  </button>
+                </div>
+                {debugLogs.length === 0 ? (
+                  <div className="text-gray-500">Nenhum log ainda...</div>
+                ) : (
+                  debugLogs.map((log, index) => (
+                    <div key={index} className="mb-1 break-words">
+                      {log}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
             {/* Botão de Envio */}
             <button
               type="button"
@@ -1100,10 +1122,10 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
               onTouchStart={(e) => {
                 e.preventDefault();
                 if (protecaoUniversal) {
-                  console.log(`🚫 [TOUCH] PROTEÇÃO UNIVERSAL ATIVA - Touch ignorado`);
+                  addDebugLog(`🚫 [TOUCH] PROTEÇÃO ATIVA - Touch ignorado`);
                   return;
                 }
-                console.log(`👆 [TOUCH] Touch registrado`);
+                addDebugLog(`👆 [TOUCH] Touch registrado`);
               }}
             >
               {loading ? (
