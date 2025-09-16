@@ -54,7 +54,20 @@ export async function POST(request: NextRequest) {
     console.log(`🔒 [API] Marcando rate limiting ANTES do processamento para ${chaveUnica} em ${agora}`);
     ultimasRequisicoes.set(chaveUnica, agora);
     
-    // 4. CRIAR PROMISE PARA ESTA REQUISIÇÃO
+    // 4. VERIFICAÇÃO ADICIONAL: Aguardar 100ms para garantir que não há requisições simultâneas
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Verificar novamente se não foi criada uma requisição em andamento durante o delay
+    if (requestsEmAndamento.has(chaveUnica)) {
+      console.log(`🚨 [ANTI-DUPLICAÇÃO] Requisição criada durante delay para ${chaveUnica}. Bloqueando.`);
+      return NextResponse.json({
+        success: false,
+        error: 'Solicitação duplicada detectada durante processamento',
+        duplicate_blocked_delay: true
+      }, { status: 409 });
+    }
+    
+    // 5. CRIAR PROMISE PARA ESTA REQUISIÇÃO
     console.log(`🚀 [API] Criando promise de processamento para ${chaveUnica}`);
     const promiseRequisicao = processarSolicitacao(body, chaveUnica);
     requestsEmAndamento.set(chaveUnica, promiseRequisicao);
@@ -140,6 +153,10 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     
     console.log(`🔒 [ANTI-DUPLICAÇÃO] Enviando para PHP com proteção ativa`);
     
+    // VERIFICAÇÃO CRÍTICA: Marcar que esta requisição está prestes a chamar o PHP
+    const timestampEnvio = Date.now();
+    console.log(`🚨 [CRÍTICO] Marcando envio ao PHP para ${chaveUnica} em ${timestampEnvio}`);
+    
     // Fazer chamada para o PHP
     const response = await axios.post(
       'https://sas.makecard.com.br/grava_antecipacao_app.php',
@@ -160,6 +177,8 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
       status: response.status,
       data: response.data
     });
+    
+    console.log(`✅ [CRÍTICO] Chamada ao PHP CONCLUÍDA para ${chaveUnica} em ${Date.now()}`);
     
     // Verificar se houve erro (incluindo erros de duplicata da trigger)
     const temErro = response.status >= 400 ||
