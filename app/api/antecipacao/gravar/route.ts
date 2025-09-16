@@ -88,19 +88,6 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
   try {
     console.log(`🚀 [ANTI-DUPLICAÇÃO] Processando solicitação ${chaveUnica} - Verificação rigorosa ativa`);
     
-    // VERIFICAÇÃO ADICIONAL: Se por algum motivo chegou até aqui, verificar novamente
-    const agora = Date.now();
-    const ultimaRequisicao = ultimasRequisicoes.get(chaveUnica);
-    
-    if (ultimaRequisicao && (agora - ultimaRequisicao) < 5000) { // 5 segundos de proteção adicional
-      console.log(`🚨 [ANTI-DUPLICAÇÃO] Bloqueando processamento - requisição muito recente (${agora - ultimaRequisicao}ms)`);
-      return NextResponse.json({
-        success: false,
-        error: 'Solicitação duplicada detectada e bloqueada',
-        duplicate_prevented: true
-      }, { status: 409 });
-    }
-    
     console.log(`🔍 [${chaveUnica}] Processando solicitação com proteção anti-duplicação ativa`);
     
     // Validar campos obrigatórios
@@ -151,21 +138,7 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     
     console.log(`🌐 [${chaveUnica}] Enviando para PHP grava_antecipacao_app.php:`, Object.fromEntries(formData));
     
-    // VERIFICAÇÃO FINAL ANTES DE ENVIAR PARA O PHP
-    const verificacaoFinal = Date.now();
-    const ultimaVerificacao = ultimasRequisicoes.get(chaveUnica);
-    if (ultimaVerificacao && (verificacaoFinal - ultimaVerificacao) < 2000) { // 2 segundos de proteção final
-      console.log(`🚨 [ANTI-DUPLICAÇÃO FINAL] Bloqueando envio para PHP - muito próximo da última requisição (${verificacaoFinal - ultimaVerificacao}ms)`);
-      return NextResponse.json({
-        success: false,
-        error: 'Solicitação duplicada detectada antes do envio ao servidor',
-        duplicate_prevented_final: true
-      }, { status: 409 });
-    }
-    
-    // Atualizar timestamp antes do envio
-    ultimasRequisicoes.set(chaveUnica, verificacaoFinal);
-    console.log(`🔒 [ANTI-DUPLICAÇÃO] Timestamp atualizado antes do envio: ${verificacaoFinal}`);
+    console.log(`🔒 [ANTI-DUPLICAÇÃO] Enviando para PHP com proteção ativa`);
     
     // Fazer chamada para o PHP
     const response = await axios.post(
