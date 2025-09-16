@@ -55,6 +55,9 @@ interface SolicitacaoAntecipacao {
 const submissoesEmAndamento = new Map<string, boolean>();
 const ultimaSubmissao = new Map<string, number>();
 
+// Map global para rastrear execuções por requestId (proteção contra React StrictMode)
+const execucoesPorRequestId = new Map<string, number>();
+
 // Função para salvar proteção no localStorage (funciona em PWA e navegador)
 const salvarProtecaoLocalStorage = (chave: string, timestamp: number) => {
   try {
@@ -529,8 +532,10 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     }
   };
 
-  // Ref para controle de execução única
+  // Refs para controle de execução única (proteção contra React StrictMode)
   const isSubmittingRef = useRef(false);
+  const lastSubmissionRef = useRef<number>(0);
+  const submissionIdRef = useRef<string>('');
 
   // Manipular envio do formulário
   const handleSubmit = async (e?: any) => {
@@ -561,8 +566,15 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       return;
     }
     
+    // PROTEÇÃO CRÍTICA 4: Verificar se a mesma submissão já foi iniciada recentemente (proteção contra React StrictMode)
+    if (lastSubmissionRef.current > 0 && (agora - lastSubmissionRef.current) < 100) {
+      console.log('🚫 Submissão duplicada detectada (React StrictMode), ignorando');
+      return;
+    }
+    
     // MARCAR TODAS AS PROTEÇÕES DE UMA VEZ (ATÔMICO)
     isSubmittingRef.current = true;
+    lastSubmissionRef.current = agora;
     setLoading(true);
     submissoesEmAndamento.set(chaveProtecao, true);
     ultimaSubmissao.set(chaveProtecao, agora);
@@ -572,6 +584,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       setErro("Digite o valor desejado");
       setLoading(false);
       isSubmittingRef.current = false;
+      lastSubmissionRef.current = 0;
       submissoesEmAndamento.delete(chaveProtecao);
       return;
     }
@@ -580,6 +593,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       setErro("Digite a chave PIX para receber o valor");
       setLoading(false);
       isSubmittingRef.current = false;
+      lastSubmissionRef.current = 0;
       submissoesEmAndamento.delete(chaveProtecao);
       return;
     }
@@ -588,6 +602,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       setErro("Digite sua senha para confirmar");
       setLoading(false);
       isSubmittingRef.current = false;
+      lastSubmissionRef.current = 0;
       submissoesEmAndamento.delete(chaveProtecao);
       return;
     }
@@ -595,8 +610,25 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     // Gerar ID único para esta requisição específica
     const requestId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
+    // PROTEÇÃO CRÍTICA 5: Verificar se este requestId já foi usado recentemente (proteção contra React StrictMode)
+    if (execucoesPorRequestId.has(requestId)) {
+      console.log(`🚫 RequestId duplicado detectado (React StrictMode), ignorando: ${requestId}`);
+      return;
+    }
+    
+    // Marcar este requestId como usado
+    execucoesPorRequestId.set(requestId, agora);
+    
+    // Limpeza automática de requestIds antigos (mais de 30 segundos)
+    Array.from(execucoesPorRequestId.entries()).forEach(([id, timestamp]) => {
+      if (agora - timestamp > 30000) {
+        execucoesPorRequestId.delete(id);
+      }
+    });
+    
     addDebugLog(`🚀 [${requestId}] Iniciando submissão - Chave: ${chaveProtecao}`);
     console.log(`🚀 [${requestId}] Iniciando submissão - Chave: ${chaveProtecao}`);
+    console.trace(`🔍 [${requestId}] Stack trace da submissão:`);
     setErro("");
     
     try {
@@ -705,8 +737,10 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     } finally {
       setLoading(false);
       isSubmittingRef.current = false;
+      lastSubmissionRef.current = 0;
       // Liberar proteção após processamento
       submissoesEmAndamento.delete(chaveProtecao);
+      execucoesPorRequestId.delete(requestId);
       addDebugLog(`🏁 [${requestId}] Submissão finalizada`);
       console.log(`🏁 Submissão finalizada - Chave: ${chaveProtecao}`);
     }
