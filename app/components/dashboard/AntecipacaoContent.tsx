@@ -534,14 +534,23 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     
     // Verificar se o valor excede o saldo disponível
     const saldoDisponivel = saldoData?.saldo || 0;
-    const excedeSaldo = valorNumerico > saldoDisponivel;
+    
+    // Arredondar ambos os valores para 2 casas decimais para evitar problemas de precisão
+    const valorArredondado = Math.round(valorNumerico * 100) / 100;
+    const saldoArredondado = Math.round(saldoDisponivel * 100) / 100;
+    
+    // Validação: valor só é inválido se for MAIOR que o saldo (igual é permitido)
+    const excedeSaldo = valorArredondado > saldoArredondado;
     
     // Debug: Log da validação
     console.log('🔍 DEBUG VALIDAÇÃO SALDO:', {
-      valorNumerico,
-      saldoDisponivel,
+      valorOriginal: valorNumerico,
+      saldoOriginal: saldoDisponivel,
+      valorArredondado,
+      saldoArredondado,
       excedeSaldo,
-      condicao: `${valorNumerico} > ${saldoDisponivel} = ${excedeSaldo}`
+      condicao: `${valorArredondado} > ${saldoArredondado} = ${excedeSaldo}`,
+      permitido: !excedeSaldo
     });
     
     setValorExcedeSaldo(excedeSaldo);
@@ -1131,12 +1140,18 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
             {/* Mensagem quando valor excede saldo disponível */}
             {(() => {
               const shouldShow = valorExcedeSaldo && valorSolicitado && parseFloat(valorSolicitado) > 0;
+              const valorDigitado = parseFloat(valorSolicitado) / 100;
+              const saldoAtual = saldoData?.saldo || 0;
+              
               console.log('🔍 DEBUG EXIBIÇÃO MENSAGEM:', {
                 valorExcedeSaldo,
                 valorSolicitado,
-                valorSolicitadoNumerico: parseFloat(valorSolicitado) / 100,
+                valorDigitado,
+                valorDigitadoArredondado: Math.round(valorDigitado * 100) / 100,
+                saldoAtual,
+                saldoArredondado: Math.round(saldoAtual * 100) / 100,
                 shouldShow,
-                saldoAtual: saldoData?.saldo
+                comparacao: `${Math.round(valorDigitado * 100) / 100} > ${Math.round(saldoAtual * 100) / 100}`
               });
               return shouldShow;
             })() ? (
