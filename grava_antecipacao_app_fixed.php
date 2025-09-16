@@ -16,12 +16,15 @@ function logDebug($message, $data = null) {
 }
 
 try {
-    logDebug("INÍCIO - Recebendo requisição de antecipação");
+    logDebug("🚀 [CRÍTICO] PHP INICIADO - Recebendo requisição de antecipação");
     
     // Verificar método
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        logDebug("❌ [ERRO] Método não é POST: " . $_SERVER['REQUEST_METHOD']);
         throw new Exception('Método não permitido');
     }
+    
+    logDebug("✅ [OK] Método POST confirmado");
 
     // Capturar dados
     $matricula = $_POST['matricula'] ?? '';
@@ -121,7 +124,6 @@ try {
 
     // Buscar dados do associado
     logDebug("Buscando dados do associado", ['matricula' => $matricula]);
-    
     $sql_associado = "
         SELECT 
             a.nome,
@@ -130,8 +132,8 @@ try {
             a.empregador,
             a.id,
             a.id_divisao
-        FROM sind.associados a
-        LEFT JOIN sind.empregadores e ON a.empregador = e.id
+        FROM sind.associado a
+        LEFT JOIN sind.empregador e ON a.empregador = e.id
         WHERE a.codigo = ?
         LIMIT 1
     ";
@@ -375,7 +377,8 @@ try {
     }
 
 } catch (Exception $e) {
-    logDebug("❌ [ERRO GERAL] " . $e->getMessage());
+    logDebug("❌ [ERRO GERAL CAPTURADO] " . $e->getMessage());
+    logDebug("❌ [STACK TRACE] " . $e->getTraceAsString());
     
     echo json_encode([
         'success' => false,
@@ -385,7 +388,8 @@ try {
             'timestamp' => date('Y-m-d H:i:s'),
             'error_type' => get_class($e),
             'error_line' => $e->getLine(),
-            'error_file' => basename($e->getFile())
+            'error_file' => basename($e->getFile()),
+            'stack_trace' => $e->getTraceAsString()
         ]
     ], JSON_UNESCAPED_UNICODE);
 }

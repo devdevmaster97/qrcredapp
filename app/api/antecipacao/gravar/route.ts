@@ -241,7 +241,7 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     formData.append('taxa', body.taxa || '0');
     formData.append('valor_descontar', body.valor_descontar || '0');
     formData.append('chave_pix', body.chave_pix || '');
-    formData.append('convenio', (body.convenio || 1).toString());
+    formData.append('convenio', (body.convenio || 221).toString());
     formData.append('id', (body.id || 0).toString());
     formData.append('id_divisao', (body.id_divisao || 0).toString());
     
