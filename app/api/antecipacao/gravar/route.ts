@@ -229,18 +229,19 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     
     debugInfo.etapas_executadas.push('validacao_concluida');
     
-    // Preparar dados para envio ao PHP
+    // Preparar dados para envio ao PHP - CAMPOS CORRETOS PARA AS TABELAS
     debugInfo.etapas_executadas.push('preparando_dados_php');
     const formData = new URLSearchParams();
     formData.append('matricula', body.matricula || '');
     formData.append('valor', body.valor || body.valor_pedido || ''); // PHP corrigido espera 'valor'
     formData.append('pass', body.pass);
     formData.append('empregador', (body.empregador || 0).toString());
-    formData.append('valor_pedido', body.valor_pedido);
-    formData.append('taxa', body.taxa);
-    formData.append('valor_descontar', body.valor_descontar);
     formData.append('mes_corrente', body.mes_corrente || '');
-    formData.append('chave_pix', body.chave_pix);
+    formData.append('celular', body.celular || '');
+    formData.append('taxa', body.taxa || '0');
+    formData.append('valor_descontar', body.valor_descontar || '0');
+    formData.append('chave_pix', body.chave_pix || '');
+    formData.append('convenio', (body.convenio || 1).toString());
     formData.append('id', (body.id || 0).toString());
     formData.append('id_divisao', (body.id_divisao || 0).toString());
     
