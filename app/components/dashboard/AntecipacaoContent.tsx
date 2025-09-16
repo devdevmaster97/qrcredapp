@@ -58,6 +58,9 @@ const ultimaSubmissao = new Map<string, number>();
 // Map global para rastrear execuções por requestId (proteção contra React StrictMode)
 const execucoesPorRequestId = new Map<string, number>();
 
+// Mutex global para controle de execução única (proteção contra React StrictMode)
+let globalMutex = false;
+
 // Função para salvar proteção no localStorage (funciona em PWA e navegador)
 const salvarProtecaoLocalStorage = (chave: string, timestamp: number) => {
   try {
@@ -541,11 +544,18 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
   const handleSubmit = async (e?: any) => {
     if (e) e.preventDefault();
     
+    // PROTEÇÃO CRÍTICA 0: Mutex global (primeira linha de defesa contra React StrictMode)
+    if (globalMutex) {
+      console.log('🚫 Mutex global ativo, ignorando execução duplicada');
+      console.trace('🔍 Stack trace da execução bloqueada pelo mutex:');
+      return;
+    }
+    
     // Proteção específica para mobile - evitar cliques duplos rápidos
     const agora = Date.now();
     const chaveProtecao = `${associadoData?.matricula}_${valorSolicitado}_${chavePix}`;
     
-    // PROTEÇÃO CRÍTICA 1: Verificar se já está processando (primeira linha de defesa)
+    // PROTEÇÃO CRÍTICA 1: Verificar se já está processando (segunda linha de defesa)
     if (loading || isSubmittingRef.current) {
       console.log('🚫 Já está processando, ignorando clique');
       return;
@@ -572,7 +582,11 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       return;
     }
     
-    // MARCAR TODAS AS PROTEÇÕES DE UMA VEZ (ATÔMICO)
+    // MARCAR MUTEX GLOBAL PRIMEIRO (CRÍTICO PARA REACT STRICTMODE)
+    globalMutex = true;
+    console.log('🔒 Mutex global ativado - bloqueando execuções duplicadas');
+    
+    // MARCAR TODAS AS OUTRAS PROTEÇÕES DE UMA VEZ (ATÔMICO)
     isSubmittingRef.current = true;
     lastSubmissionRef.current = agora;
     setLoading(true);
@@ -585,6 +599,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       setLoading(false);
       isSubmittingRef.current = false;
       lastSubmissionRef.current = 0;
+      globalMutex = false;
       submissoesEmAndamento.delete(chaveProtecao);
       return;
     }
@@ -594,6 +609,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       setLoading(false);
       isSubmittingRef.current = false;
       lastSubmissionRef.current = 0;
+      globalMutex = false;
       submissoesEmAndamento.delete(chaveProtecao);
       return;
     }
@@ -603,6 +619,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       setLoading(false);
       isSubmittingRef.current = false;
       lastSubmissionRef.current = 0;
+      globalMutex = false;
       submissoesEmAndamento.delete(chaveProtecao);
       return;
     }
@@ -738,6 +755,8 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       setLoading(false);
       isSubmittingRef.current = false;
       lastSubmissionRef.current = 0;
+      globalMutex = false;
+      console.log('🔓 Mutex global liberado - permitindo novas execuções');
       // Liberar proteção após processamento
       submissoesEmAndamento.delete(chaveProtecao);
       execucoesPorRequestId.delete(requestId);
