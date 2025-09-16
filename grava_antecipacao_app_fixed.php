@@ -29,20 +29,34 @@ try {
     $pass = $_POST['pass'] ?? '';
     $request_id = $_POST['request_id'] ?? '';
     
-    logDebug("Dados recebidos", [
+    logDebug("🔍 [INÍCIO] Dados recebidos no PHP", [
         'matricula' => $matricula,
         'valor' => $valor,
         'pass' => '***',
-        'request_id' => $request_id
+        'request_id' => $request_id,
+        'todos_posts' => array_keys($_POST)
     ]);
+
+    // TESTE CRÍTICO: Verificar se dados essenciais estão chegando
+    if (empty($pass)) {
+        logDebug("❌ [ERRO CRÍTICO] Campo 'pass' não foi enviado pela API");
+        echo json_encode([
+            'success' => false,
+            'error' => 'Campo senha (pass) é obrigatório mas não foi enviado',
+            'debug_info' => [
+                'campos_recebidos' => array_keys($_POST),
+                'matricula' => $matricula,
+                'valor' => $valor,
+                'pass_vazio' => empty($pass),
+                'request_id' => $request_id
+            ]
+        ], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
 
     // Validações básicas
     if (empty($matricula) || empty($valor)) {
         throw new Exception('Matrícula e valor são obrigatórios');
-    }
-
-    if (empty($pass)) {
-        throw new Exception('Senha é obrigatória');
     }
 
     // Incluir arquivo de conexão com banco (estrutura do servidor)

@@ -611,6 +611,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       console.log(`📤 [${requestId}] Enviando para API:`, {
         matricula: payload.matricula,
         valor: payload.valor_pedido,
+        pass: payload.pass ? '[PRESENTE]' : '[AUSENTE]',
         request_id: requestId
       });
 
