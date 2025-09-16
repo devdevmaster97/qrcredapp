@@ -193,7 +193,16 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
           success: false,
           error: `Campo obrigatório ausente: ${campo}`,
           campo_ausente: campo,
-          dados_recebidos: Object.keys(body)
+          dados_recebidos: Object.keys(body),
+          debug_info: {
+            chave_unica: chaveUnica,
+            timestamp: new Date().toISOString(),
+            campos_validados: camposObrigatorios,
+            valores_recebidos: camposObrigatorios.reduce((acc, c) => {
+              acc[c] = body[c] || 'AUSENTE';
+              return acc;
+            }, {} as any)
+          }
         }, { 
           status: 400,
           headers: {

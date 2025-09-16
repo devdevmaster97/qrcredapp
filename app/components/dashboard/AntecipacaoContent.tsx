@@ -630,10 +630,24 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
 
       addDebugLog(`📥 [${requestId}] Resposta da API - Status: ${response.status} Success: ${data.success}`);
       addDebugLog(`✅ [${requestId}] API NEXT.JS EXECUTADA - Status: ${response.status}`);
+      
+      // Mostrar detalhes do erro 400 se houver debug_info
+      if (response.status === 400 && data.debug_info) {
+        addDebugLog(`🔍 [${requestId}] DETALHES DO ERRO 400:`);
+        addDebugLog(`📋 Campo ausente: ${data.campo_ausente || 'N/A'}`);
+        addDebugLog(`📊 Campos recebidos: ${data.dados_recebidos?.join(', ') || 'N/A'}`);
+        if (data.debug_info.valores_recebidos) {
+          Object.entries(data.debug_info.valores_recebidos).forEach(([campo, valor]) => {
+            addDebugLog(`   ${campo}: ${valor}`);
+          });
+        }
+      }
+      
       console.log(`📥 [${requestId}] Resposta da API:`, {
         success: data.success,
         status: response.status,
-        headers: Object.fromEntries(response.headers.entries())
+        headers: Object.fromEntries(response.headers.entries()),
+        debug_info: data.debug_info || 'N/A'
       });
 
       if (data.success) {
