@@ -208,9 +208,11 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     
     // VERIFICAÇÃO CRÍTICA: Marcar que esta requisição está prestes a chamar o PHP
     const timestampEnvio = Date.now();
-    console.log(`🚨 [CRÍTICO] Marcando envio ao PHP para ${chaveUnica} em ${timestampEnvio}`);
+    const requestId = `${timestampEnvio}_${Math.random().toString(36).substr(2, 9)}`;
+    console.log(`🚨 [CRÍTICO] INICIANDO CHAMADA PHP - RequestID: ${requestId} - Chave: ${chaveUnica} - Timestamp: ${timestampEnvio}`);
+    console.log(`📋 [DADOS PHP] RequestID: ${requestId} - Dados enviados:`, Object.fromEntries(formData));
     
-    // Fazer chamada para o PHP
+    // Fazer chamada para o PHP com ID único
     const response = await axios.post(
       'https://sas.makecard.com.br/grava_antecipacao_app.php',
       formData,
@@ -219,19 +221,21 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
           'Content-Type': 'application/x-www-form-urlencoded',
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
-          'Expires': '0'
+          'Expires': '0',
+          'X-Request-ID': requestId, // ID único para rastrear no PHP
+          'X-Chave-Unica': chaveUnica // Chave única para debug
         },
         timeout: 15000,
         validateStatus: () => true // Não rejeitar por status HTTP
       }
     );
     
-    console.log(`📥 [${chaveUnica}] Resposta do PHP:`, {
-      status: response.status,
-      data: response.data
-    });
+    const timestampResposta = Date.now();
+    const tempoProcessamento = timestampResposta - timestampEnvio;
     
-    console.log(`✅ [CRÍTICO] Chamada ao PHP CONCLUÍDA para ${chaveUnica} em ${Date.now()}`);
+    console.log(`📥 [RESPOSTA PHP] RequestID: ${requestId} - Status: ${response.status} - Tempo: ${tempoProcessamento}ms`);
+    console.log(`📋 [DADOS RESPOSTA] RequestID: ${requestId} - Data:`, response.data);
+    console.log(`✅ [CRÍTICO] CHAMADA PHP CONCLUÍDA - RequestID: ${requestId} - Chave: ${chaveUnica} - Timestamp: ${timestampResposta}`);
     
     // Verificar se houve erro (incluindo erros de duplicata da trigger)
     const temErro = response.status >= 400 ||
