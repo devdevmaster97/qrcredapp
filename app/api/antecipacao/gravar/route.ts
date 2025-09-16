@@ -30,42 +30,33 @@ export async function POST(request: NextRequest) {
       request_id: body.request_id,
       frontend_request_id: requestId
     });
-    //teste
+    
     // Criar chave única para esta solicitação
     const chaveUnica = `${body.matricula}_${body.valor_pedido}_${body.request_id}`;
-    
     const agora = Date.now();
+    
     console.log(`🔑 [API] Chave única gerada: ${chaveUnica}`);
     console.log(`🔒 [API] Controle execução única:`, Array.from(execucaoUnica.entries()));
     console.log(`⏰ [API] Timestamp execução:`, Array.from(timestampExecucao.entries()));
     
-    // LIMPEZA TEMPORÁRIA: Limpar cache antigo para permitir teste
+    // LIMPEZA AUTOMÁTICA: Limpar cache antigo para permitir novas requisições
     if (timestampExecucao.has(chaveUnica)) {
       const tempoDecorrido = agora - timestampExecucao.get(chaveUnica)!;
       if (tempoDecorrido > 30000) { // Limpar entradas antigas (30s)
         timestampExecucao.delete(chaveUnica);
         execucaoUnica.delete(chaveUnica);
         ultimasRequisicoes.delete(chaveUnica);
+        requestsEmAndamento.delete(chaveUnica);
+        promisesEmAndamento.delete(chaveUnica);
+        contadorChamadasPHP.delete(chaveUnica);
         console.log(`🧹 [LIMPEZA AUTOMÁTICA] Cache antigo removido para ${chaveUnica}`);
       }
     }
     
-    // 0. VERIFICAÇÃO CRÍTICA BASEADA EM TIMESTAMP (PRIMEIRA LINHA DE DEFESA)
-    const ultimoTimestamp = timestampExecucao.get(chaveUnica);
-    if (ultimoTimestamp && (agora - ultimoTimestamp) < 100) { // 100ms de proteção absoluta (reduzido de 500ms)
-      console.log(`🚨 [${requestId}] TIMESTAMP BLOQUEIO ABSOLUTO - solicitação ${chaveUnica} executada há ${agora - ultimoTimestamp}ms`);
-      return NextResponse.json({
-        success: false,
-        error: 'Solicitação muito recente. Aguarde alguns segundos.',
-        timestamp_blocked: true,
-        tempo_desde_ultima: agora - ultimoTimestamp,
-        request_id: requestId
-      }, { status: 409 });
-    }
-    
-    // 1. VERIFICAÇÃO DE EXECUÇÃO ÚNICA (SEGUNDA LINHA DE DEFESA)
+    // VERIFICAÇÃO ÚNICA E ROBUSTA DE DUPLICAÇÃO
+    // 1. Verificar se já está sendo executada (execução única)
     if (execucaoUnica.has(chaveUnica)) {
-      console.log(`🚨 [${requestId}] EXECUÇÃO ÚNICA BLOQUEIO IMEDIATO - solicitação ${chaveUnica} já está sendo executada`);
+      console.log(`🚨 [${requestId}] EXECUÇÃO ÚNICA BLOQUEIO - solicitação ${chaveUnica} já está sendo executada`);
       return NextResponse.json({
         success: false,
         error: 'Solicitação já está sendo processada. Aguarde a conclusão.',
@@ -74,76 +65,42 @@ export async function POST(request: NextRequest) {
       }, { status: 409 });
     }
     
-    // Marcar IMEDIATAMENTE timestamp e execução (ANTES de qualquer outra operação)
-    timestampExecucao.set(chaveUnica, agora);
-    execucaoUnica.set(chaveUnica, true);
-    console.log(`🔐 [${requestId}] TIMESTAMP + EXECUÇÃO MARCADO IMEDIATAMENTE: ${chaveUnica} em ${agora}`);
+    // 2. Verificar se há requisição em andamento
+    if (requestsEmAndamento.has(chaveUnica)) {
+      console.log(`🔄 [${requestId}] REQUISIÇÃO EM ANDAMENTO - solicitação ${chaveUnica} já está sendo processada`);
+      return NextResponse.json({
+        success: false,
+        error: 'Solicitação já está sendo processada. Aguarde a conclusão.',
+        duplicate_blocked: true,
+        request_id: requestId
+      }, { status: 409 });
+    }
     
-    console.log(`📋 [API] Cache rate limiting atual:`, Array.from(ultimasRequisicoes.entries()));
-    console.log(`🔄 [API] Requisições em andamento:`, Array.from(requestsEmAndamento.keys()));
-    
-    // 2. VERIFICAR RATE LIMITING (2 segundos - ajustado para ser menos restritivo)
+    // 3. Verificar rate limiting (2 segundos)
     const ultimaRequisicao = ultimasRequisicoes.get(chaveUnica);
-    if (ultimaRequisicao && (agora - ultimaRequisicao) < 2000) { // 2 segundos (reduzido de 5s)
+    if (ultimaRequisicao && (agora - ultimaRequisicao) < 2000) {
       const tempoRestante = Math.ceil((2000 - (agora - ultimaRequisicao)) / 1000);
-      console.log(`⏰ [API] Rate limit ativo para ${chaveUnica}. Última: ${ultimaRequisicao}, Agora: ${agora}, Diferença: ${agora - ultimaRequisicao}ms, Tempo restante: ${tempoRestante}s`);
-      
-      // Limpar execução única e timestamp se rate limited
-      execucaoUnica.delete(chaveUnica);
-      timestampExecucao.delete(chaveUnica);
-      console.log(`🧹 [LIMPEZA] Rate limit - removido execução e timestamp: ${chaveUnica}`);
-      
+      console.log(`⏰ [${requestId}] RATE LIMIT - solicitação ${chaveUnica} muito recente. Tempo restante: ${tempoRestante}s`);
       return NextResponse.json({
         success: false,
         error: `Aguarde ${tempoRestante} segundos antes de fazer nova solicitação similar`,
         rate_limited: true,
-        tempo_restante: tempoRestante
+        tempo_restante: tempoRestante,
+        request_id: requestId
       }, { status: 429 });
-    } else {
-      console.log(`✅ [API] Rate limiting OK para ${chaveUnica}. Última requisição: ${ultimaRequisicao ? new Date(ultimaRequisicao).toISOString() : 'nunca'}`);
     }
     
-    // 2. VERIFICAR SE JÁ EXISTE REQUISIÇÃO EM ANDAMENTO (CRÍTICO PARA EVITAR DUPLICAÇÃO)
-    if (requestsEmAndamento.has(chaveUnica)) {
-      console.log(`🔄 [ANTI-DUPLICAÇÃO] Requisição já em andamento para ${chaveUnica}. Bloqueando requisição duplicada.`);
-      // Limpar execução única e timestamp se já há requisição em andamento
-      execucaoUnica.delete(chaveUnica);
-      timestampExecucao.delete(chaveUnica);
-      console.log(`🧹 [LIMPEZA] Requisição em andamento - removido execução e timestamp: ${chaveUnica}`);
-      
-      return NextResponse.json({
-        success: false,
-        error: 'Solicitação já está sendo processada. Aguarde a conclusão.',
-        duplicate_blocked: true
-      }, { status: 409 }); // 409 Conflict
-    }
-    
-    // 3. MARCAR RATE LIMITING ANTES DE PROCESSAR (CRÍTICO PARA EVITAR DUPLICAÇÃO)
-    console.log(`🔒 [API] Marcando rate limiting ANTES do processamento para ${chaveUnica} em ${agora}`);
+    // MARCAR TODOS OS CONTROLES DE UMA VEZ (ATÔMICO)
+    timestampExecucao.set(chaveUnica, agora);
+    execucaoUnica.set(chaveUnica, true);
     ultimasRequisicoes.set(chaveUnica, agora);
-    
-    // 4. VERIFICAÇÃO ADICIONAL: Aguardar 100ms para garantir que não há requisições simultâneas
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    // Verificar novamente se não foi criada uma requisição em andamento durante o delay
-    if (requestsEmAndamento.has(chaveUnica)) {
-      console.log(`🚨 [ANTI-DUPLICAÇÃO] Requisição criada durante delay para ${chaveUnica}. Bloqueando.`);
-      // Limpar execução única e timestamp se detectou duplicata durante delay
-      execucaoUnica.delete(chaveUnica);
-      timestampExecucao.delete(chaveUnica);
-      console.log(`🧹 [LIMPEZA] Duplicata durante delay - removido execução e timestamp: ${chaveUnica}`);
-      
-      return NextResponse.json({
-        success: false,
-        error: 'Solicitação duplicada detectada durante processamento',
-        duplicate_blocked_delay: true
-      }, { status: 409 });
-    }
-    
-    // 5. CRIAR PROMISE PARA ESTA REQUISIÇÃO
-    console.log(`🚀 [${requestId}] [API] Criando promise de processamento para ${chaveUnica}`);
-    const promiseRequisicao = processarSolicitacao(body, chaveUnica);
     requestsEmAndamento.set(chaveUnica, true);
+    
+    console.log(`🔐 [${requestId}] TODOS OS CONTROLES MARCADOS: ${chaveUnica} em ${agora}`);
+    
+    // CRIAR E EXECUTAR PROMISE DE PROCESSAMENTO
+    console.log(`🚀 [${requestId}] [API] Criando promise de processamento para ${chaveUnica}`);
+    const promiseRequisicao = processarSolicitacao(body, chaveUnica, requestId);
     promisesEmAndamento.set(chaveUnica, promiseRequisicao);
     
     try {
@@ -152,11 +109,12 @@ export async function POST(request: NextRequest) {
       console.log(`✅ [${requestId}] [API] Processamento concluído para ${chaveUnica}`);
       return resultado;
     } finally {
-      // Limpar cache após processamento
+      // Limpar TODOS os controles após processamento
       requestsEmAndamento.delete(chaveUnica);
       promisesEmAndamento.delete(chaveUnica);
       execucaoUnica.delete(chaveUnica);
       timestampExecucao.delete(chaveUnica);
+      contadorChamadasPHP.delete(chaveUnica);
       console.log(`🧹 [${requestId}] [LIMPEZA FINAL] Removido todos os controles para ${chaveUnica}`);
     }
     
@@ -183,25 +141,26 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function processarSolicitacao(body: any, chaveUnica: string) {
+async function processarSolicitacao(body: any, chaveUnica: string, requestId: string) {
   const debugInfo: any = {
     etapa: 'inicio',
     timestamp: new Date().toISOString(),
     chave_unica: chaveUnica,
+    request_id: requestId,
     etapas_executadas: []
   };
   
   try {
     debugInfo.etapas_executadas.push('inicio_processamento');
-    console.log(`🚀 [ANTI-DUPLICAÇÃO] Processando solicitação ${chaveUnica} - Verificação rigorosa ativa`);
+    console.log(`🚀 [${requestId}] Processando solicitação ${chaveUnica} - Verificação rigorosa ativa`);
     
     debugInfo.etapas_executadas.push('log_inicial');
-    console.log(`🔍 [${chaveUnica}] Processando solicitação com proteção anti-duplicação ativa`);
+    console.log(`🔍 [${requestId}] Processando solicitação com proteção anti-duplicação ativa`);
     
     // Validar campos obrigatórios
     const camposObrigatorios = ['matricula', 'pass', 'empregador', 'valor_pedido', 'taxa', 'valor_descontar', 'mes_corrente', 'chave_pix'];
     
-    console.log(`🔍 [${chaveUnica}] Validando campos obrigatórios:`, {
+    console.log(`🔍 [${requestId}] Validando campos obrigatórios:`, {
       matricula: body.matricula,
       pass: body.pass ? '[PRESENTE]' : '[AUSENTE]',
       empregador: body.empregador,
@@ -217,7 +176,7 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
       if (!body[campo] && body[campo] !== 0) { // Permitir valor 0 para campos numéricos
         debugInfo.etapa = 'erro_validacao_campo';
         debugInfo.campo_ausente = campo;
-        console.log(`❌ [${chaveUnica}] Campo obrigatório ausente: ${campo} (valor: ${body[campo]})`);
+        console.log(`❌ [${requestId}] Campo obrigatório ausente: ${campo} (valor: ${body[campo]})`);
         return NextResponse.json({
           success: false,
           error: `Campo obrigatório ausente: ${campo}`,
@@ -225,6 +184,7 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
           dados_recebidos: Object.keys(body),
           debug_info: {
             chave_unica: chaveUnica,
+            request_id: requestId,
             timestamp: new Date().toISOString(),
             campos_validados: camposObrigatorios,
             valores_recebidos: camposObrigatorios.reduce((acc, c) => {
@@ -261,16 +221,15 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     formData.append('convenio', (body.convenio || 221).toString());
     formData.append('id', (body.id || 0).toString());
     formData.append('id_divisao', (body.id_divisao || 0).toString());
+    formData.append('request_id', requestId); // Adicionar request_id ao formData
     
     debugInfo.etapas_executadas.push('dados_php_preparados');
     
-    console.log(`🌐 [${chaveUnica}] Enviando para PHP grava_antecipacao_app.php:`, Object.fromEntries(formData));
-    
-    console.log(`🔒 [ANTI-DUPLICAÇÃO] Enviando para PHP com proteção ativa`);
+    console.log(`🌐 [${requestId}] Enviando para PHP grava_antecipacao_app_fixed.php:`, Object.fromEntries(formData));
     
     // VERIFICAÇÃO CRÍTICA: Marcar que esta requisição está prestes a chamar o PHP
     const timestampEnvio = Date.now();
-    const requestId = body.request_id || `${timestampEnvio}_${Math.random().toString(36).substr(2, 9)}`;
+    
     // Incrementar contador de chamadas PHP
     const contadorAtual = (contadorChamadasPHP.get(chaveUnica) || 0) + 1;
     contadorChamadasPHP.set(chaveUnica, contadorAtual);
@@ -278,7 +237,12 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     console.log(`🚨 [CRÍTICO] INICIANDO CHAMADA PHP - RequestID: ${requestId} - Chave: ${chaveUnica} - Timestamp: ${timestampEnvio}`);
     console.log(`📋 [DADOS PHP] RequestID: ${requestId} - Dados enviados:`, Object.fromEntries(formData));
     console.log(`🔢 [CONTADOR CRÍTICO] Esta é a chamada PHP número ${contadorAtual} para chave: ${chaveUnica}`);
-    console.log(`📊 [CONTADOR GLOBAL] Total de chamadas por chave:`, Array.from(contadorChamadasPHP.entries()));
+    
+    // ALERTA CRÍTICO: Se contador > 1, há duplicação
+    if (contadorAtual > 1) {
+      console.log(`🚨 [ALERTA DUPLICAÇÃO] DETECTADA MÚLTIPLA CHAMADA PHP! Chave: ${chaveUnica} - Chamada número: ${contadorAtual}`);
+      console.log(`🔍 [DEBUG DUPLICAÇÃO] Histórico de chamadas:`, Array.from(contadorChamadasPHP.entries()));
+    }
     
     // Fazer chamada para o PHP com ID único
     debugInfo.etapas_executadas.push('iniciando_chamada_php');
@@ -307,12 +271,6 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     console.log(`📋 [DADOS RESPOSTA] RequestID: ${requestId} - Data:`, response.data);
     console.log(`🔍 [ANÁLISE PHP] RequestID: ${requestId} - Headers:`, response.headers);
     console.log(`✅ [CONFIRMAÇÃO] Chamada PHP ${contadorAtual} completada para chave: ${chaveUnica}`);
-    
-    // ALERTA CRÍTICO: Se contador > 1, há duplicação
-    if (contadorAtual > 1) {
-      console.log(`🚨 [ALERTA DUPLICAÇÃO] DETECTADA MÚLTIPLA CHAMADA PHP! Chave: ${chaveUnica} - Chamada número: ${contadorAtual}`);
-      console.log(`🔍 [DEBUG DUPLICAÇÃO] Histórico de chamadas:`, Array.from(contadorChamadasPHP.entries()));
-    }
     
     // Log detalhado da resposta PHP para análise
     if (response.data) {
@@ -350,7 +308,7 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     
     if (temErro) {
       const mensagem = response.data.message || 'Erro ao processar solicitação';
-      console.log(`❌ [${chaveUnica}] Erro detectado:`, mensagem);
+      console.log(`❌ [${requestId}] Erro detectado:`, mensagem);
       
       // Remover do rate limiting se deu erro para permitir nova tentativa
       ultimasRequisicoes.delete(chaveUnica);
@@ -390,7 +348,7 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
                      (response.status === 200 && !temErro);
     
     if (isSuccess) {
-      console.log(`✅ [${chaveUnica}] Antecipação gravada com sucesso`);
+      console.log(`✅ [${requestId}] Antecipação gravada com sucesso`);
       console.log(`✅ [SUCESSO FINAL] RequestID: ${requestId} - Retornando sucesso com debug_info completo`);
       console.log(`📊 [DEBUG_INFO FINAL] RequestID: ${requestId}:`, JSON.stringify(debugInfo, null, 2));
       
@@ -410,7 +368,7 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
       });
     } else {
       // Resposta ambígua - tratar como erro
-      console.log(`❌ [${chaveUnica}] Resposta ambígua do PHP:`, response.data);
+      console.log(`❌ [${requestId}] Resposta ambígua do PHP:`, response.data);
       
       // Remover do rate limiting se deu erro para permitir nova tentativa
       ultimasRequisicoes.delete(chaveUnica);
@@ -431,7 +389,7 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     }
     
   } catch (error) {
-    console.error(`💥 [${chaveUnica}] Erro no processamento:`, error);
+    console.error(`💥 [${requestId}] Erro no processamento:`, error);
     
     // Remover do rate limiting se deu erro para permitir nova tentativa
     ultimasRequisicoes.delete(chaveUnica);
