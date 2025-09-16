@@ -10,20 +10,25 @@ const execucaoUnica = new Map<string, boolean>(); // Controle de execução úni
 const timestampExecucao = new Map<string, number>(); // Timestamp de execução para controle absoluto
 
 export async function POST(request: NextRequest) {
+  const requestId = request.headers.get('X-Request-ID') || `api_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
+  console.log(`🚀 [${requestId}] === INÍCIO DA REQUISIÇÃO API ===`);
+  console.log(`🔍 [${requestId}] Headers recebidos:`, Object.fromEntries(request.headers.entries()));
+  console.log(`⏰ [${requestId}] Timestamp: ${new Date().toISOString()}`);
+  
   try {
-    const requestId = request.headers.get('X-Request-ID') || `api_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    console.log(`🚨 [${requestId}] API ANTECIPAÇÃO CHAMADA - TIMESTAMP:`, new Date().toISOString());
     const body = await request.json();
-    
+    console.log(`📦 [${requestId}] Body recebido:`, body);
+    console.log(`🔍 [${requestId}] Campos do body:`, Object.keys(body));
     console.log(`📥 [${requestId}] API Antecipação - Dados recebidos:`, {
       matricula: body.matricula,
-      valor: body.valor,
+      valor_pedido: body.valor_pedido,
       request_id: body.request_id,
       frontend_request_id: requestId
     });
     
     // Criar chave única para esta solicitação
-    const chaveUnica = `${body.matricula}_${body.valor}_${body.request_id}`;
+    const chaveUnica = `${body.matricula}_${body.valor_pedido}_${body.request_id}`;
     
     const agora = Date.now();
     console.log(`🔑 [API] Chave única gerada: ${chaveUnica}`);
@@ -139,16 +144,17 @@ export async function POST(request: NextRequest) {
     }
     
   } catch (error) {
-    console.error('💥 Erro na API de antecipação:', error);
-    
-    // Limpar todos os controles em caso de erro
-    console.log(`🧹 [LIMPEZA GERAL] Erro - removendo todos os controles`);
-    execucaoUnica.clear();
-    timestampExecucao.clear();
-    
+    console.error(`💥 [${requestId}] Erro na API:`, error);
+    console.error(`💥 [${requestId}] Stack trace:`, error instanceof Error ? error.stack : 'N/A');
+    console.error(`💥 [${requestId}] Tipo do erro:`, typeof error);
     return NextResponse.json({
       success: false,
-      error: 'Erro interno do servidor'
+      error: 'Erro interno do servidor',
+      debug_info: {
+        error_type: typeof error,
+        error_message: error instanceof Error ? error.message : String(error),
+        timestamp: new Date().toISOString()
+      }
     }, { 
       status: 500,
       headers: {
