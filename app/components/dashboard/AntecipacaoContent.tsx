@@ -61,6 +61,9 @@ const execucoesPorRequestId = new Map<string, number>();
 // Mutex global para controle de execução única (proteção contra React StrictMode)
 let globalMutex = false;
 
+// Contador global para rastrear execuções simultâneas
+let executionCounter = 0;
+
 // Função para salvar proteção no localStorage (funciona em PWA e navegador)
 const salvarProtecaoLocalStorage = (chave: string, timestamp: number) => {
   try {
@@ -544,20 +547,28 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
   const handleSubmit = async (e?: any) => {
     if (e) e.preventDefault();
     
-    // PROTEÇÃO CRÍTICA 0: Mutex global (primeira linha de defesa contra React StrictMode)
-    if (globalMutex) {
-      console.log('🚫 Mutex global ativo, ignorando execução duplicada');
-      console.trace('🔍 Stack trace da execução bloqueada pelo mutex:');
-      return;
-    }
-    
     // Proteção específica para mobile - evitar cliques duplos rápidos
     const agora = Date.now();
     const chaveProtecao = `${associadoData?.matricula}_${valorSolicitado}_${chavePix}`;
     
+    // PROTEÇÃO CRÍTICA 0: Atomic check-and-set para mutex global (primeira linha de defesa)
+    const currentCounter = ++executionCounter;
+    console.log(`🔢 Contador de execução: ${currentCounter}`);
+    
+    if (globalMutex) {
+      console.log(`🚫 Mutex global ativo, ignorando execução ${currentCounter}`);
+      console.trace(`🔍 Stack trace da execução ${currentCounter} bloqueada pelo mutex:`);
+      return;
+    }
+    
+    // MARCAR MUTEX GLOBAL IMEDIATAMENTE (ATOMIC)
+    globalMutex = true;
+    console.log(`🔒 Mutex global ativado pela execução ${currentCounter} - bloqueando execuções duplicadas`);
+    
     // PROTEÇÃO CRÍTICA 1: Verificar se já está processando (segunda linha de defesa)
     if (loading || isSubmittingRef.current) {
-      console.log('🚫 Já está processando, ignorando clique');
+      console.log(`🚫 Execução ${currentCounter} - já está processando, ignorando`);
+      globalMutex = false;
       return;
     }
     
@@ -565,26 +576,25 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     if (ultimaSubmissao.has(chaveProtecao)) {
       const ultimoTempo = ultimaSubmissao.get(chaveProtecao)!;
       if (agora - ultimoTempo < 3000) {
-        console.log('🚫 Submissão muito recente, ignorando');
+        console.log(`🚫 Execução ${currentCounter} - submissão muito recente, ignorando`);
+        globalMutex = false;
         return;
       }
     }
     
     // PROTEÇÃO CRÍTICA 3: Verificar se já existe submissão em andamento para esta combinação
     if (submissoesEmAndamento.has(chaveProtecao)) {
-      console.log('🚫 Submissão já em andamento para esta combinação');
+      console.log(`🚫 Execução ${currentCounter} - submissão já em andamento para esta combinação`);
+      globalMutex = false;
       return;
     }
     
     // PROTEÇÃO CRÍTICA 4: Verificar se a mesma submissão já foi iniciada recentemente (proteção contra React StrictMode)
     if (lastSubmissionRef.current > 0 && (agora - lastSubmissionRef.current) < 100) {
-      console.log('🚫 Submissão duplicada detectada (React StrictMode), ignorando');
+      console.log(`🚫 Execução ${currentCounter} - submissão duplicada detectada (React StrictMode), ignorando`);
+      globalMutex = false;
       return;
     }
-    
-    // MARCAR MUTEX GLOBAL PRIMEIRO (CRÍTICO PARA REACT STRICTMODE)
-    globalMutex = true;
-    console.log('🔒 Mutex global ativado - bloqueando execuções duplicadas');
     
     // MARCAR TODAS AS OUTRAS PROTEÇÕES DE UMA VEZ (ATÔMICO)
     isSubmittingRef.current = true;
@@ -601,6 +611,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       lastSubmissionRef.current = 0;
       globalMutex = false;
       submissoesEmAndamento.delete(chaveProtecao);
+      console.log(`❌ Execução ${currentCounter} - validação falhou: valor inválido`);
       return;
     }
     
@@ -611,6 +622,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       lastSubmissionRef.current = 0;
       globalMutex = false;
       submissoesEmAndamento.delete(chaveProtecao);
+      console.log(`❌ Execução ${currentCounter} - validação falhou: chave PIX ausente`);
       return;
     }
 
@@ -621,15 +633,18 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       lastSubmissionRef.current = 0;
       globalMutex = false;
       submissoesEmAndamento.delete(chaveProtecao);
+      console.log(`❌ Execução ${currentCounter} - validação falhou: senha ausente`);
       return;
     }
 
     // Gerar ID único para esta requisição específica
     const requestId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    console.log(`🆔 Execução ${currentCounter} - RequestId gerado: ${requestId}`);
     
     // PROTEÇÃO CRÍTICA 5: Verificar se este requestId já foi usado recentemente (proteção contra React StrictMode)
     if (execucoesPorRequestId.has(requestId)) {
-      console.log(`🚫 RequestId duplicado detectado (React StrictMode), ignorando: ${requestId}`);
+      console.log(`🚫 Execução ${currentCounter} - RequestId duplicado detectado (React StrictMode), ignorando: ${requestId}`);
+      globalMutex = false;
       return;
     }
     
@@ -643,9 +658,9 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       }
     });
     
-    addDebugLog(`🚀 [${requestId}] Iniciando submissão - Chave: ${chaveProtecao}`);
-    console.log(`🚀 [${requestId}] Iniciando submissão - Chave: ${chaveProtecao}`);
-    console.trace(`🔍 [${requestId}] Stack trace da submissão:`);
+    addDebugLog(`🚀 [${requestId}] Execução ${currentCounter} - Iniciando submissão - Chave: ${chaveProtecao}`);
+    console.log(`🚀 [${requestId}] Execução ${currentCounter} - Iniciando submissão - Chave: ${chaveProtecao}`);
+    console.trace(`🔍 [${requestId}] Execução ${currentCounter} - Stack trace da submissão:`);
     setErro("");
     
     try {
@@ -756,12 +771,12 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       isSubmittingRef.current = false;
       lastSubmissionRef.current = 0;
       globalMutex = false;
-      console.log('🔓 Mutex global liberado - permitindo novas execuções');
+      console.log(`🔓 Mutex global liberado pela execução ${currentCounter} - permitindo novas execuções`);
       // Liberar proteção após processamento
       submissoesEmAndamento.delete(chaveProtecao);
       execucoesPorRequestId.delete(requestId);
       addDebugLog(`🏁 [${requestId}] Submissão finalizada`);
-      console.log(`🏁 Submissão finalizada - Chave: ${chaveProtecao}`);
+      console.log(`🏁 Execução ${currentCounter} finalizada - Chave: ${chaveProtecao}`);
     }
   };
   // Função para obter classes CSS baseadas no status
