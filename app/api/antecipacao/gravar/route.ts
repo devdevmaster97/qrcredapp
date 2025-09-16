@@ -6,6 +6,7 @@ export const dynamic = 'force-dynamic';
 // Cache para controlar requisições em andamento e rate limiting
 const requestsEmAndamento = new Map<string, Promise<any>>();
 const ultimasRequisicoes = new Map<string, number>();
+const execucaoUnica = new Map<string, boolean>(); // Controle de execução única
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,12 +23,31 @@ export async function POST(request: NextRequest) {
     console.log(`⏰ [API] Timestamp atual: ${agora}`);
     console.log(`📋 [API] Cache rate limiting atual:`, Array.from(ultimasRequisicoes.entries()));
     console.log(`🔄 [API] Requisições em andamento:`, Array.from(requestsEmAndamento.keys()));
+    console.log(`🔒 [API] Controle execução única:`, Array.from(execucaoUnica.entries()));
+    
+    // 0. VERIFICAÇÃO CRÍTICA DE EXECUÇÃO ÚNICA (PRIMEIRA LINHA DE DEFESA)
+    if (execucaoUnica.get(chaveUnica) === true) {
+      console.log(`🚨 [EXECUÇÃO ÚNICA] Bloqueando - solicitação ${chaveUnica} já está sendo executada`);
+      return NextResponse.json({
+        success: false,
+        error: 'Solicitação já está sendo processada. Aguarde a conclusão.',
+        execution_blocked: true
+      }, { status: 409 });
+    }
+    
+    // Marcar imediatamente como em execução
+    execucaoUnica.set(chaveUnica, true);
+    console.log(`🔐 [EXECUÇÃO ÚNICA] Marcado como em execução: ${chaveUnica}`);
     
     // 1. VERIFICAR RATE LIMITING (60 segundos - mais rigoroso para evitar duplicação)
     const ultimaRequisicao = ultimasRequisicoes.get(chaveUnica);
     if (ultimaRequisicao && (agora - ultimaRequisicao) < 60000) { // 60 segundos
       const tempoRestante = Math.ceil((60000 - (agora - ultimaRequisicao)) / 1000);
       console.log(`⏰ [API] Rate limit ativo para ${chaveUnica}. Última: ${ultimaRequisicao}, Agora: ${agora}, Diferença: ${agora - ultimaRequisicao}ms, Tempo restante: ${tempoRestante}s`);
+      
+      // Limpar execução única se rate limited
+      execucaoUnica.delete(chaveUnica);
+      console.log(`🧹 [EXECUÇÃO ÚNICA] Limpeza por rate limit: ${chaveUnica}`);
       
       return NextResponse.json({
         success: false,
@@ -42,6 +62,10 @@ export async function POST(request: NextRequest) {
     // 2. VERIFICAR SE JÁ EXISTE REQUISIÇÃO EM ANDAMENTO (CRÍTICO PARA EVITAR DUPLICAÇÃO)
     if (requestsEmAndamento.has(chaveUnica)) {
       console.log(`🔄 [ANTI-DUPLICAÇÃO] Requisição já em andamento para ${chaveUnica}. Bloqueando requisição duplicada.`);
+      
+      // Limpar execução única se já há requisição em andamento
+      execucaoUnica.delete(chaveUnica);
+      console.log(`🧹 [EXECUÇÃO ÚNICA] Limpeza por requisição em andamento: ${chaveUnica}`);
       
       return NextResponse.json({
         success: false,
@@ -60,6 +84,11 @@ export async function POST(request: NextRequest) {
     // Verificar novamente se não foi criada uma requisição em andamento durante o delay
     if (requestsEmAndamento.has(chaveUnica)) {
       console.log(`🚨 [ANTI-DUPLICAÇÃO] Requisição criada durante delay para ${chaveUnica}. Bloqueando.`);
+      
+      // Limpar execução única se detectou duplicata durante delay
+      execucaoUnica.delete(chaveUnica);
+      console.log(`🧹 [EXECUÇÃO ÚNICA] Limpeza por duplicata durante delay: ${chaveUnica}`);
+      
       return NextResponse.json({
         success: false,
         error: 'Solicitação duplicada detectada durante processamento',
@@ -78,10 +107,16 @@ export async function POST(request: NextRequest) {
     } finally {
       // Limpar cache após processamento
       requestsEmAndamento.delete(chaveUnica);
+      execucaoUnica.delete(chaveUnica);
+      console.log(`🧹 [EXECUÇÃO ÚNICA] Limpeza final para ${chaveUnica}`);
     }
     
   } catch (error) {
     console.error('💥 Erro na API de antecipação:', error);
+    
+    // Limpar execução única em caso de erro (usar chave genérica pois body já foi consumido)
+    console.log(`🧹 [EXECUÇÃO ÚNICA] Limpeza geral por erro - removendo todas as execuções`);
+    execucaoUnica.clear();
     
     return NextResponse.json({
       success: false,
