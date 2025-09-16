@@ -256,7 +256,7 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     const requestId = body.request_id || `${timestampEnvio}_${Math.random().toString(36).substr(2, 9)}`;
     console.log(`🚨 [CRÍTICO] INICIANDO CHAMADA PHP - RequestID: ${requestId} - Chave: ${chaveUnica} - Timestamp: ${timestampEnvio}`);
     console.log(`📋 [DADOS PHP] RequestID: ${requestId} - Dados enviados:`, Object.fromEntries(formData));
-    // Request_id removido - não será mais enviado para o PHP
+    console.log(`🔢 [CONTADOR] Esta é a chamada PHP número 1 para RequestID: ${requestId}`);
     
     // Fazer chamada para o PHP com ID único
     debugInfo.etapas_executadas.push('iniciando_chamada_php');
@@ -284,6 +284,7 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     console.log(`📥 [RESPOSTA PHP] RequestID: ${requestId} - Status: ${response.status} - Tempo: ${tempoProcessamento}ms`);
     console.log(`📋 [DADOS RESPOSTA] RequestID: ${requestId} - Data:`, response.data);
     console.log(`🔍 [ANÁLISE PHP] RequestID: ${requestId} - Headers:`, response.headers);
+    console.log(`✅ [CONFIRMAÇÃO] Chamada PHP ÚNICA completada para RequestID: ${requestId}`);
     
     // Log detalhado da resposta PHP para análise
     if (response.data) {
