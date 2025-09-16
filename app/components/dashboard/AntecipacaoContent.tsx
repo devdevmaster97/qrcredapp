@@ -112,7 +112,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     }
   };
 
-  // Detectar dispositivo móvel com múltiplas verificações
+  // Detectar dispositivo móvel e limpar cache global
   useEffect(() => {
     const checkMobile = () => {
       const userAgent = typeof window !== 'undefined' ? window.navigator.userAgent : '';
@@ -125,6 +125,17 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       
       addDebugLog(`📱 Dispositivo: ${isMobileDevice ? 'MOBILE' : 'DESKTOP'} - UA:${isMobileUA} Touch:${isTouchDevice} Screen:${window.innerWidth}px`);
     };
+    
+    // LIMPEZA CRÍTICA: Limpar cache global ao inicializar componente
+    const cacheAnterior = {
+      submissoes: submissoesEmAndamento.size,
+      ultimasReq: ultimaSubmissao.size
+    };
+    
+    submissoesEmAndamento.clear();
+    ultimaSubmissao.clear();
+    
+    addDebugLog(`🧹 CACHE LIMPO - Anterior: ${cacheAnterior.submissoes} submissões, ${cacheAnterior.ultimasReq} rate limits`);
     
     checkMobile();
   }, []);
