@@ -55,6 +55,57 @@ interface SolicitacaoAntecipacao {
 const submissoesEmAndamento = new Map<string, boolean>();
 const ultimaSubmissao = new Map<string, number>();
 
+// Função para salvar proteção no localStorage (funciona em PWA e navegador)
+const salvarProtecaoLocalStorage = (chave: string, timestamp: number) => {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const protecoes = JSON.parse(localStorage.getItem('protecaoAntecipacao') || '{}');
+      protecoes[chave] = timestamp;
+      localStorage.setItem('protecaoAntecipacao', JSON.stringify(protecoes));
+    }
+  } catch (error) {
+    console.warn('Erro ao salvar proteção no localStorage:', error);
+  }
+};
+
+// Função para verificar proteção no localStorage
+const verificarProtecaoLocalStorage = (chave: string, tempoLimite: number): boolean => {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const protecoes = JSON.parse(localStorage.getItem('protecaoAntecipacao') || '{}');
+      const ultimoTimestamp = protecoes[chave];
+      if (ultimoTimestamp && (Date.now() - ultimoTimestamp) < tempoLimite) {
+        return true; // Ainda está protegido
+      }
+    }
+  } catch (error) {
+    console.warn('Erro ao verificar proteção no localStorage:', error);
+  }
+  return false; // Não está protegido
+};
+
+// Função para limpar proteções antigas do localStorage
+const limparProtecoesAntigas = () => {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const protecoes = JSON.parse(localStorage.getItem('protecaoAntecipacao') || '{}');
+      const agora = Date.now();
+      const protecoesLimpas: {[key: string]: number} = {};
+      
+      // Manter apenas proteções dos últimos 5 minutos
+      Object.entries(protecoes).forEach(([chave, timestamp]) => {
+        if (agora - (timestamp as number) < 300000) { // 5 minutos
+          protecoesLimpas[chave] = timestamp as number;
+        }
+      });
+      
+      localStorage.setItem('protecaoAntecipacao', JSON.stringify(protecoesLimpas));
+    }
+  } catch (error) {
+    console.warn('Erro ao limpar proteções antigas:', error);
+  }
+};
+
 export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoProps) {
   const { data: session } = useSession({ required: false });
   const [loading, setLoading] = useState(false);
@@ -499,12 +550,20 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     const requestId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     addDebugLog(`🚀 INICIANDO SOLICITAÇÃO - ID: ${requestId.slice(-6)}`);
     
-    // 1. VERIFICAR RATE LIMITING FRONTEND (ajustado para mobile)
-    const rateLimitTime = isMobile ? 15000 : 10000; // 15s para mobile, 10s para desktop
+    // 1. VERIFICAR RATE LIMITING DUPLO (Memória + localStorage)
+    const rateLimitTime = isMobile ? 30000 : 15000; // 30s para mobile, 15s para desktop
+    
+    // Verificar no cache em memória
     const ultimaSubmissaoTime = ultimaSubmissao.get(chaveUnica);
-    if (ultimaSubmissaoTime && (agora - ultimaSubmissaoTime) < rateLimitTime) {
-      const tempoRestante = Math.ceil((rateLimitTime - (agora - ultimaSubmissaoTime)) / 1000);
-      addDebugLog(`⏰ RATE LIMIT ATIVO - Restam ${tempoRestante}s`);
+    const temMemoria = ultimaSubmissaoTime && (agora - ultimaSubmissaoTime) < rateLimitTime;
+    
+    // Verificar no localStorage (funciona em PWA e navegador)
+    const temLocalStorage = verificarProtecaoLocalStorage(chaveUnica, rateLimitTime);
+    
+    if (temMemoria || temLocalStorage) {
+      const tempoRestanteMemoria = ultimaSubmissaoTime ? Math.ceil((rateLimitTime - (agora - ultimaSubmissaoTime)) / 1000) : 0;
+      const tempoRestante = Math.max(tempoRestanteMemoria, 15); // Mínimo 15s
+      addDebugLog(`⏰ PROTEÇÃO DUPLA ATIVA - Memória:${temMemoria} LocalStorage:${temLocalStorage} - Restam ${tempoRestante}s`);
       setErro(`Aguarde ${tempoRestante} segundos antes de tentar novamente`);
       return;
     }
@@ -530,10 +589,17 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       return;
     }
 
-    // 3. MARCAR COMO EM ANDAMENTO ANTES DE PROCESSAR
+    // 3. MARCAR COMO EM ANDAMENTO ANTES DE PROCESSAR (Dupla proteção)
     submissoesEmAndamento.set(chaveUnica, true);
     ultimaSubmissao.set(chaveUnica, agora);
-    console.log(` [${requestId}] Marcado como em andamento - Cache atualizado`);
+    
+    // Salvar também no localStorage para PWA/navegador
+    salvarProtecaoLocalStorage(chaveUnica, agora);
+    
+    // Limpar proteções antigas para não acumular dados
+    limparProtecoesAntigas();
+    
+    addDebugLog(`🛡️ PROTEÇÃO DUPLA ATIVADA - Memória + LocalStorage - ID: ${requestId.slice(-6)}`);
 
     setLoading(true);
     setErro("");
