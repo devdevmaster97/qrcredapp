@@ -421,7 +421,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       formData.append('matricula', associadoData.matricula);
       formData.append('empregador', associadoData.empregador.toString());
       
-      const response = await axios.post('/api/historico-antecipacao', formData, {
+      const response = await axios.post('/api/historico-antecipacao-proxy', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

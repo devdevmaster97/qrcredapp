@@ -45,15 +45,11 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Preparar a requisição para o backend
-    const formData = new FormData();
-    formData.append('matricula', matricula);
-    formData.append('empregador', empregador);
-    
     console.log('📤 Preparando requisição para o backend:');
     console.log('   - Matrícula:', matricula, '(tipo:', typeof matricula, ')');
     console.log('   - Empregador:', empregador, '(tipo:', typeof empregador, ')');
     console.log('   - URL:', 'https://sas.makecard.com.br/historico_antecipacao_app.php');
+    console.log('   - Método: GET (POST bloqueado pelo servidor)');
     
     // Teste de conectividade básica
     console.log('🔍 Testando conectividade com o servidor...');
@@ -64,19 +60,43 @@ export async function POST(request: NextRequest) {
       console.log('⚠️ Servidor pode estar inacessível:', testError instanceof Error ? testError.message : 'Erro desconhecido');
     }
     
-    // Fazer a requisição para o endpoint do backend
-    console.log('🔍 Enviando requisição para histórico de antecipações...');
+    // Tentar POST primeiro, se falhar com 403, tentar GET
+    console.log('🔍 Tentando requisição POST primeiro...');
     
-    const response = await axios.post(
-      'https://sas.makecard.com.br/historico_antecipacao_app.php',
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        timeout: 10000, // 10 segundos
+    let response;
+    try {
+      // Preparar FormData para POST
+      const formData = new FormData();
+      formData.append('matricula', matricula);
+      formData.append('empregador', empregador);
+      
+      response = await axios.post(
+        'https://sas.makecard.com.br/historico_antecipacao_app.php',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+          timeout: 10000,
+        }
+      );
+      console.log('✅ POST bem-sucedido');
+    } catch (postError) {
+      if (axios.isAxiosError(postError) && postError.response?.status === 403) {
+        console.log('⚠️ POST falhou com 403, tentando GET...');
+        
+        // Tentar GET como fallback
+        response = await axios.get(
+          `https://sas.makecard.com.br/historico_antecipacao_app.php?matricula=${encodeURIComponent(matricula)}&empregador=${encodeURIComponent(empregador)}`,
+          {
+            timeout: 10000,
+          }
+        );
+        console.log('✅ GET bem-sucedido');
+      } else {
+        throw postError;
       }
-    );
+    }
     
     console.log('✅ Resposta recebida do backend:', {
       status: response.status,
