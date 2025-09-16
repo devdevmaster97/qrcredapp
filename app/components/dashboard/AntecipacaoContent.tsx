@@ -1104,6 +1104,9 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
               onClick={handleSubmit}
               onTouchStart={(e) => {
                 e.preventDefault();
+                e.stopPropagation();
+                
+                addDebugLog(`👆 [TOUCH] Touch detectado - Estado atual: ${protecaoUniversal ? 'PROTEGIDO' : 'LIVRE'}`);
                 
                 // PROTEÇÃO RADICAL: Desabilitar botão IMEDIATAMENTE no primeiro touch
                 if (protecaoUniversal) {
@@ -1111,14 +1114,14 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
                   return;
                 }
                 
-                // Ativar proteção ANTES de qualquer processamento
+                // Ativar proteção IMEDIATAMENTE
                 setProtecaoUniversal(true);
-                addDebugLog(`👆 [TOUCH] Touch registrado - PROTEÇÃO ATIVADA IMEDIATAMENTE`);
+                addDebugLog(`🔒 [TOUCH] PROTEÇÃO ATIVADA - Botão bloqueado por 60s`);
                 
                 // Desativar proteção após 60 segundos
                 setTimeout(() => {
                   setProtecaoUniversal(false);
-                  addDebugLog(`🔓 [TOUCH] PROTEÇÃO DESATIVADA após 60s`);
+                  addDebugLog(`🔓 [TOUCH] PROTEÇÃO DESATIVADA - Botão liberado`);
                 }, 60000);
               }}
             >
