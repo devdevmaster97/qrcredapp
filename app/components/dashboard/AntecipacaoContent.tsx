@@ -87,6 +87,18 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
   const [botaoDesabilitadoPermanente, setBotaoDesabilitadoPermanente] = useState(false);
   // Proteção universal - aplicada a TODOS os dispositivos
   const [protecaoUniversal, setProtecaoUniversal] = useState(false);
+  
+  // Sistema de logs visível no celular
+  const [debugLogs, setDebugLogs] = useState<string[]>([]);
+  const [mostrarDebug, setMostrarDebug] = useState(false);
+
+  // Função para adicionar logs visíveis no debug
+  const addDebugLog = (message: string) => {
+    const timestamp = new Date().toLocaleTimeString();
+    const logMessage = `[${timestamp}] ${message}`;
+    console.log(logMessage);
+    setDebugLogs(prev => [...prev.slice(-19), logMessage]); // Manter apenas os últimos 20 logs
+  };
 
   // Função segura para verificar se uma string está em um array
   const isStringInArray = (str: any, arr: string[]): boolean => {
@@ -111,15 +123,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       const isMobileDevice = isMobileUA || (isTouchDevice && isSmallScreen);
       setIsMobile(isMobileDevice);
       
-      console.log(`📱 Detecção de dispositivo:`, {
-        userAgent: userAgent.substring(0, 50) + '...',
-        isMobileUA,
-        isTouchDevice,
-        isSmallScreen,
-        screenWidth: window.innerWidth,
-        maxTouchPoints: navigator.maxTouchPoints,
-        resultado: isMobileDevice ? 'MOBILE' : 'DESKTOP'
-      });
+      addDebugLog(`📱 Dispositivo: ${isMobileDevice ? 'MOBILE' : 'DESKTOP'} - UA:${isMobileUA} Touch:${isTouchDevice} Screen:${window.innerWidth}px`);
     };
     
     checkMobile();
