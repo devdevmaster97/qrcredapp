@@ -1117,8 +1117,9 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
                 setProtecaoUniversal(true);
                 addDebugLog(`🔒 [TOUCH] PROTEÇÃO ATIVADA - Próximos touches bloqueados por 60s`);
                 
-                // Permitir que este primeiro touch continue para onClick
-                addDebugLog(`✅ [TOUCH] Primeiro touch permitido - onClick será executado`);
+                // EXECUTAR handleSubmit DIRETAMENTE no primeiro touch
+                addDebugLog(`✅ [TOUCH] Primeiro touch permitido - Executando handleSubmit diretamente`);
+                handleSubmit();
                 
                 // Desativar proteção após 60 segundos
                 setTimeout(() => {
