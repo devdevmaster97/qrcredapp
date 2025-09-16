@@ -4,26 +4,30 @@ import axios from 'axios';
 export async function POST(request: NextRequest) {
   try {
     // Obter os dados da solicitação
-    let matricula, empregador;
+    let matricula, empregador, id_associado, divisao;
     
     try {
       const formData = await request.formData();
       matricula = formData.get('matricula')?.toString();
       empregador = formData.get('empregador')?.toString();
-      console.log('📥 Parâmetros recebidos (FormData):', { matricula, empregador });
+      id_associado = formData.get('id_associado')?.toString();
+      divisao = formData.get('divisao')?.toString();
+      console.log('📥 Parâmetros recebidos (FormData):', { matricula, empregador, id_associado, divisao });
     } catch (error) {
       // Se não for FormData, tentar como JSON
       const data = await request.json();
       matricula = data.matricula;
       empregador = data.empregador;
-      console.log('📥 Parâmetros recebidos (JSON):', { matricula, empregador });
+      id_associado = data.id_associado;
+      divisao = data.divisao;
+      console.log('📥 Parâmetros recebidos (JSON):', { matricula, empregador, id_associado, divisao });
     }
 
     // Verificar parâmetros obrigatórios
-    if (!matricula || !empregador) {
-      console.error('❌ Parâmetros obrigatórios ausentes:', { matricula, empregador });
+    if (!matricula || !empregador || !id_associado || !divisao) {
+      console.error('❌ Parâmetros obrigatórios ausentes:', { matricula, empregador, id_associado, divisao });
       return NextResponse.json(
-        { error: 'Matrícula e empregador são obrigatórios' },
+        { error: 'Matrícula, empregador, id_associado e divisão são obrigatórios' },
         { status: 400 }
       );
     }
@@ -45,9 +49,27 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    if (isNaN(Number(id_associado)) || Number(id_associado) <= 0) {
+      console.error('❌ ID do associado inválido:', id_associado);
+      return NextResponse.json(
+        { error: 'ID do associado deve ser um número válido' },
+        { status: 400 }
+      );
+    }
+    
+    if (isNaN(Number(divisao)) || Number(divisao) <= 0) {
+      console.error('❌ Divisão inválida:', divisao);
+      return NextResponse.json(
+        { error: 'Divisão deve ser um número válido' },
+        { status: 400 }
+      );
+    }
+    
     console.log('🔄 Iniciando proxy para histórico de antecipações...');
     console.log('   - Matrícula:', matricula);
     console.log('   - Empregador:', empregador);
+    console.log('   - ID Associado:', id_associado);
+    console.log('   - Divisão:', divisao);
     
     // Simular dados de histórico (já que o backend está bloqueado)
     // Em produção, isso seria substituído por uma chamada real ao banco
@@ -56,6 +78,8 @@ export async function POST(request: NextRequest) {
         id: 1,
         matricula: matricula,
         empregador: Number(empregador),
+        id_associado: Number(id_associado),
+        divisao: Number(divisao),
         mes_corrente: 'AGO/2025',
         data_solicitacao: '2025-08-15 10:30:00',
         valor_solicitado: 500.00,
@@ -70,6 +94,8 @@ export async function POST(request: NextRequest) {
         id: 2,
         matricula: matricula,
         empregador: Number(empregador),
+        id_associado: Number(id_associado),
+        divisao: Number(divisao),
         mes_corrente: 'JUL/2025',
         data_solicitacao: '2025-07-20 14:15:00',
         valor_solicitado: 300.00,

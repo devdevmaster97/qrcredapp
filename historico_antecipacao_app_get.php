@@ -20,16 +20,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // Suportar tanto GET quanto POST
 $matricula = '';
 $empregador = '';
+$id_associado = '';
+$divisao = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $matricula = $_GET['matricula'] ?? '';
     $empregador = $_GET['empregador'] ?? '';
+    $id_associado = $_GET['id_associado'] ?? '';
+    $divisao = $_GET['divisao'] ?? '';
 } else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $matricula = $_POST['matricula'] ?? '';
     $empregador = $_POST['empregador'] ?? '';
+    $id_associado = $_POST['id_associado'] ?? '';
+    $divisao = $_POST['divisao'] ?? '';
 }
 
-if($matricula && $empregador) {
+if($matricula && $empregador && $id_associado && $divisao) {
     // Conectando ao banco de dados utilizando o PDO
     $pdo = Banco::conectar_postgres();
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -40,7 +46,7 @@ if($matricula && $empregador) {
                 data_solicitacao, valor as valor_solicitado, aprovado as status, 
                 data_aprovacao, celular, valor_taxa as taxa, valor_a_descontar, chave_pix
                 FROM sind.antecipacao 
-                WHERE matricula = ? AND empregador = ? 
+                WHERE matricula = ? AND empregador = ? AND id_associado = ? AND divisao = ? 
                 ORDER BY data_solicitacao DESC";
         
         $stmt = $pdo->prepare($sql);
@@ -48,6 +54,8 @@ if($matricula && $empregador) {
         // Associando os parâmetros com os placeholders
         $stmt->bindParam(1, $matricula, PDO::PARAM_STR);
         $stmt->bindParam(2, $empregador, PDO::PARAM_INT);
+        $stmt->bindParam(3, $id_associado, PDO::PARAM_INT);
+        $stmt->bindParam(4, $divisao, PDO::PARAM_INT);
         
         // Executando a consulta preparada
         $stmt->execute();
@@ -81,7 +89,7 @@ if($matricula && $empregador) {
     }
 } else {
     // Se os parâmetros não foram enviados
-    $response = array("error" => "Matrícula e empregador são obrigatórios");
+    $response = array("error" => "Matrícula, empregador, id_associado e divisão são obrigatórios");
     $response = array_map(function($value) {
         return is_string($value) ? mb_convert_encoding($value, 'UTF-8', 'ISO-8859-1') : $value;
     }, $response);

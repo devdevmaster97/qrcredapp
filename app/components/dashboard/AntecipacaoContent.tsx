@@ -412,7 +412,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
 
   // Função para buscar o histórico de solicitações
   const fetchHistoricoSolicitacoes = useCallback(async () => {
-    if (!associadoData?.matricula || !historicoApiDisponivel) return;
+    if (!associadoData?.matricula || !associadoData?.id || !associadoData?.id_divisao || !historicoApiDisponivel) return;
     
     try {
       setLoadingHistorico(true);
@@ -420,6 +420,8 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       const formData = new FormData();
       formData.append('matricula', associadoData.matricula);
       formData.append('empregador', associadoData.empregador.toString());
+      formData.append('id_associado', associadoData.id.toString());
+      formData.append('divisao', associadoData.id_divisao.toString());
       
       const response = await axios.post('/api/historico-antecipacao-proxy', formData, {
         headers: {

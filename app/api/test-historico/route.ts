@@ -37,6 +37,8 @@ export async function GET(request: NextRequest) {
     const formData = new FormData();
     formData.append('matricula', '123456');
     formData.append('empregador', '1');
+    formData.append('id_associado', '123');
+    formData.append('divisao', '1');
     
     try {
       const postResponse = await axios.post(
@@ -71,19 +73,56 @@ export async function GET(request: NextRequest) {
         console.log('   - StatusText:', postError.response.statusText);
         console.log('   - Data:', postError.response.data);
         
-        return NextResponse.json({
-          success: false,
-          tests: {
-            basicConnectivity: 'OK',
-            phpFileAccess: 'OK',
-            postRequest: 'FAILED',
-            error: {
-              status: postError.response.status,
-              statusText: postError.response.statusText,
-              data: postError.response.data
+        // Tentar GET como fallback
+        console.log('4️⃣ Tentando GET como fallback...');
+        try {
+          const getFormData = new FormData();
+          getFormData.append('matricula', '123456');
+          getFormData.append('empregador', '1');
+          getFormData.append('id_associado', '123');
+          getFormData.append('divisao', '1');
+          
+          const getResponse = await axios.request({
+            method: 'GET',
+            url: 'https://sas.makecard.com.br/historico_antecipacao_app.php',
+            data: getFormData,
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+            timeout: 10000,
+          });
+          
+          console.log('✅ GET bem-sucedido - Status:', getResponse.status);
+          console.log('   - Data:', getResponse.data);
+          
+          return NextResponse.json({
+            success: true,
+            tests: {
+              basicConnectivity: 'OK',
+              phpFileAccess: 'OK',
+              postRequest: 'FAILED',
+              getRequest: 'OK',
+              response: getResponse.data
             }
-          }
-        });
+          });
+          
+        } catch (getError) {
+          console.log('❌ GET também falhou:', getError instanceof Error ? getError.message : 'Erro desconhecido');
+          
+          return NextResponse.json({
+            success: false,
+            tests: {
+              basicConnectivity: 'OK',
+              phpFileAccess: 'OK',
+              postRequest: 'FAILED',
+              getRequest: 'FAILED',
+              errors: {
+                post: postError instanceof Error ? postError.message : 'Erro desconhecido',
+                get: getError instanceof Error ? getError.message : 'Erro desconhecido'
+              }
+            }
+          });
+        }
       }
       
       return NextResponse.json({
