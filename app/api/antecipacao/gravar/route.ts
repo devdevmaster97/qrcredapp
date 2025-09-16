@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic';
 const requestsEmAndamento = new Map<string, Promise<any>>();
 const ultimasRequisicoes = new Map<string, number>();
 const execucaoUnica = new Map<string, boolean>(); // Controle de execução única
+const timestampExecucao = new Map<string, number>(); // Timestamp de execução para controle absoluto
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,10 +19,24 @@ export async function POST(request: NextRequest) {
     // Criar chave única para esta solicitação
     const chaveUnica = `${body.matricula}_${body.empregador}_${body.valor_pedido}_${body.mes_corrente}`;
     
+    const agora = Date.now();
     console.log(`🔑 [API] Chave única gerada: ${chaveUnica}`);
     console.log(`🔒 [API] Controle execução única:`, Array.from(execucaoUnica.entries()));
+    console.log(`⏰ [API] Timestamp execução:`, Array.from(timestampExecucao.entries()));
     
-    // 0. VERIFICAÇÃO CRÍTICA DE EXECUÇÃO ÚNICA (PRIMEIRA LINHA DE DEFESA - ANTES DE TUDO)
+    // 0. VERIFICAÇÃO CRÍTICA BASEADA EM TIMESTAMP (PRIMEIRA LINHA DE DEFESA)
+    const ultimoTimestamp = timestampExecucao.get(chaveUnica);
+    if (ultimoTimestamp && (agora - ultimoTimestamp) < 5000) { // 5 segundos de proteção absoluta
+      console.log(`🚨 [TIMESTAMP] BLOQUEIO ABSOLUTO - solicitação ${chaveUnica} executada há ${agora - ultimoTimestamp}ms`);
+      return NextResponse.json({
+        success: false,
+        error: 'Solicitação muito recente. Aguarde alguns segundos.',
+        timestamp_blocked: true,
+        tempo_desde_ultima: agora - ultimoTimestamp
+      }, { status: 409 });
+    }
+    
+    // 1. VERIFICAÇÃO DE EXECUÇÃO ÚNICA (SEGUNDA LINHA DE DEFESA)
     if (execucaoUnica.has(chaveUnica)) {
       console.log(`🚨 [EXECUÇÃO ÚNICA] BLOQUEIO IMEDIATO - solicitação ${chaveUnica} já está sendo executada`);
       return NextResponse.json({
@@ -31,24 +46,24 @@ export async function POST(request: NextRequest) {
       }, { status: 409 });
     }
     
-    // Marcar IMEDIATAMENTE como em execução (ANTES de qualquer outra operação)
+    // Marcar IMEDIATAMENTE timestamp e execução (ANTES de qualquer outra operação)
+    timestampExecucao.set(chaveUnica, agora);
     execucaoUnica.set(chaveUnica, true);
-    console.log(`🔐 [EXECUÇÃO ÚNICA] MARCADO IMEDIATAMENTE como em execução: ${chaveUnica}`);
+    console.log(`🔐 [TIMESTAMP + EXECUÇÃO] MARCADO IMEDIATAMENTE: ${chaveUnica} em ${agora}`);
     
-    const agora = Date.now();
-    console.log(`⏰ [API] Timestamp atual: ${agora}`);
     console.log(`📋 [API] Cache rate limiting atual:`, Array.from(ultimasRequisicoes.entries()));
     console.log(`🔄 [API] Requisições em andamento:`, Array.from(requestsEmAndamento.keys()));
     
-    // 1. VERIFICAR RATE LIMITING (60 segundos - mais rigoroso para evitar duplicação)
+    // 2. VERIFICAR RATE LIMITING (60 segundos - mais rigoroso para evitar duplicação)
     const ultimaRequisicao = ultimasRequisicoes.get(chaveUnica);
     if (ultimaRequisicao && (agora - ultimaRequisicao) < 60000) { // 60 segundos
       const tempoRestante = Math.ceil((60000 - (agora - ultimaRequisicao)) / 1000);
       console.log(`⏰ [API] Rate limit ativo para ${chaveUnica}. Última: ${ultimaRequisicao}, Agora: ${agora}, Diferença: ${agora - ultimaRequisicao}ms, Tempo restante: ${tempoRestante}s`);
       
-      // Limpar execução única se rate limited
+      // Limpar execução única e timestamp se rate limited
       execucaoUnica.delete(chaveUnica);
-      console.log(`🧹 [EXECUÇÃO ÚNICA] Limpeza por rate limit: ${chaveUnica}`);
+      timestampExecucao.delete(chaveUnica);
+      console.log(`🧹 [LIMPEZA] Rate limit - removido execução e timestamp: ${chaveUnica}`);
       
       return NextResponse.json({
         success: false,
@@ -63,10 +78,10 @@ export async function POST(request: NextRequest) {
     // 2. VERIFICAR SE JÁ EXISTE REQUISIÇÃO EM ANDAMENTO (CRÍTICO PARA EVITAR DUPLICAÇÃO)
     if (requestsEmAndamento.has(chaveUnica)) {
       console.log(`🔄 [ANTI-DUPLICAÇÃO] Requisição já em andamento para ${chaveUnica}. Bloqueando requisição duplicada.`);
-      
-      // Limpar execução única se já há requisição em andamento
+      // Limpar execução única e timestamp se já há requisição em andamento
       execucaoUnica.delete(chaveUnica);
-      console.log(`🧹 [EXECUÇÃO ÚNICA] Limpeza por requisição em andamento: ${chaveUnica}`);
+      timestampExecucao.delete(chaveUnica);
+      console.log(`🧹 [LIMPEZA] Requisição em andamento - removido execução e timestamp: ${chaveUnica}`);
       
       return NextResponse.json({
         success: false,
@@ -85,10 +100,10 @@ export async function POST(request: NextRequest) {
     // Verificar novamente se não foi criada uma requisição em andamento durante o delay
     if (requestsEmAndamento.has(chaveUnica)) {
       console.log(`🚨 [ANTI-DUPLICAÇÃO] Requisição criada durante delay para ${chaveUnica}. Bloqueando.`);
-      
-      // Limpar execução única se detectou duplicata durante delay
+      // Limpar execução única e timestamp se detectou duplicata durante delay
       execucaoUnica.delete(chaveUnica);
-      console.log(`🧹 [EXECUÇÃO ÚNICA] Limpeza por duplicata durante delay: ${chaveUnica}`);
+      timestampExecucao.delete(chaveUnica);
+      console.log(`🧹 [LIMPEZA] Duplicata durante delay - removido execução e timestamp: ${chaveUnica}`);
       
       return NextResponse.json({
         success: false,
@@ -109,15 +124,17 @@ export async function POST(request: NextRequest) {
       // Limpar cache após processamento
       requestsEmAndamento.delete(chaveUnica);
       execucaoUnica.delete(chaveUnica);
-      console.log(`🧹 [EXECUÇÃO ÚNICA] Limpeza final para ${chaveUnica}`);
+      timestampExecucao.delete(chaveUnica);
+      console.log(`🧹 [LIMPEZA FINAL] Removido todos os controles para ${chaveUnica}`);
     }
     
   } catch (error) {
     console.error('💥 Erro na API de antecipação:', error);
     
-    // Limpar execução única em caso de erro (usar chave genérica pois body já foi consumido)
-    console.log(`🧹 [EXECUÇÃO ÚNICA] Limpeza geral por erro - removendo todas as execuções`);
+    // Limpar todos os controles em caso de erro
+    console.log(`🧹 [LIMPEZA GERAL] Erro - removendo todos os controles`);
     execucaoUnica.clear();
+    timestampExecucao.clear();
     
     return NextResponse.json({
       success: false,
