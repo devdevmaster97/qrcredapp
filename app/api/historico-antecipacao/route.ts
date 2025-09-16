@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
     console.log('Enviando requisição para o backend com matrícula:', matricula, 'e empregador:', empregador);
     
     // Fazer a requisição para o endpoint do backend
+    console.log('🔍 Enviando requisição para histórico de antecipações...');
     const response = await axios.post(
       'https://sas.makecard.com.br/historico_antecipacao_app.php',
       formData,
@@ -73,14 +74,40 @@ export async function POST(request: NextRequest) {
     if (axios.isAxiosError(error)) {
       if (error.response) {
         // O servidor respondeu com um status fora do intervalo 2xx
-        console.error('Erro de resposta:', error.response.status, error.response.data);
+        console.error('🚨 Erro de resposta do backend:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data,
+          headers: error.response.headers
+        });
+        
+        // Tratamento específico para erro 403
+        if (error.response.status === 403) {
+          console.error('🚫 Acesso negado (403) - Possíveis causas:');
+          console.error('   - Matrícula ou empregador inválidos');
+          console.error('   - Usuário sem permissão para acessar histórico');
+          console.error('   - Backend rejeitando requisição por segurança');
+          
+          return NextResponse.json(
+            { 
+              error: 'Acesso negado ao histórico de antecipações',
+              details: 'Verifique se a matrícula e empregador estão corretos',
+              status: 403
+            },
+            { status: 403 }
+          );
+        }
+        
         return NextResponse.json(
-          { error: `Erro ao buscar histórico: ${error.response.status}` },
+          { 
+            error: `Erro ao buscar histórico: ${error.response.status}`,
+            details: error.response.data || 'Erro desconhecido do servidor'
+          },
           { status: error.response.status }
         );
       } else if (error.request) {
         // A requisição foi feita mas não houve resposta
-        console.error('Erro de requisição:', error.request);
+        console.error('🚨 Erro de requisição - servidor não respondeu:', error.request);
         return NextResponse.json(
           { error: 'Servidor não respondeu à solicitação' },
           { status: 503 }

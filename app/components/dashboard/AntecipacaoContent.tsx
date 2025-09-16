@@ -438,6 +438,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       // Se for erro 403, marcar API como indisponível
       if (axios.isAxiosError(error) && error.response?.status === 403) {
         console.log('🚫 API de histórico retornou 403 - marcando como indisponível');
+        console.log('📋 Detalhes do erro 403:', error.response.data);
         setHistoricoApiDisponivel(false);
         setUltimasSolicitacoes([]);
         return;
@@ -934,8 +935,9 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
             <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
               {!historicoApiDisponivel ? (
                 <div className="text-center py-4">
-                  <p className="text-orange-600 font-medium mb-2">⚠️ API de histórico indisponível</p>
-                  <p className="text-gray-500 text-sm">Clique no botão de atualizar para tentar novamente</p>
+                  <p className="text-orange-600 font-medium mb-2">⚠️ Acesso negado ao histórico</p>
+                  <p className="text-gray-500 text-sm mb-2">Erro 403 - Verifique se a matrícula e empregador estão corretos</p>
+                  <p className="text-gray-400 text-xs">Clique no botão de atualizar para tentar novamente</p>
                 </div>
               ) : loadingHistorico ? (
                 <div className="flex justify-center py-4">
