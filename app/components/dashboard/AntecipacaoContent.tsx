@@ -149,6 +149,9 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
   // Proteção universal - aplicada a TODOS os dispositivos
   const [protecaoUniversal, setProtecaoUniversal] = useState(false);
   
+  // Estado para controlar se o valor digitado excede o saldo disponível
+  const [valorExcedeSaldo, setValorExcedeSaldo] = useState(false);
+  
   // Sistema de logs visível no celular
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
   const [mostrarDebug, setMostrarDebug] = useState(true); // Sempre mostrar no mobile
@@ -529,9 +532,14 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     const valorNumerico = parseFloat(valor) / 100;
     setValorSolicitado(valor);
     
+    // Verificar se o valor excede o saldo disponível
+    const saldoDisponivel = saldoData?.saldo || 0;
+    const excedeSaldo = valorNumerico > saldoDisponivel;
+    setValorExcedeSaldo(excedeSaldo);
+    
     // Validar se o valor é válido
-    if (valorNumerico > (saldoData?.saldo || 0)) {
-      setErro(`Valor indisponível. Saldo restante: ${formatarValor(saldoData?.saldo || 0)}`);
+    if (excedeSaldo && valorNumerico > 0) {
+      setErro(`Valor não pode ser maior que o saldo disponível: ${formatarValor(saldoDisponivel)}`);
       setValorFormatado("");
       setTaxa(0);
       setValorTotal(0);
@@ -551,6 +559,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       setValorFormatado("");
       setTaxa(0);
       setValorTotal(0);
+      setValorExcedeSaldo(false);
     }
   };
 
@@ -1110,45 +1119,67 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
               </div>
             )}
             
-            {/* Chave PIX */}
-            <div className="mb-4">
-              <label htmlFor="chave-pix" className="block text-sm font-medium text-gray-700 mb-1">
-                Chave PIX para Recebimento
-              </label>
-              <input
-                type="text"
-                id="chave-pix"
-                placeholder="CPF, E-mail, Celular ou Chave Aleatória"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                value={chavePix}
-                onChange={(e) => setChavePix(e.target.value)}
-                disabled={loading}
-              />
-            </div>
-            
-            {/* Seção senha com informação adicional */}
-            <div className="mb-6">
-              <label htmlFor="senha" className="block text-sm font-medium text-gray-700 mb-1">
-                Senha (para confirmar)
-              </label>
-              <input
-                type="password"
-                id="senha"
-                placeholder="Digite sua senha de acesso ao app"
-                className={`w-full p-3 border ${
-                  erro.toLowerCase().includes("senha") ? "border-red-500" : "border-gray-300"
-                } rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-colors`}
-                value={senha}
-                onChange={(e) => setSenha(e.target.value)}
-                disabled={loading}
-              />
-              <p className="text-xs mt-1 font-medium flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                <span className="text-blue-600">Importante: Use a mesma senha do seu login no aplicativo</span>
-              </p>
-            </div>
+            {/* Mensagem quando valor excede saldo disponível */}
+            {valorExcedeSaldo && valorSolicitado && parseFloat(valorSolicitado) > 0 ? (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="flex items-center mb-2">
+                  <FaTimesCircle className="text-red-500 text-lg mr-2" />
+                  <h4 className="font-medium text-red-800">Valor Indisponível</h4>
+                </div>
+                <p className="text-red-700 mb-2">
+                  O valor digitado não pode ser maior que o saldo disponível.
+                </p>
+                <div className="text-sm text-red-600">
+                  <p><strong>Valor digitado:</strong> {formatarValor(parseFloat(valorSolicitado) / 100)}</p>
+                  <p><strong>Saldo disponível:</strong> {formatarValor(saldoData?.saldo || 0)}</p>
+                </div>
+                <p className="text-xs text-red-500 mt-2">
+                  💡 Digite um valor menor ou igual ao saldo disponível para continuar.
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* Chave PIX */}
+                <div className="mb-4">
+                  <label htmlFor="chave-pix" className="block text-sm font-medium text-gray-700 mb-1">
+                    Chave PIX para Recebimento
+                  </label>
+                  <input
+                    type="text"
+                    id="chave-pix"
+                    placeholder="CPF, E-mail, Celular ou Chave Aleatória"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                    value={chavePix}
+                    onChange={(e) => setChavePix(e.target.value)}
+                    disabled={loading}
+                  />
+                </div>
+                
+                {/* Seção senha com informação adicional */}
+                <div className="mb-6">
+                  <label htmlFor="senha" className="block text-sm font-medium text-gray-700 mb-1">
+                    Senha (para confirmar)
+                  </label>
+                  <input
+                    type="password"
+                    id="senha"
+                    placeholder="Digite sua senha de acesso ao app"
+                    className={`w-full p-3 border ${
+                      erro.toLowerCase().includes("senha") ? "border-red-500" : "border-gray-300"
+                    } rounded-lg focus:ring-blue-500 focus:border-blue-500 transition-colors`}
+                    value={senha}
+                    onChange={(e) => setSenha(e.target.value)}
+                    disabled={loading}
+                  />
+                  <p className="text-xs mt-1 font-medium flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-blue-600">Importante: Use a mesma senha do seu login no aplicativo</span>
+                  </p>
+                </div>
+              </>
+            )}
             
             {/* Mensagem de Erro */}
             {erro && (
@@ -1167,27 +1198,29 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
             )}
             
 
-            {/* Botão de Envio */}
-            <button
-              type="button"
-              className={`w-full py-3 px-4 ${
-                loading
-                  ? 'bg-gray-400 cursor-not-allowed' 
-                  : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
-              } text-white rounded-lg transition-colors font-medium`}
-              disabled={loading}
-              onClick={handleSubmit}
-              style={{ touchAction: 'manipulation' }}
-            >
-              {loading ? (
-                <span className="flex items-center justify-center">
-                  <FaSpinner className="animate-spin mr-2" />
-                  Processando...
-                </span>
-              ) : (
-                "Solicitar Antecipação"
-              )}
-            </button>
+            {/* Botão de Envio - só aparece se valor não exceder saldo */}
+            {!valorExcedeSaldo && (
+              <button
+                type="button"
+                className={`w-full py-3 px-4 ${
+                  loading
+                    ? 'bg-gray-400 cursor-not-allowed' 
+                    : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
+                } text-white rounded-lg transition-colors font-medium`}
+                disabled={loading}
+                onClick={handleSubmit}
+                style={{ touchAction: 'manipulation' }}
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center">
+                    <FaSpinner className="animate-spin mr-2" />
+                    Processando...
+                  </span>
+                ) : (
+                  "Solicitar Antecipação"
+                )}
+              </button>
+            )}
           </form>
         )}
       </div>

@@ -192,7 +192,7 @@ try {
                 divisao,
                 id_associado,
                 hora
-            ) VALUES (?, ?, ?, CURRENT_DATE, ?, null, ?, ?, ?, ?, ?, ?, CURRENT_TIME)
+            ) VALUES (?, ?, ?, CURRENT_DATE, ?, null, ?, ?, ?, ?, ?, ?, CAST(CURRENT_TIME AS TIME(0)))
         ");
 
         logDebug("🔄 [SQL] Executando INSERT antecipacao", [
@@ -248,7 +248,7 @@ try {
                 tipo,
                 divisao,
                 id_associado
-            ) VALUES (?, ?, ?, CURRENT_DATE, CURRENT_TIME, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, CURRENT_DATE, CAST(CURRENT_TIME AS TIME(0)), ?, ?, ?, ?, ?, ?)
         ");
 
         logDebug("🔄 [SQL] Executando INSERT conta", [
