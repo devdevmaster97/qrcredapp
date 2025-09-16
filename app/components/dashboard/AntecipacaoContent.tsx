@@ -533,11 +533,14 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
   const handleSubmit = async (e?: any) => {
     if (e) e.preventDefault();
     
-    // Verificar se já está processando
+    // PROTEÇÃO CRÍTICA: Verificar se já está processando (primeira linha de defesa)
     if (loading) {
       console.log('🚫 Já está processando, ignorando clique');
       return;
     }
+    
+    // PROTEÇÃO ADICIONAL: Marcar como loading imediatamente para evitar dupla execução
+    setLoading(true);
     
     // Proteção específica para mobile - evitar cliques duplos rápidos
     const agora = Date.now();
@@ -555,38 +558,38 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     // Verificar se já existe submissão em andamento para esta combinação
     if (submissoesEmAndamento.has(chaveProtecao)) {
       console.log('🚫 Submissão já em andamento para esta combinação');
+      setLoading(false); // Reset loading se bloqueou
       return;
     }
     
-    // Marcar submissão como em andamento
-    submissoesEmAndamento.set(chaveProtecao, true);
-    ultimaSubmissao.set(chaveProtecao, agora);
-    
-    // Validações básicas
+    // Validações básicas ANTES de marcar como em andamento
     if (!valorSolicitado || parseFloat(valorSolicitado) / 100 <= 0) {
       setErro("Digite o valor desejado");
-      submissoesEmAndamento.delete(chaveProtecao);
+      setLoading(false);
       return;
     }
     
     if (!chavePix) {
       setErro("Digite a chave PIX para receber o valor");
-      submissoesEmAndamento.delete(chaveProtecao);
+      setLoading(false);
       return;
     }
 
     if (!senha) {
       setErro("Digite sua senha para confirmar");
-      submissoesEmAndamento.delete(chaveProtecao);
+      setLoading(false);
       return;
     }
+
+    // Marcar submissão como em andamento APENAS após validações
+    submissoesEmAndamento.set(chaveProtecao, true);
+    ultimaSubmissao.set(chaveProtecao, agora);
 
     // Gerar ID único para esta requisição específica
     const requestId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
     addDebugLog(`🚀 [${requestId}] Iniciando submissão - Chave: ${chaveProtecao}`);
     console.log(`🚀 [${requestId}] Iniciando submissão - Chave: ${chaveProtecao}`);
-    setLoading(true);
     setErro("");
     
     try {
