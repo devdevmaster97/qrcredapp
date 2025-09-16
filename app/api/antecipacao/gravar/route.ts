@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     
     // 0. VERIFICAÇÃO CRÍTICA BASEADA EM TIMESTAMP (PRIMEIRA LINHA DE DEFESA)
     const ultimoTimestamp = timestampExecucao.get(chaveUnica);
-    if (ultimoTimestamp && (agora - ultimoTimestamp) < 5000) { // 5 segundos de proteção absoluta
+    if (ultimoTimestamp && (agora - ultimoTimestamp) < 1000) { // 1 segundo de proteção absoluta (reduzido de 5s)
       console.log(`🚨 [${requestId}] TIMESTAMP BLOQUEIO ABSOLUTO - solicitação ${chaveUnica} executada há ${agora - ultimoTimestamp}ms`);
       return NextResponse.json({
         success: false,
@@ -67,10 +67,10 @@ export async function POST(request: NextRequest) {
     console.log(`📋 [API] Cache rate limiting atual:`, Array.from(ultimasRequisicoes.entries()));
     console.log(`🔄 [API] Requisições em andamento:`, Array.from(requestsEmAndamento.keys()));
     
-    // 2. VERIFICAR RATE LIMITING (60 segundos - mais rigoroso para evitar duplicação)
+    // 2. VERIFICAR RATE LIMITING (10 segundos - ajustado para ser menos restritivo)
     const ultimaRequisicao = ultimasRequisicoes.get(chaveUnica);
-    if (ultimaRequisicao && (agora - ultimaRequisicao) < 60000) { // 60 segundos
-      const tempoRestante = Math.ceil((60000 - (agora - ultimaRequisicao)) / 1000);
+    if (ultimaRequisicao && (agora - ultimaRequisicao) < 10000) { // 10 segundos (reduzido de 60s)
+      const tempoRestante = Math.ceil((10000 - (agora - ultimaRequisicao)) / 1000);
       console.log(`⏰ [API] Rate limit ativo para ${chaveUnica}. Última: ${ultimaRequisicao}, Agora: ${agora}, Diferença: ${agora - ultimaRequisicao}ms, Tempo restante: ${tempoRestante}s`);
       
       // Limpar execução única e timestamp se rate limited
@@ -256,8 +256,7 @@ async function processarSolicitacao(body: any, chaveUnica: string) {
     const requestId = body.request_id || `${timestampEnvio}_${Math.random().toString(36).substr(2, 9)}`;
     console.log(`🚨 [CRÍTICO] INICIANDO CHAMADA PHP - RequestID: ${requestId} - Chave: ${chaveUnica} - Timestamp: ${timestampEnvio}`);
     console.log(`📋 [DADOS PHP] RequestID: ${requestId} - Dados enviados:`, Object.fromEntries(formData));
-    // Adicionar request_id aos dados enviados para o PHP
-    formData.append('request_id', requestId);
+    // Request_id removido - não será mais enviado para o PHP
     
     // Fazer chamada para o PHP com ID único
     debugInfo.etapas_executadas.push('iniciando_chamada_php');
