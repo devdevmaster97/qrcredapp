@@ -80,9 +80,13 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
   const [taxaConfirmada, setTaxaConfirmada] = useState(0);
   const [totalConfirmado, setTotalConfirmado] = useState(0);
   
-  // Controle específico para dispositivos móveis
-  const [ultimoClickMobile, setUltimoClickMobile] = useState(0);
+  // Estados para controle mobile
   const [isMobile, setIsMobile] = useState(false);
+  const [ultimoClickMobile, setUltimoClickMobile] = useState<number | null>(null);
+  const [bloqueioAtivo, setBloqueioAtivo] = useState(false);
+  const [botaoDesabilitadoPermanente, setBotaoDesabilitadoPermanente] = useState(false);
+  // Proteção universal - aplicada a TODOS os dispositivos
+  const [protecaoUniversal, setProtecaoUniversal] = useState(false);
 
   // Função segura para verificar se uma string está em um array
   const isStringInArray = (str: any, arr: string[]): boolean => {
@@ -96,13 +100,26 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     }
   };
 
-  // Detectar dispositivo móvel
+  // Detectar dispositivo móvel com múltiplas verificações
   useEffect(() => {
     const checkMobile = () => {
       const userAgent = typeof window !== 'undefined' ? window.navigator.userAgent : '';
-      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+      const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+      const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+      const isSmallScreen = window.innerWidth <= 768;
+      
+      const isMobileDevice = isMobileUA || (isTouchDevice && isSmallScreen);
       setIsMobile(isMobileDevice);
-      console.log(`📱 Dispositivo detectado: ${isMobileDevice ? 'MOBILE' : 'DESKTOP'}`);
+      
+      console.log(`📱 Detecção de dispositivo:`, {
+        userAgent: userAgent.substring(0, 50) + '...',
+        isMobileUA,
+        isTouchDevice,
+        isSmallScreen,
+        screenWidth: window.innerWidth,
+        maxTouchPoints: navigator.maxTouchPoints,
+        resultado: isMobileDevice ? 'MOBILE' : 'DESKTOP'
+      });
     };
     
     checkMobile();
@@ -452,15 +469,21 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     
     const agora = Date.now();
     
-    // PROTEÇÃO ESPECÍFICA PARA MOBILE: Verificar cliques muito próximos
-    if (isMobile) {
-      if (ultimoClickMobile && (agora - ultimoClickMobile) < 2000) { // 2 segundos para mobile
-        console.log(`📱 [MOBILE] Bloqueando clique muito próximo: ${agora - ultimoClickMobile}ms`);
-        return;
-      }
-      setUltimoClickMobile(agora);
-      console.log(`📱 [MOBILE] Click registrado em: ${agora}`);
+    // PROTEÇÃO UNIVERSAL - APLICADA A TODOS OS DISPOSITIVOS
+    if (protecaoUniversal) {
+      console.log(`🚫 [UNIVERSAL] PROTEÇÃO ATIVA - Ignorando tentativa`);
+      return;
     }
+    
+    // Ativar proteção universal imediatamente
+    setProtecaoUniversal(true);
+    console.log(`🔒 [UNIVERSAL] PROTEÇÃO ATIVADA - Dispositivo: ${isMobile ? 'MOBILE' : 'DESKTOP'}`);
+    
+    // Desativar proteção após 45 segundos
+    setTimeout(() => {
+      setProtecaoUniversal(false);
+      console.log(`🔓 [UNIVERSAL] PROTEÇÃO DESATIVADA após 45s`);
+    }, 45000);
     
     // Criar chave única para controle de duplicação
     const chaveUnica = `${associadoData?.matricula}_${associadoData?.empregador}_${valorSolicitado}_${saldoData?.mesCorrente}`;
@@ -500,19 +523,18 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       return;
     }
 
-    // 3. MARCAR COMO PROCESSANDO
-    ultimaSubmissao.set(chaveUnica, agora);
+    // 3. MARCAR COMO EM ANDAMENTO ANTES DE PROCESSAR
     submissoesEmAndamento.set(chaveUnica, true);
+    ultimaSubmissao.set(chaveUnica, agora);
+    console.log(` [${requestId}] Marcado como em andamento - Cache atualizado`);
+
     setLoading(true);
-    
-    console.log(`📤 [${requestId}] Preparando dados para envio:`, {
-      matricula: associadoData?.matricula,
-      empregador: associadoData?.empregador,
-      valor_pedido: parseFloat(valorSolicitado) / 100,
-      taxa: taxa,
-      valor_total: valorTotal,
-      mes_corrente: saldoData?.mesCorrente
-    });
+    setErro("");
+
+    // PROTEÇÃO ADICIONAL: Desabilitar botão visualmente para mobile
+    if (isMobile) {
+      console.log(` [MOBILE] Botão desabilitado durante processamento`);
+    }
     
     try {
       const valorNumerico = parseFloat(valorSolicitado) / 100;
@@ -1065,21 +1087,20 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
             <button
               type="button"
               className={`w-full py-3 px-4 ${
-                loading
+                loading || protecaoUniversal
                   ? 'bg-gray-400 cursor-not-allowed' 
                   : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
               } text-white rounded-lg transition-colors font-medium`}
-              disabled={loading}
+              disabled={loading || protecaoUniversal}
               onClick={handleSubmit}
-              onTouchStart={isMobile ? (e) => {
+              onTouchStart={(e) => {
                 e.preventDefault();
-                const agora = Date.now();
-                if (ultimoClickMobile && (agora - ultimoClickMobile) < 2000) {
-                  console.log(`📱 [TOUCH] Bloqueando touch muito próximo: ${agora - ultimoClickMobile}ms`);
+                if (protecaoUniversal) {
+                  console.log(`🚫 [TOUCH] PROTEÇÃO UNIVERSAL ATIVA - Touch ignorado`);
                   return;
                 }
-                console.log(`📱 [TOUCH] Touch registrado, aguardando onClick`);
-              } : undefined}
+                console.log(`👆 [TOUCH] Touch registrado`);
+              }}
             >
               {loading ? (
                 <span className="flex items-center justify-center">
