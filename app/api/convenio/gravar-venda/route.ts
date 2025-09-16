@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     
     // Preparar dados para enviar ao backend PHP
     const formData = new URLSearchParams();
-    
+    //teste 
     // Adicionar todos os campos recebidos
     Object.keys(body).forEach(key => {
       if (body[key] !== undefined && body[key] !== null) {
