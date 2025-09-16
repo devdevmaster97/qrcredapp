@@ -35,9 +35,20 @@ export async function POST(request: NextRequest) {
     console.log(`🔒 [API] Controle execução única:`, Array.from(execucaoUnica.entries()));
     console.log(`⏰ [API] Timestamp execução:`, Array.from(timestampExecucao.entries()));
     
+    // LIMPEZA TEMPORÁRIA: Limpar cache antigo para permitir teste
+    if (timestampExecucao.has(chaveUnica)) {
+      const tempoDecorrido = agora - timestampExecucao.get(chaveUnica)!;
+      if (tempoDecorrido > 30000) { // Limpar entradas antigas (30s)
+        timestampExecucao.delete(chaveUnica);
+        execucaoUnica.delete(chaveUnica);
+        ultimasRequisicoes.delete(chaveUnica);
+        console.log(`🧹 [LIMPEZA AUTOMÁTICA] Cache antigo removido para ${chaveUnica}`);
+      }
+    }
+    
     // 0. VERIFICAÇÃO CRÍTICA BASEADA EM TIMESTAMP (PRIMEIRA LINHA DE DEFESA)
     const ultimoTimestamp = timestampExecucao.get(chaveUnica);
-    if (ultimoTimestamp && (agora - ultimoTimestamp) < 500) { // 500ms de proteção absoluta (reduzido de 1s)
+    if (ultimoTimestamp && (agora - ultimoTimestamp) < 100) { // 100ms de proteção absoluta (reduzido de 500ms)
       console.log(`🚨 [${requestId}] TIMESTAMP BLOQUEIO ABSOLUTO - solicitação ${chaveUnica} executada há ${agora - ultimoTimestamp}ms`);
       return NextResponse.json({
         success: false,
@@ -67,10 +78,10 @@ export async function POST(request: NextRequest) {
     console.log(`📋 [API] Cache rate limiting atual:`, Array.from(ultimasRequisicoes.entries()));
     console.log(`🔄 [API] Requisições em andamento:`, Array.from(requestsEmAndamento.keys()));
     
-    // 2. VERIFICAR RATE LIMITING (5 segundos - ajustado para ser menos restritivo)
+    // 2. VERIFICAR RATE LIMITING (2 segundos - ajustado para ser menos restritivo)
     const ultimaRequisicao = ultimasRequisicoes.get(chaveUnica);
-    if (ultimaRequisicao && (agora - ultimaRequisicao) < 5000) { // 5 segundos (reduzido de 10s)
-      const tempoRestante = Math.ceil((5000 - (agora - ultimaRequisicao)) / 1000);
+    if (ultimaRequisicao && (agora - ultimaRequisicao) < 2000) { // 2 segundos (reduzido de 5s)
+      const tempoRestante = Math.ceil((2000 - (agora - ultimaRequisicao)) / 1000);
       console.log(`⏰ [API] Rate limit ativo para ${chaveUnica}. Última: ${ultimaRequisicao}, Agora: ${agora}, Diferença: ${agora - ultimaRequisicao}ms, Tempo restante: ${tempoRestante}s`);
       
       // Limpar execução única e timestamp se rate limited
