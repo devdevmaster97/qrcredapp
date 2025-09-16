@@ -1096,11 +1096,11 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
             <button
               type="button"
               className={`w-full py-3 px-4 ${
-                loading || protecaoUniversal
+                loading
                   ? 'bg-gray-400 cursor-not-allowed' 
                   : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
               } text-white rounded-lg transition-colors font-medium`}
-              disabled={loading || protecaoUniversal}
+              disabled={loading}
               onClick={handleSubmit}
               onTouchStart={(e) => {
                 addDebugLog(`👆 [TOUCH] Touch detectado - Estado atual: ${protecaoUniversal ? 'PROTEGIDO' : 'LIVRE'}`);
