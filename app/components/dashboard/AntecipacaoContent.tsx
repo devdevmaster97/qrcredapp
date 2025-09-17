@@ -1375,7 +1375,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
                     {/* Detalhes da solicitação */}
                     <div className="text-sm text-gray-600 space-y-1">
                       <p><strong>Taxa:</strong> {formatarValor(parseFloat(solicitacao.taxa || '0'))}</p>
-                      <p><strong>Total Descontado:</strong> {formatarValor(parseFloat(solicitacao.valor_a_descontar || solicitacao.valor_descontar || '0'))}</p>
+                      <p><strong>Total a Descontar:</strong> {formatarValor(parseFloat(solicitacao.valor_a_descontar || solicitacao.valor_descontar || '0'))}</p>
                       <p><strong>Mês:</strong> {solicitacao.mes_corrente}</p>
                       {solicitacao.chave_pix && (
                         <p><strong>Chave PIX:</strong> {solicitacao.chave_pix}</p>
