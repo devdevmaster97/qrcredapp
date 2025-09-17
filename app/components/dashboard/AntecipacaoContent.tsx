@@ -159,6 +159,10 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
   // Estados para controle das guias
   const [guiaAtiva, setGuiaAtiva] = useState<'solicitacao' | 'historico'>('solicitacao');
   const [mesFiltro, setMesFiltro] = useState<string>('todos');
+  
+  // Estados para meses da API
+  const [mesesApi, setMesesApi] = useState<any[]>([]);
+  const [loadingMeses, setLoadingMeses] = useState(false);
 
   // Função para adicionar logs visíveis no debug
   const addDebugLog = (message: string) => {
@@ -519,6 +523,44 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     await loadSaldoData();
   }, [loadSaldoData]);
 
+  // Função para buscar meses da API
+  const fetchMesesApi = useCallback(async () => {
+    if (!associadoData?.id_divisao) return;
+    
+    try {
+      setLoadingMeses(true);
+      console.log('🔍 Buscando meses da API para divisão:', associadoData.id_divisao);
+      
+      const response = await axios.get('https://sas.makecard.com.br/meses_conta_api.php', {
+        params: {
+          origem: 'convenio',
+          divisao: associadoData.id_divisao
+        },
+        timeout: 10000
+      });
+      
+      if (response.data && Array.isArray(response.data)) {
+        setMesesApi(response.data);
+        console.log('✅ Meses carregados da API:', response.data);
+      } else {
+        console.warn('⚠️ Resposta inválida da API de meses:', response.data);
+        setMesesApi([]);
+      }
+    } catch (error) {
+      console.error('❌ Erro ao buscar meses da API:', error);
+      setMesesApi([]);
+    } finally {
+      setLoadingMeses(false);
+    }
+  }, [associadoData?.id_divisao]);
+
+  // Carregar meses da API quando a guia histórico for ativada
+  useEffect(() => {
+    if (guiaAtiva === 'historico' && associadoData?.id_divisao && mesesApi.length === 0) {
+      fetchMesesApi();
+    }
+  }, [guiaAtiva, associadoData?.id_divisao, mesesApi.length, fetchMesesApi]);
+
   // Formatar o valor como moeda brasileira
   const formatarValor = (valor: number): string => {
     return valor.toLocaleString('pt-BR', {
@@ -534,9 +576,8 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     }
     
     return ultimasSolicitacoes.filter(solicitacao => {
-      const dataSolicitacao = new Date(solicitacao.data_solicitacao);
-      const mesAno = `${String(dataSolicitacao.getMonth() + 1).padStart(2, '0')}/${dataSolicitacao.getFullYear()}`;
-      return mesAno === mesFiltro;
+      // Filtrar por mes_corrente da solicitação que corresponde à abreviação da API
+      return solicitacao.mes_corrente === mesFiltro;
     });
   }, [ultimasSolicitacoes, mesFiltro]);
 
@@ -997,86 +1038,6 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
             </p>
           )}
         </div>
-        
-        {/* Status de Solicitações */}
-        {ultimasSolicitacoes.length > 0 && (
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-md font-medium text-gray-700 flex items-center">
-                <FaClockRotateLeft className="mr-1" /> Status de Solicitações
-              </h3>
-              <button 
-                onClick={() => {
-                  if (!historicoApiDisponivel) {
-                    setHistoricoApiDisponivel(true);
-                    fetchHistoricoSolicitacoes();
-                  } else {
-                    fetchHistoricoSolicitacoes();
-                  }
-                }}
-                className="text-blue-600 p-1 rounded hover:bg-blue-50"
-                title={historicoApiDisponivel ? "Atualizar histórico" : "Reativar API de histórico"}
-                disabled={loadingHistorico}
-                type="button"
-              >
-                {loadingHistorico ? <FaSpinner className="animate-spin" /> : <FaArrowRotateLeft />}
-              </button>
-            </div>
-            
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-              {!historicoApiDisponivel ? (
-                <div className="text-center py-4">
-                  <p className="text-orange-600 font-medium mb-2">⚠️ Acesso negado ao histórico</p>
-                  <p className="text-gray-500 text-sm mb-2">Erro 403 - Verifique se a matrícula e empregador estão corretos</p>
-                  <p className="text-gray-400 text-xs">Clique no botão de atualizar para tentar novamente</p>
-                </div>
-              ) : loadingHistorico ? (
-                <div className="flex justify-center py-4">
-                  <FaSpinner className="animate-spin text-blue-600" />
-                </div>
-              ) : ultimasSolicitacoes.length === 0 ? (
-                <p className="text-gray-500 text-center py-2">Nenhuma solicitação encontrada</p>
-              ) : (
-                <div className="space-y-3">
-                  {/* Solicitações Mais Recentes */}
-                  {(mostrarTodasSolicitacoes ? ultimasSolicitacoes : ultimasSolicitacoes.slice(0, 3)).map((solicitacao) => (
-                    <div 
-                      key={solicitacao.id} 
-                      className={`p-3 rounded-lg border ${getStatusClass(solicitacao.status)}`}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="font-semibold">
-                            {Number(solicitacao.valor_solicitado).toLocaleString('pt-BR', {
-                              style: 'currency',
-                              currency: 'BRL'
-                            })}
-                          </div>
-                          <div className="text-xs text-gray-600">
-                            {format(new Date(solicitacao.data_solicitacao), "dd/MM/yyyy", { locale: ptBR })}
-                          </div>
-                        </div>
-                        <div className="font-medium">
-                          {formatarStatus(solicitacao.status)}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {ultimasSolicitacoes.length > 3 && (
-                    <button
-                      onClick={() => setMostrarTodasSolicitacoes(!mostrarTodasSolicitacoes)}
-                      className="text-blue-600 text-sm hover:underline w-full text-center py-1"
-                      type="button"
-                    >
-                      {mostrarTodasSolicitacoes ? 'Ver menos solicitações' : 'Ver mais solicitações'}
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
 
 
@@ -1328,13 +1289,18 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
                 value={mesFiltro}
                 onChange={(e) => setMesFiltro(e.target.value)}
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                disabled={loadingMeses}
               >
                 <option value="todos">Todos os Meses</option>
-                {mesesDisponiveis.map(mes => (
-                  <option key={mes} value={mes}>
-                    {mes.replace('/', '/')}
-                  </option>
-                ))}
+                {loadingMeses ? (
+                  <option disabled>Carregando meses...</option>
+                ) : (
+                  mesesApi.slice(1).map((mes, index) => ( // slice(1) para pular o primeiro item que é mes_corrente
+                    <option key={index} value={mes.abreviacao}>
+                      {mes.abreviacao}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 
