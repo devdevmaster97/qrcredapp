@@ -46,6 +46,7 @@ interface SolicitacaoAntecipacao {
   valor_solicitado: string;
   taxa: string;
   valor_descontar: string;
+  valor_a_descontar?: string; // Campo alternativo que pode vir da API
   mes_corrente: string;
   chave_pix: string;
   status: string | boolean | null;
@@ -158,7 +159,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
 
   // Estados para controle das guias
   const [guiaAtiva, setGuiaAtiva] = useState<'solicitacao' | 'historico'>('solicitacao');
-  const [mesFiltro, setMesFiltro] = useState<string>('todos');
+  const [mesFiltro, setMesFiltro] = useState<string>('');
   
   // Estados para meses da API
   const [mesesApi, setMesesApi] = useState<any[]>([]);
@@ -542,6 +543,15 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       if (response.data && Array.isArray(response.data)) {
         setMesesApi(response.data);
         console.log('✅ Meses carregados da API:', response.data);
+        
+        // Definir o primeiro mês disponível como padrão se não há filtro selecionado
+        if (!mesFiltro && response.data.length > 1) {
+          const primeiroMes = response.data[1]; // slice(1) para pular mes_corrente
+          if (primeiroMes && primeiroMes.abreviacao) {
+            setMesFiltro(primeiroMes.abreviacao);
+            console.log('📅 Primeiro mês definido como padrão:', primeiroMes.abreviacao);
+          }
+        }
       } else {
         console.warn('⚠️ Resposta inválida da API de meses:', response.data);
         setMesesApi([]);
@@ -571,7 +581,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
 
   // Filtrar histórico por mês
   const historicoFiltrado = useMemo(() => {
-    if (mesFiltro === 'todos') {
+    if (!mesFiltro) {
       return ultimasSolicitacoes;
     }
     
@@ -1291,7 +1301,6 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                 disabled={loadingMeses}
               >
-                <option value="todos">Todos os Meses</option>
                 {loadingMeses ? (
                   <option disabled>Carregando meses...</option>
                 ) : (
@@ -1313,9 +1322,20 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
             ) : historicoFiltrado.length > 0 ? (
               <div className="space-y-3">
                 <h3 className="text-lg font-medium text-gray-800 mb-3">
-                  Suas Solicitações {mesFiltro !== 'todos' ? `- ${mesFiltro}` : ''}
+                  Suas Solicitações {mesFiltro ? `- ${mesFiltro}` : ''}
                 </h3>
-                {historicoFiltrado.map((solicitacao, index) => (
+                {historicoFiltrado.map((solicitacao, index) => {
+                  // Debug: Log dos campos de valor para identificar o problema
+                  console.log('🔍 DEBUG SOLICITAÇÃO:', {
+                    index,
+                    valor_solicitado: solicitacao.valor_solicitado,
+                    taxa: solicitacao.taxa,
+                    valor_descontar: solicitacao.valor_descontar,
+                    valor_a_descontar: solicitacao.valor_a_descontar,
+                    todos_campos: Object.keys(solicitacao)
+                  });
+                  
+                  return (
                   <div key={index} className={`p-4 rounded-lg border-2 ${
                     solicitacao.status === true || solicitacao.status === 'true' || solicitacao.status === '1'
                       ? 'bg-green-50 border-green-200'
@@ -1355,24 +1375,25 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
                     {/* Detalhes da solicitação */}
                     <div className="text-sm text-gray-600 space-y-1">
                       <p><strong>Taxa:</strong> {formatarValor(parseFloat(solicitacao.taxa || '0'))}</p>
-                      <p><strong>Total Descontado:</strong> {formatarValor(parseFloat(solicitacao.valor_descontar || '0'))}</p>
+                      <p><strong>Total Descontado:</strong> {formatarValor(parseFloat(solicitacao.valor_a_descontar || solicitacao.valor_descontar || '0'))}</p>
                       <p><strong>Mês:</strong> {solicitacao.mes_corrente}</p>
                       {solicitacao.chave_pix && (
                         <p><strong>Chave PIX:</strong> {solicitacao.chave_pix}</p>
                       )}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-8">
                 <FaClockRotateLeft className="mx-auto h-12 w-12 text-gray-400 mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  {mesFiltro !== 'todos' ? `Nenhuma solicitação em ${mesFiltro}` : 'Nenhuma solicitação encontrada'}
+                  {mesFiltro ? `Nenhuma solicitação em ${mesFiltro}` : 'Nenhuma solicitação encontrada'}
                 </h3>
                 <p className="text-gray-500">
-                  {mesFiltro !== 'todos' 
-                    ? 'Tente selecionar outro mês ou "Todos os Meses"'
+                  {mesFiltro 
+                    ? 'Tente selecionar outro mês'
                     : 'Suas solicitações de antecipação aparecerão aqui'
                   }
                 </p>
