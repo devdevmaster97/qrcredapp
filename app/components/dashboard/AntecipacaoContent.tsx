@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, ChangeEvent, FormEvent, useCallback, useRef } from 'react';
+import { useState, useEffect, ChangeEvent, FormEvent, useCallback, useRef, useMemo } from 'react';
 import axios from 'axios';
 import { useSession } from 'next-auth/react';
 import toast from 'react-hot-toast';
@@ -155,6 +155,10 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
   // Sistema de logs visível no celular
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
   const [mostrarDebug, setMostrarDebug] = useState(true); // Sempre mostrar no mobile
+
+  // Estados para controle das guias
+  const [guiaAtiva, setGuiaAtiva] = useState<'solicitacao' | 'historico'>('solicitacao');
+  const [mesFiltro, setMesFiltro] = useState<string>('todos');
 
   // Função para adicionar logs visíveis no debug
   const addDebugLog = (message: string) => {
@@ -522,6 +526,30 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       currency: 'BRL'
     });
   };
+
+  // Filtrar histórico por mês
+  const historicoFiltrado = useMemo(() => {
+    if (mesFiltro === 'todos') {
+      return ultimasSolicitacoes;
+    }
+    
+    return ultimasSolicitacoes.filter(solicitacao => {
+      const dataSolicitacao = new Date(solicitacao.data_solicitacao);
+      const mesAno = `${String(dataSolicitacao.getMonth() + 1).padStart(2, '0')}/${dataSolicitacao.getFullYear()}`;
+      return mesAno === mesFiltro;
+    });
+  }, [ultimasSolicitacoes, mesFiltro]);
+
+  // Obter lista de meses únicos do histórico
+  const mesesDisponiveis = useMemo(() => {
+    const meses = ultimasSolicitacoes.map(solicitacao => {
+      const dataSolicitacao = new Date(solicitacao.data_solicitacao);
+      return `${String(dataSolicitacao.getMonth() + 1).padStart(2, '0')}/${dataSolicitacao.getFullYear()}`;
+    });
+    
+    const mesesUnicos = Array.from(new Set(meses)).sort().reverse(); // Mais recentes primeiro
+    return mesesUnicos;
+  }, [ultimasSolicitacoes]);
 
   // Manipular mudança no input de valor
   const handleValorChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -911,10 +939,39 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
   return (
     <div className="max-w-lg mx-auto p-4">
       <div className="bg-white rounded-lg shadow-lg p-6">
-        <h2 className="text-xl font-bold mb-6 text-gray-800">Solicitação de Antecipação</h2>
+        <h2 className="text-xl font-bold mb-6 text-gray-800">Antecipação Salarial</h2>
         
-        {/* Saldo Disponível */}
+        {/* Sistema de Guias */}
         <div className="mb-6">
+          <div className="flex border-b border-gray-200">
+            <button
+              onClick={() => setGuiaAtiva('solicitacao')}
+              className={`flex-1 py-3 px-4 text-center font-medium transition-colors ${
+                guiaAtiva === 'solicitacao'
+                  ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Nova Solicitação
+            </button>
+            <button
+              onClick={() => setGuiaAtiva('historico')}
+              className={`flex-1 py-3 px-4 text-center font-medium transition-colors ${
+                guiaAtiva === 'historico'
+                  ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Histórico
+            </button>
+          </div>
+        </div>
+        
+        {/* Conteúdo das Guias */}
+        {guiaAtiva === 'solicitacao' ? (
+          <>
+            {/* Saldo Disponível */}
+            <div className="mb-6">
           <div className="flex items-center justify-between">
             <h3 className="text-md font-medium text-gray-600">Saldo Disponível:</h3>
             <button 
@@ -1256,6 +1313,106 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
               </button>
             )}
           </form>
+        )}
+          </>
+        ) : (
+          /* Guia de Histórico */
+          <div>
+            {/* Filtro por Mês */}
+            <div className="mb-4">
+              <label htmlFor="mes-filtro" className="block text-sm font-medium text-gray-700 mb-2">
+                Filtrar por Mês:
+              </label>
+              <select
+                id="mes-filtro"
+                value={mesFiltro}
+                onChange={(e) => setMesFiltro(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="todos">Todos os Meses</option>
+                {mesesDisponiveis.map(mes => (
+                  <option key={mes} value={mes}>
+                    {mes.replace('/', '/')}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Lista do Histórico */}
+            {loadingHistorico ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <span className="ml-2 text-gray-600">Carregando histórico...</span>
+              </div>
+            ) : historicoFiltrado.length > 0 ? (
+              <div className="space-y-3">
+                <h3 className="text-lg font-medium text-gray-800 mb-3">
+                  Suas Solicitações {mesFiltro !== 'todos' ? `- ${mesFiltro}` : ''}
+                </h3>
+                {historicoFiltrado.map((solicitacao, index) => (
+                  <div key={index} className={`p-4 rounded-lg border-2 ${
+                    solicitacao.status === true || solicitacao.status === 'true' || solicitacao.status === '1'
+                      ? 'bg-green-50 border-green-200'
+                      : solicitacao.status === false || solicitacao.status === 'false' || solicitacao.status === '0'
+                      ? 'bg-red-50 border-red-200'
+                      : 'bg-yellow-50 border-yellow-200'
+                  }`}>
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <p className="font-semibold text-gray-800">
+                          {formatarValor(parseFloat(solicitacao.valor_solicitado))}
+                        </p>
+                        <p className="text-sm text-gray-600">
+                          {new Date(solicitacao.data_solicitacao).toLocaleDateString('pt-BR')}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        {solicitacao.status === true || solicitacao.status === 'true' || solicitacao.status === '1' ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <FaCheckCircle className="mr-1" />
+                            Aprovado
+                          </span>
+                        ) : solicitacao.status === false || solicitacao.status === 'false' || solicitacao.status === '0' ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            <FaTimesCircle className="mr-1" />
+                            Rejeitado
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            <FaHourglassHalf className="mr-1" />
+                            Pendente
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Detalhes da solicitação */}
+                    <div className="text-sm text-gray-600 space-y-1">
+                      <p><strong>Taxa:</strong> {formatarValor(parseFloat(solicitacao.taxa || '0'))}</p>
+                      <p><strong>Total Descontado:</strong> {formatarValor(parseFloat(solicitacao.valor_descontar || '0'))}</p>
+                      <p><strong>Mês:</strong> {solicitacao.mes_corrente}</p>
+                      {solicitacao.chave_pix && (
+                        <p><strong>Chave PIX:</strong> {solicitacao.chave_pix}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <FaClockRotateLeft className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  {mesFiltro !== 'todos' ? `Nenhuma solicitação em ${mesFiltro}` : 'Nenhuma solicitação encontrada'}
+                </h3>
+                <p className="text-gray-500">
+                  {mesFiltro !== 'todos' 
+                    ? 'Tente selecionar outro mês ou "Todos os Meses"'
+                    : 'Suas solicitações de antecipação aparecerão aqui'
+                  }
+                </p>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>
