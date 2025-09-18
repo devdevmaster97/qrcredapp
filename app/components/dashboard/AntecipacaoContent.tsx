@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { FaSpinner, FaClockRotateLeft, FaArrowRotateLeft, FaHourglassHalf } from 'react-icons/fa6';
-import { FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
+import { FaCheckCircle, FaTimesCircle, FaEdit, FaSave, FaTimes } from 'react-icons/fa';
 
 interface AntecipacaoProps {
   cartao?: string;
@@ -164,6 +164,11 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
   // Estados para meses da API
   const [mesesApi, setMesesApi] = useState<any[]>([]);
   const [loadingMeses, setLoadingMeses] = useState(false);
+
+  // Estados para edição de chave PIX
+  const [editandoChavePix, setEditandoChavePix] = useState<string | null>(null);
+  const [novaChavePix, setNovaChavePix] = useState<string>('');
+  const [salvandoChavePix, setSalvandoChavePix] = useState(false);
 
   // Função para adicionar logs visíveis no debug
   const addDebugLog = (message: string) => {
@@ -577,6 +582,67 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       style: 'currency',
       currency: 'BRL'
     });
+  };
+
+  // Função para iniciar edição da chave PIX
+  const iniciarEdicaoChavePix = (solicitacaoId: string, chaveAtual: string) => {
+    setEditandoChavePix(solicitacaoId);
+    setNovaChavePix(chaveAtual || '');
+  };
+
+  // Função para cancelar edição da chave PIX
+  const cancelarEdicaoChavePix = () => {
+    setEditandoChavePix(null);
+    setNovaChavePix('');
+  };
+
+  // Função para salvar nova chave PIX
+  const salvarChavePix = async (solicitacaoId: string) => {
+    if (!novaChavePix.trim()) {
+      toast.error('Digite uma chave PIX válida');
+      return;
+    }
+
+    try {
+      setSalvandoChavePix(true);
+      
+      const response = await fetch('/api/atualizar-chave-pix', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: solicitacaoId,
+          chave_pix: novaChavePix.trim()
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Chave PIX atualizada com sucesso!');
+        
+        // Atualizar a lista local
+        setUltimasSolicitacoes(prev => 
+          prev.map(solicitacao => 
+            solicitacao.id === solicitacaoId 
+              ? { ...solicitacao, chave_pix: novaChavePix.trim() }
+              : solicitacao
+          )
+        );
+        
+        // Limpar estados de edição
+        setEditandoChavePix(null);
+        setNovaChavePix('');
+      } else {
+        toast.error(data.error || 'Erro ao atualizar chave PIX');
+      }
+    } catch (error) {
+      console.error('Erro ao salvar chave PIX:', error);
+      toast.error('Erro ao conectar com o servidor');
+    } finally {
+      setSalvandoChavePix(false);
+    }
   };
 
   // Filtrar histórico por mês
@@ -1377,9 +1443,65 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
                       <p><strong>Taxa:</strong> {formatarValor(parseFloat(solicitacao.taxa || '0'))}</p>
                       <p><strong>Total a Descontar:</strong> {formatarValor(parseFloat(solicitacao.valor_a_descontar || solicitacao.valor_descontar || '0'))}</p>
                       <p><strong>Mês:</strong> {solicitacao.mes_corrente}</p>
-                      {solicitacao.chave_pix && (
-                        <p><strong>Chave PIX:</strong> {solicitacao.chave_pix}</p>
-                      )}
+                      
+                      {/* Chave PIX com opção de edição */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          {editandoChavePix === solicitacao.id ? (
+                            <div className="flex items-center space-x-2">
+                              <strong>Chave PIX:</strong>
+                              <input
+                                type="text"
+                                value={novaChavePix}
+                                onChange={(e) => setNovaChavePix(e.target.value)}
+                                className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
+                                placeholder="Digite a nova chave PIX"
+                                disabled={salvandoChavePix}
+                              />
+                            </div>
+                          ) : (
+                            <p>
+                              <strong>Chave PIX:</strong> {solicitacao.chave_pix || 'Não informada'}
+                            </p>
+                          )}
+                        </div>
+                        
+                        {/* Botões de ação */}
+                        <div className="flex items-center space-x-1 ml-2">
+                          {editandoChavePix === solicitacao.id ? (
+                            <>
+                              <button
+                                onClick={() => salvarChavePix(solicitacao.id)}
+                                disabled={salvandoChavePix}
+                                className="p-1 text-green-600 hover:text-green-800 disabled:opacity-50"
+                                title="Salvar chave PIX"
+                              >
+                                {salvandoChavePix ? (
+                                  <FaSpinner className="animate-spin" size={14} />
+                                ) : (
+                                  <FaSave size={14} />
+                                )}
+                              </button>
+                              <button
+                                onClick={cancelarEdicaoChavePix}
+                                disabled={salvandoChavePix}
+                                className="p-1 text-red-600 hover:text-red-800 disabled:opacity-50"
+                                title="Cancelar edição"
+                              >
+                                <FaTimes size={14} />
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => iniciarEdicaoChavePix(solicitacao.id, solicitacao.chave_pix || '')}
+                              className="p-1 text-blue-600 hover:text-blue-800"
+                              title="Editar chave PIX"
+                            >
+                              <FaEdit size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                   );
