@@ -8,6 +8,11 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
+    // 🎯 DEBUG ESPECÍFICO - Mostrar o que foi recebido
+    console.log('🎯 DEBUG API RECEBIDA - Body completo:', body);
+    console.log('🎯 DEBUG API RECEBIDA - body.codigo:', body.codigo);
+    console.log('🎯 DEBUG API RECEBIDA - typeof body.codigo:', typeof body.codigo);
+    
     // Valida os dados recebidos
     if (!body.codigo) {
       return NextResponse.json(

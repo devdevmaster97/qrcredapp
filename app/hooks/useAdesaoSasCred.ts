@@ -88,14 +88,20 @@ export function useAdesaoSasCred(): AdesaoStatus {
       }
 
       // Fazer chamada para a API de verificação de adesão (versão simples - apenas existência)
+      const requestBody = {
+        codigo: userData.matricula.toString()
+      };
+      
+      console.log('🎯 DEBUG API REQUEST - Body que será enviado:', requestBody);
+      console.log('🎯 DEBUG API REQUEST - userData.matricula original:', userData.matricula);
+      console.log('🎯 DEBUG API REQUEST - userData.matricula.toString():', userData.matricula.toString());
+      
       const response = await fetch('/api/verificar-adesao-sasmais-simples', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          codigo: userData.matricula.toString()
-        })
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
