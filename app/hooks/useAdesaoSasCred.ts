@@ -27,23 +27,28 @@ export function useAdesaoSasCred(): AdesaoStatus {
     dadosAdesao: null,
     refresh: () => {}
   });
+
+  // Ref para controlar se o componente ainda está montado
+  const isMountedRef = useRef(true);
+  const lastStatusRef = useRef<boolean>(false);
   
-  // Refs para evitar loops infinitos
+  // 🎯 PROTEÇÃO CONTRA MÚLTIPLAS CHAMADAS SIMULTÂNEAS
   const isCheckingRef = useRef(false);
-  const lastStatusRef = useRef(false);
   const eventDispatchedRef = useRef(false);
   const hookDestroyedRef = useRef(false);
 
   const verificarAdesao = async (isPolling = false, skipEventDispatch = false) => {
+    console.log('🚀 SasCred: INICIANDO verificação - isPolling:', isPolling, 'isChecking:', isCheckingRef.current);
+    
     // Evitar verificações simultâneas ou após destruição do hook
     if (isCheckingRef.current || hookDestroyedRef.current) {
-      // console.log('🚫 SasCred: Verificação já em andamento ou hook destruído - ignorando');
+      console.log('🚫 SasCred: Verificação já em andamento ou hook destruído - ignorando');
       return lastStatusRef.current;
     }
     
     // Se já aderiu e já foi despachado evento, não verificar mais
     if (lastStatusRef.current && eventDispatchedRef.current && !isPolling) {
-      // console.log('🚫 SasCred: Já aderiu e evento já despachado - ignorando verificação');
+      console.log('🚫 SasCred: Já aderiu e evento já despachado - ignorando verificação');
       return true;
     }
     
@@ -168,6 +173,7 @@ export function useAdesaoSasCred(): AdesaoStatus {
     } finally {
       // Limpar flag de verificação
       isCheckingRef.current = false;
+      console.log('🏁 SasCred: Verificação finalizada - flag limpo');
     }
   };
 
