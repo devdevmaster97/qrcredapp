@@ -1445,63 +1445,60 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
                       <p><strong>Mês:</strong> {solicitacao.mes_corrente}</p>
                       
                       {/* Chave PIX com opção de edição */}
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          {editandoChavePix === solicitacao.id ? (
-                            <div className="flex items-center space-x-2">
-                              <strong>Chave PIX:</strong>
+                      {editandoChavePix === solicitacao.id ? (
+                        <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium text-gray-700">Editar Chave PIX:</p>
+                            <div className="flex flex-col sm:flex-row gap-2">
                               <input
                                 type="text"
                                 value={novaChavePix}
                                 onChange={(e) => setNovaChavePix(e.target.value)}
-                                className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
+                                className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 placeholder="Digite a nova chave PIX"
                                 disabled={salvandoChavePix}
                               />
+                              <div className="flex gap-2 justify-center sm:justify-start">
+                                <button
+                                  onClick={() => salvarChavePix(solicitacao.id)}
+                                  disabled={salvandoChavePix}
+                                  className="px-3 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:opacity-50 flex items-center gap-1"
+                                  title="Salvar chave PIX"
+                                >
+                                  {salvandoChavePix ? (
+                                    <FaSpinner className="animate-spin" size={14} />
+                                  ) : (
+                                    <FaSave size={14} />
+                                  )}
+                                  Salvar
+                                </button>
+                                <button
+                                  onClick={cancelarEdicaoChavePix}
+                                  disabled={salvandoChavePix}
+                                  className="px-3 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700 disabled:opacity-50 flex items-center gap-1"
+                                  title="Cancelar edição"
+                                >
+                                  <FaTimes size={14} />
+                                  Cancelar
+                                </button>
+                              </div>
                             </div>
-                          ) : (
-                            <p>
-                              <strong>Chave PIX:</strong> {solicitacao.chave_pix || 'Não informada'}
-                            </p>
-                          )}
+                          </div>
                         </div>
-                        
-                        {/* Botões de ação */}
-                        <div className="flex items-center space-x-1 ml-2">
-                          {editandoChavePix === solicitacao.id ? (
-                            <>
-                              <button
-                                onClick={() => salvarChavePix(solicitacao.id)}
-                                disabled={salvandoChavePix}
-                                className="p-1 text-green-600 hover:text-green-800 disabled:opacity-50"
-                                title="Salvar chave PIX"
-                              >
-                                {salvandoChavePix ? (
-                                  <FaSpinner className="animate-spin" size={14} />
-                                ) : (
-                                  <FaSave size={14} />
-                                )}
-                              </button>
-                              <button
-                                onClick={cancelarEdicaoChavePix}
-                                disabled={salvandoChavePix}
-                                className="p-1 text-red-600 hover:text-red-800 disabled:opacity-50"
-                                title="Cancelar edição"
-                              >
-                                <FaTimes size={14} />
-                              </button>
-                            </>
-                          ) : (
-                            <button
-                              onClick={() => iniciarEdicaoChavePix(solicitacao.id, solicitacao.chave_pix || '')}
-                              className="p-1 text-blue-600 hover:text-blue-800"
-                              title="Editar chave PIX"
-                            >
-                              <FaEdit size={14} />
-                            </button>
-                          )}
+                      ) : (
+                        <div className="flex items-center justify-between">
+                          <p>
+                            <strong>Chave PIX:</strong> {solicitacao.chave_pix || 'Não informada'}
+                          </p>
+                          <button
+                            onClick={() => iniciarEdicaoChavePix(solicitacao.id, solicitacao.chave_pix || '')}
+                            className="p-1 text-blue-600 hover:text-blue-800 ml-2"
+                            title="Editar chave PIX"
+                          >
+                            <FaEdit size={14} />
+                          </button>
                         </div>
-                      </div>
+                      )}
                     </div>
                   </div>
                   );
