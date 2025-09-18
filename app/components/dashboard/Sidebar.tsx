@@ -251,6 +251,8 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
       icon: <FaMoneyBillWave size={20} className="text-green-500" />,
       isOpen: isSasCredOpen,
       toggle: toggleSasCred,
+      // Adicionar key única baseada no estado para forçar re-render
+      key: `sascred-${jaAderiuSasCred}-${loadingAdesao}`,
       items: [
         {
           href: '/dashboard/sascred/o-que-e',
@@ -273,12 +275,18 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
         })(),
         // Só mostrar "Aderir" se não estiver carregando E ainda não aderiu
         ...(!loadingAdesao && !jaAderiuSasCred ? [
-          {
-            href: '/dashboard/adesao-sasapp',
-            label: 'Aderir',
-            icon: <FaFileContract size={16} className="text-blue-500" />
-          }
-        ] : []),
+          (() => {
+            console.log('🚨🚨🚨 MENU ADERIR ESTÁ SENDO INCLUÍDO NA LISTA! 🚨🚨🚨');
+            return {
+              href: '/dashboard/adesao-sasapp',
+              label: 'Aderir',
+              icon: <FaFileContract size={16} className="text-blue-500" />
+            };
+          })()
+        ] : (() => {
+          console.log('✅✅✅ MENU ADERIR NÃO FOI INCLUÍDO - Usuário já aderiu ou está carregando ✅✅✅');
+          return [];
+        })()),
         // Submenus condicionais - só aparecem se o associado já aderiu
         ...(jaAderiuSasCred ? [
           {
@@ -367,6 +375,23 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
       icon: <FaPhone size={20} />
     }
   ];
+
+  // DEBUG: Verificar se menu Aderir está no array final
+  useEffect(() => {
+    const sasCredMenu = menuItems.find(item => item.label === 'SasCred');
+    if (sasCredMenu && sasCredMenu.items) {
+      const aderirItem = sasCredMenu.items.find((item: any) => item.label === 'Aderir');
+      console.log('🔍🔍🔍 DEBUG FINAL - Menu Aderir no array:', !!aderirItem);
+      console.log('🔍🔍🔍 DEBUG FINAL - Total itens SasCred:', sasCredMenu.items.length);
+      console.log('🔍🔍🔍 DEBUG FINAL - Itens SasCred:', sasCredMenu.items.map((item: any) => item.label));
+      
+      // Verificar localStorage para garantir que não há cache
+      const storedStatus = localStorage.getItem('sascred_adesao_status');
+      if (storedStatus) {
+        console.log('🔍🔍🔍 DEBUG FINAL - Status no localStorage:', JSON.parse(storedStatus));
+      }
+    }
+  }, [jaAderiuSasCred, loadingAdesao]);
 
   const handleLogout = () => {
     if (typeof window !== 'undefined') {
@@ -567,7 +592,11 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
           {/* Links de Navegação */}
           <nav className="flex-1 overflow-y-auto py-4">
             <ul className="space-y-1">
-              {menuItems.map((item) => renderMenuItem(item))}
+              {menuItems.map((item, index) => (
+                <div key={item.key || `menu-item-${index}-${item.label}`}>
+                  {renderMenuItem(item)}
+                </div>
+              ))}
               
               {/* Menu Antecipação - Só aparece após assinatura digital completa (mantido para compatibilidade) */}
               {assinaturaCompleta && !jaAderiuSasCred && (
