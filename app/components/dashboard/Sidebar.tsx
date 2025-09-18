@@ -261,15 +261,18 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
         ...(() => {
           console.log('🎯 DEBUG MENU ADERIR - jaAderiuSasCred:', jaAderiuSasCred);
           console.log('🎯 DEBUG MENU ADERIR - typeof jaAderiuSasCred:', typeof jaAderiuSasCred);
+          console.log('🎯 DEBUG MENU ADERIR - loadingAdesao:', loadingAdesao);
           console.log('🎯 DEBUG MENU ADERIR - !jaAderiuSasCred:', !jaAderiuSasCred);
+          console.log('🎯 DEBUG MENU ADERIR - !loadingAdesao:', !loadingAdesao);
           console.log('🎯 DEBUG MENU ADERIR - jaAderiuSasCred === true:', jaAderiuSasCred === true);
           console.log('🎯 DEBUG MENU ADERIR - jaAderiuSasCred === false:', jaAderiuSasCred === false);
-          console.log('🎯 DEBUG MENU ADERIR - Menu Aderir será mostrado:', !jaAderiuSasCred);
+          console.log('🎯 DEBUG MENU ADERIR - Condição completa (!loadingAdesao && !jaAderiuSasCred):', !loadingAdesao && !jaAderiuSasCred);
+          console.log('🎯 DEBUG MENU ADERIR - Menu Aderir será mostrado:', !loadingAdesao && !jaAderiuSasCred);
           
           return [];
         })(),
-        // Só mostrar "Aderir" se ainda não aderiu
-        ...(!jaAderiuSasCred ? [
+        // Só mostrar "Aderir" se não estiver carregando E ainda não aderiu
+        ...(!loadingAdesao && !jaAderiuSasCred ? [
           {
             href: '/dashboard/adesao-sasapp',
             label: 'Aderir',
