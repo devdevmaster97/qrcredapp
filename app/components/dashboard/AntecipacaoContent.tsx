@@ -549,12 +549,19 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         setMesesApi(response.data);
         console.log('✅ Meses carregados da API:', response.data);
         
-        // Definir o primeiro mês disponível como padrão se não há filtro selecionado
-        if (!mesFiltro && response.data.length > 1) {
-          const primeiroMes = response.data[1]; // slice(1) para pular mes_corrente
-          if (primeiroMes && primeiroMes.abreviacao) {
-            setMesFiltro(primeiroMes.abreviacao);
-            console.log('📅 Primeiro mês definido como padrão:', primeiroMes.abreviacao);
+        // Definir o mês corrente como padrão se não há filtro selecionado
+        if (!mesFiltro && response.data.length > 0) {
+          // Primeiro tentar usar o mês corrente dos dados de saldo
+          if (saldoData?.mesCorrente) {
+            setMesFiltro(saldoData.mesCorrente);
+            console.log('📅 Mês corrente definido como padrão:', saldoData.mesCorrente);
+          } else if (response.data.length > 1) {
+            // Fallback: usar o primeiro mês disponível se mês corrente não estiver disponível
+            const primeiroMes = response.data[1]; // slice(1) para pular mes_corrente
+            if (primeiroMes && primeiroMes.abreviacao) {
+              setMesFiltro(primeiroMes.abreviacao);
+              console.log('📅 Primeiro mês definido como fallback:', primeiroMes.abreviacao);
+            }
           }
         }
       } else {
@@ -567,7 +574,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     } finally {
       setLoadingMeses(false);
     }
-  }, [associadoData?.id_divisao]);
+  }, [associadoData?.id_divisao, saldoData?.mesCorrente, mesFiltro]);
 
   // Carregar meses da API quando a guia histórico for ativada
   useEffect(() => {
@@ -575,6 +582,14 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       fetchMesesApi();
     }
   }, [guiaAtiva, associadoData?.id_divisao, mesesApi.length, fetchMesesApi]);
+
+  // Definir mês corrente como padrão quando saldoData estiver disponível
+  useEffect(() => {
+    if (saldoData?.mesCorrente && !mesFiltro && guiaAtiva === 'historico') {
+      setMesFiltro(saldoData.mesCorrente);
+      console.log('📅 Mês corrente definido automaticamente:', saldoData.mesCorrente);
+    }
+  }, [saldoData?.mesCorrente, mesFiltro, guiaAtiva]);
 
   // Formatar o valor como moeda brasileira
   const formatarValor = (valor: number): string => {
@@ -1370,11 +1385,14 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
                 {loadingMeses ? (
                   <option disabled>Carregando meses...</option>
                 ) : (
-                  mesesApi.slice(1).map((mes, index) => ( // slice(1) para pular o primeiro item que é mes_corrente
-                    <option key={index} value={mes.abreviacao}>
-                      {mes.abreviacao}
-                    </option>
-                  ))
+                  <>
+                    <option value="">Todos os meses</option>
+                    {mesesApi.slice(1).map((mes, index) => ( // slice(1) para pular o primeiro item que é mes_corrente
+                      <option key={index} value={mes.abreviacao}>
+                        {mes.abreviacao}
+                      </option>
+                    ))}
+                  </>
                 )}
               </select>
             </div>
