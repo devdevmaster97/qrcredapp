@@ -56,6 +56,7 @@ export function useAdesaoSasCred(): AdesaoStatus {
     try {
       // Obter dados do usuário do localStorage
       const storedUser = localStorage.getItem('qrcred_user');
+      console.log('🔍 DEBUG useAdesaoSasCred - storedUser:', storedUser);
       
       if (!storedUser) {
         setStatus(prev => ({
@@ -70,6 +71,8 @@ export function useAdesaoSasCred(): AdesaoStatus {
       }
 
       const userData: UserData = JSON.parse(storedUser);
+      console.log('🔍 DEBUG useAdesaoSasCred - userData:', userData);
+      console.log('🔍 DEBUG useAdesaoSasCred - matricula:', userData.matricula);
       
       // Se não tiver matrícula, não pode verificar adesão
       if (!userData.matricula) {
@@ -100,9 +103,11 @@ export function useAdesaoSasCred(): AdesaoStatus {
       }
 
       const resultado = await response.json();
+      console.log('🔍 DEBUG useAdesaoSasCred - resultado da API:', resultado);
       
       if (resultado.status === 'sucesso') {
         const jaAderiu = resultado.jaAderiu === true;
+        console.log('🔍 DEBUG useAdesaoSasCred - jaAderiu calculado:', jaAderiu);
         const statusAnterior = lastStatusRef.current;
         
         setStatus(prev => ({

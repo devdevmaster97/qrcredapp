@@ -64,6 +64,9 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
   // Hook para verificar adesão ao SasCred
   const { jaAderiu: jaAderiuSasCred, loading: loadingAdesao } = useAdesaoSasCred();
   
+  // DEBUG: Log do status da adesão
+  console.log('🔍 DEBUG Sidebar - jaAderiuSasCred:', jaAderiuSasCred, 'loading:', loadingAdesao);
+  
   // Hook para verificar se antecipação foi aprovada
   const { aprovada: antecipacaoAprovada, loading: loadingAntecipacao } = useAntecipacaoAprovada();
   

@@ -6,7 +6,23 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (jsonError) {
+      console.error('❌ Erro ao fazer parse do body da requisição:', jsonError);
+      return NextResponse.json(
+        { 
+          status: 'erro', 
+          mensagem: 'Erro no formato JSON da requisição',
+          debug: {
+            error: jsonError instanceof Error ? jsonError.message : 'Erro desconhecido',
+            contentType: request.headers.get('content-type')
+          }
+        },
+        { status: 400 }
+      );
+    }
     
     if (!body.codigo) {
       return NextResponse.json(
@@ -49,14 +65,21 @@ export async function POST(request: NextRequest) {
 
     let data;
     try {
-      data = JSON.parse(responseText);
+      // Limpar caracteres especiais que podem causar problemas no JSON
+      const cleanedText = responseText.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+      data = JSON.parse(cleanedText);
     } catch (parseError) {
+      console.error('❌ Erro no parse JSON:', parseError);
+      console.error('📄 Texto original:', responseText);
+      console.error('📄 Texto limpo:', responseText.replace(/[\u0000-\u001F\u007F-\u009F]/g, ''));
+      
       return NextResponse.json({
         status: 'erro',
         mensagem: 'Erro ao fazer parse da resposta',
         debug: {
-          responseText,
-          parseError: parseError instanceof Error ? parseError.message : 'Erro desconhecido'
+          responseText: responseText.substring(0, 500), // Limitar tamanho
+          parseError: parseError instanceof Error ? parseError.message : 'Erro desconhecido',
+          responseLength: responseText.length
         }
       });
     }
