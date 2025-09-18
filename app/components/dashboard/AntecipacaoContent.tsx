@@ -1418,9 +1418,9 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
                     valor_a_descontar: solicitacao.valor_a_descontar,
                     todos_campos: Object.keys(solicitacao)
                   });
-                  
+
                   return (
-                  <div key={index} className={`p-4 rounded-lg border-2 ${
+                  <div key={index} className={`p-4 rounded-lg border-2 w-full max-w-none ${
                     solicitacao.status === true || solicitacao.status === 'true' || solicitacao.status === '1'
                       ? 'bg-green-50 border-green-200'
                       : solicitacao.status === false || solicitacao.status === 'false' || solicitacao.status === '0'
