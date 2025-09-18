@@ -1069,7 +1069,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
   }
 
   return (
-    <div className="max-w-lg mx-auto p-4">
+    <div className="max-w-4xl mx-auto p-4 w-full">
       <div className="bg-white rounded-lg shadow-lg p-6">
         <h2 className="text-xl font-bold mb-6 text-gray-800">Antecipação Salarial</h2>
         
