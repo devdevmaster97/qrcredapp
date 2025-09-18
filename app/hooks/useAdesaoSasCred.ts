@@ -96,6 +96,11 @@ export function useAdesaoSasCred(): AdesaoStatus {
       console.log('🎯 DEBUG API REQUEST - userData.matricula original:', userData.matricula);
       console.log('🎯 DEBUG API REQUEST - userData.matricula.toString():', userData.matricula.toString());
       
+      const apiUrl = '/api/verificar-adesao-sasmais-simples';
+      console.log('🎯 DEBUG API REQUEST - URL que será chamada:', apiUrl);
+      console.log('🎯 DEBUG API REQUEST - window.location.origin:', window.location.origin);
+      console.log('🎯 DEBUG API REQUEST - URL completa:', window.location.origin + apiUrl);
+      
       const response = await fetch('/api/verificar-adesao-sasmais-simples', {
         method: 'POST',
         headers: {
