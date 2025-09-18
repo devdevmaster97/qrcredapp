@@ -257,6 +257,17 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
           label: 'O que é',
           icon: <FaInfoCircle size={16} />
         },
+        // 🔍 DEBUG ESPECÍFICO - Verificar valor da variável jaAderiuSasCred
+        ...(() => {
+          console.log('🎯 DEBUG MENU ADERIR - jaAderiuSasCred:', jaAderiuSasCred);
+          console.log('🎯 DEBUG MENU ADERIR - typeof jaAderiuSasCred:', typeof jaAderiuSasCred);
+          console.log('🎯 DEBUG MENU ADERIR - !jaAderiuSasCred:', !jaAderiuSasCred);
+          console.log('🎯 DEBUG MENU ADERIR - jaAderiuSasCred === true:', jaAderiuSasCred === true);
+          console.log('🎯 DEBUG MENU ADERIR - jaAderiuSasCred === false:', jaAderiuSasCred === false);
+          console.log('🎯 DEBUG MENU ADERIR - Menu Aderir será mostrado:', !jaAderiuSasCred);
+          
+          return [];
+        })(),
         // Só mostrar "Aderir" se ainda não aderiu
         ...(!jaAderiuSasCred ? [
           {
