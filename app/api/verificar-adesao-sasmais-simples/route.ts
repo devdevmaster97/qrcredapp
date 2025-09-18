@@ -8,10 +8,10 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    // 🎯 DEBUG ESPECÍFICO - Mostrar o que foi recebido
-    console.log('🎯 DEBUG API RECEBIDA - Body completo:', body);
-    console.log('🎯 DEBUG API RECEBIDA - body.codigo:', body.codigo);
-    console.log('🎯 DEBUG API RECEBIDA - typeof body.codigo:', typeof body.codigo);
+    // DEBUG ESPECÍFICO - Mostrar o que foi recebido
+    console.log(' DEBUG API RECEBIDA - Body completo:', body);
+    console.log(' DEBUG API RECEBIDA - body.codigo:', body.codigo);
+    console.log(' DEBUG API RECEBIDA - typeof body.codigo:', typeof body.codigo);
     
     // Valida os dados recebidos
     if (!body.codigo) {
@@ -26,7 +26,12 @@ export async function POST(request: NextRequest) {
     }
 
     const codigo = body.codigo.toString().trim();
-    console.log('🔍 Verificando existência do registro para código:', codigo);
+    console.log(' Verificando existência do registro para código:', codigo);
+
+    // DEBUG ESPECÍFICO - Mostrar o que será enviado para a API PHP
+    const phpRequestBody = { codigo };
+    console.log(' DEBUG PHP REQUEST - Body que será enviado para PHP:', phpRequestBody);
+    console.log(' DEBUG PHP REQUEST - JSON.stringify:', JSON.stringify(phpRequestBody));
 
     // Usar a API PHP existente, mas interpretar apenas a EXISTÊNCIA do registro
     const response = await fetch('https://sas.makecard.com.br/api_verificar_adesao_sasmais.php', {
@@ -35,40 +40,52 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      body: JSON.stringify({ codigo }),
+      body: JSON.stringify(phpRequestBody),
       cache: 'no-store'
     });
 
+    console.log(' DEBUG PHP RESPONSE - Status:', response.status);
+    console.log(' DEBUG PHP RESPONSE - StatusText:', response.statusText);
+    console.log(' DEBUG PHP RESPONSE - Headers:', Object.fromEntries(response.headers.entries()));
+
     if (!response.ok) {
-      console.log('⚠️ API PHP não disponível, usando fallback');
-      // Se a API PHP não responder, assumir que não existe
+      console.error(' Erro na resposta da API PHP:', response.status, response.statusText);
       return NextResponse.json({
-        status: 'sucesso',
+        status: 'erro',
+        mensagem: 'API PHP não disponível',
         jaAderiu: false,
-        mensagem: 'Associado não encontrado na tabela',
-        dados: null
+        debug: {
+          httpStatus: response.status,
+          httpStatusText: response.statusText
+        }
       });
     }
 
     const responseText = await response.text();
-    console.log('📥 Resposta da API PHP:', responseText);
+    console.log(' DEBUG PHP RESPONSE - Texto bruto:', responseText);
+    console.log(' DEBUG PHP RESPONSE - Tamanho:', responseText.length);
 
     let data;
     try {
       data = JSON.parse(responseText);
+      console.log(' DEBUG PHP RESPONSE - JSON parseado:', data);
     } catch (parseError) {
-      console.error('Erro no parse da resposta:', parseError);
+      console.error(' Erro ao fazer parse da resposta PHP:', parseError);
+      console.error(' Resposta que causou erro:', responseText.substring(0, 500));
       return NextResponse.json({
-        status: 'sucesso',
+        status: 'erro',
+        mensagem: 'Erro ao processar resposta da API PHP',
         jaAderiu: false,
-        mensagem: 'Erro ao processar resposta',
-        dados: null
+        debug: {
+          responseText: responseText.substring(0, 500),
+          parseError: parseError instanceof Error ? parseError.message : 'Erro desconhecido'
+        }
       });
     }
 
-    // 🎯 NOVA LÓGICA: Se tem dados do associado, significa que existe na tabela
+    // NOVA LÓGICA: Se tem dados do associado, significa que existe na tabela
     // Independente do valor_aprovado ou status de aprovação
-    console.log('📊 Analisando resposta da API PHP:');
+    console.log(' Analisando resposta da API PHP:');
     console.log('  - Status:', data.status);
     console.log('  - jaAderiu original:', data.jaAderiu);
     console.log('  - Tem dados?', data.dados ? 'SIM' : 'NÃO');
@@ -102,7 +119,7 @@ export async function POST(request: NextRequest) {
       motivo = 'Status da API não é sucesso';
     }
 
-    console.log(`✅ Verificação concluída - Código: ${codigo}, Existe: ${jaAderiu}, Motivo: ${motivo}`);
+    console.log(` Verificação concluída - Código: ${codigo}, Existe: ${jaAderiu}, Motivo: ${motivo}`);
 
     return NextResponse.json({
       status: 'sucesso',
@@ -118,7 +135,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('💥 Erro na verificação de existência:', error);
+    console.error(' Erro na verificação de existência:', error);
     
     return NextResponse.json({
       status: 'erro',
