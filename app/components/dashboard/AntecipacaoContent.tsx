@@ -341,6 +341,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
 
   // Função para buscar dados do associado uma única vez
   const fetchAssociado = useCallback(async (cartaoParam: string) => {
+    console.log('🚀 fetchAssociado iniciado com cartão:', cartaoParam);
     try {
       const formDataAssociado = new FormData();
       formDataAssociado.append('cartao', cartaoParam.trim());
@@ -355,22 +356,43 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         throw new Error('Dados do associado não encontrados');
       }
 
+      console.log('📋 Dados do associado recebidos:', {
+        matricula: associadoResponse.data.matricula,
+        empregador: associadoResponse.data.empregador,
+        id: associadoResponse.data.id,
+        id_divisao: associadoResponse.data.id_divisao,
+        nome: associadoResponse.data.nome
+      });
+
       // Buscar também os dados com PIX se tivermos os dados necessários
       if (associadoResponse.data.matricula && associadoResponse.data.empregador && 
           associadoResponse.data.id && associadoResponse.data.id_divisao) {
         try {
           console.log('🔍 Tentando buscar PIX do associado...');
+          console.log('📊 Dados do associado disponíveis:', {
+            matricula: associadoResponse.data.matricula,
+            empregador: associadoResponse.data.empregador,
+            id: associadoResponse.data.id,
+            id_divisao: associadoResponse.data.id_divisao,
+            tipos: {
+              matricula: typeof associadoResponse.data.matricula,
+              empregador: typeof associadoResponse.data.empregador,
+              id: typeof associadoResponse.data.id,
+              id_divisao: typeof associadoResponse.data.id_divisao
+            }
+          });
+          
           const formDataPix = new FormData();
           formDataPix.append('matricula', associadoResponse.data.matricula);
           formDataPix.append('id_empregador', associadoResponse.data.empregador.toString());
           formDataPix.append('id_associado', associadoResponse.data.id.toString());
           formDataPix.append('id_divisao', associadoResponse.data.id_divisao.toString());
           
-          console.log('📤 Enviando dados para buscar PIX:', {
-            matricula: associadoResponse.data.matricula,
-            id_empregador: associadoResponse.data.empregador,
-            id_associado: associadoResponse.data.id,
-            id_divisao: associadoResponse.data.id_divisao
+          console.log('📤 Enviando FormData para buscar PIX:', {
+            matricula: formDataPix.get('matricula'),
+            id_empregador: formDataPix.get('id_empregador'),
+            id_associado: formDataPix.get('id_associado'),
+            id_divisao: formDataPix.get('id_divisao')
           });
           
           const pixResponse = await axios.post('/api/buscar-dados-associado-pix', formDataPix, {
@@ -383,15 +405,26 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
             }
           });
           
-          console.log('📥 Resposta da busca do PIX:', pixResponse.status, pixResponse.data);
+          console.log('📥 Resposta completa da busca do PIX:', {
+            status: pixResponse.status,
+            statusText: pixResponse.statusText,
+            headers: pixResponse.headers,
+            data: pixResponse.data,
+            dataType: typeof pixResponse.data,
+            dataKeys: pixResponse.data ? Object.keys(pixResponse.data) : []
+          });
           
           if (pixResponse.data && pixResponse.data.pix) {
             associadoResponse.data.pix = pixResponse.data.pix;
             console.log('✅ PIX encontrado:', pixResponse.data.pix);
           } else if (pixResponse.data && pixResponse.data.erro) {
             console.log('⚠️ Erro retornado pela API:', pixResponse.data.erro);
+            if (pixResponse.data.campos_faltantes) {
+              console.log('⚠️ Campos faltantes:', pixResponse.data.campos_faltantes);
+            }
           } else {
             console.log('ℹ️ PIX não encontrado ou vazio');
+            console.log('📋 Estrutura da resposta:', JSON.stringify(pixResponse.data, null, 2));
           }
         } catch (pixError: any) {
           console.log('⚠️ Não foi possível buscar dados do PIX:', pixError.message);

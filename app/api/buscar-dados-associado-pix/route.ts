@@ -15,10 +15,16 @@ export async function POST(request: NextRequest) {
     const id_divisao = formData.get('id_divisao');
 
     console.log('📋 Dados recebidos:', {
-      matricula,
-      id_empregador,
-      id_associado,
-      id_divisao
+      matricula: matricula || 'VAZIO',
+      id_empregador: id_empregador || 'VAZIO',
+      id_associado: id_associado || 'VAZIO',
+      id_divisao: id_divisao || 'VAZIO',
+      tipos: {
+        matricula: typeof matricula,
+        id_empregador: typeof id_empregador,
+        id_associado: typeof id_associado,
+        id_divisao: typeof id_divisao
+      }
     });
 
     if (!matricula || !id_empregador || !id_associado || !id_divisao) {
@@ -41,6 +47,13 @@ export async function POST(request: NextRequest) {
 
     const phpUrl = `${API_URL}/buscar_dados_associado_pix.php`;
     console.log('📤 Enviando para PHP:', phpUrl);
+    
+    // Converter FormData para objeto para debug
+    const formDataDebug: any = {};
+    formData.forEach((value, key) => {
+      formDataDebug[key] = value;
+    });
+    console.log('📦 FormData sendo enviado:', formDataDebug);
 
     // Fazer a requisição para o servidor PHP
     const response = await fetch(phpUrl, {
@@ -49,9 +62,11 @@ export async function POST(request: NextRequest) {
     });
 
     console.log('📥 Resposta do PHP - Status:', response.status);
+    console.log('📥 Resposta do PHP - Headers:', Object.fromEntries(response.headers.entries()));
 
     const responseText = await response.text();
-    console.log('📄 Resposta bruta do PHP:', responseText);
+    console.log('📄 Resposta bruta do PHP (primeiros 500 chars):', responseText.substring(0, 500));
+    console.log('📄 Tamanho da resposta:', responseText.length, 'caracteres');
 
     if (!response.ok) {
       console.error('❌ Erro HTTP do PHP:', response.status, responseText);
@@ -67,14 +82,22 @@ export async function POST(request: NextRequest) {
     let data;
     try {
       data = JSON.parse(responseText);
-      console.log('✅ JSON parseado com sucesso:', data);
+      console.log('✅ JSON parseado com sucesso:', {
+        data,
+        tipo: typeof data,
+        keys: data ? Object.keys(data) : [],
+        pix: data?.pix || 'NÃO ENCONTRADO',
+        erro: data?.erro || 'NENHUM ERRO'
+      });
     } catch (parseError) {
       console.error('❌ Erro ao parsear JSON:', parseError);
+      console.error('❌ Texto que causou erro:', responseText);
       // Se não conseguir parsear, retornar sem PIX
       console.warn('⚠️ Resposta inválida do PHP, retornando sem PIX');
       return NextResponse.json({ pix: null });
     }
 
+    console.log('🚀 Retornando dados para o frontend:', data);
     return NextResponse.json(data);
 
   } catch (error: any) {
