@@ -64,8 +64,6 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
   // Hook para verificar adesão ao SasCred
   const { jaAderiu: jaAderiuSasCred, loading: loadingAdesao } = useAdesaoSasCred();
   
-  // DEBUG: Log do status da adesão
-  console.log('🔍 DEBUG Sidebar - jaAderiuSasCred:', jaAderiuSasCred, 'loading:', loadingAdesao);
   
   // Hook para verificar se antecipação foi aprovada
   const { aprovada: antecipacaoAprovada, loading: loadingAntecipacao } = useAntecipacaoAprovada();
@@ -73,43 +71,8 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
   // Hook para verificar adesão à antecipação (se já assinou o contrato)
   const { jaAderiu: jaAderiuAntecipacao, loading: loadingAdesaoAntecipacao } = useAdesaoAntecipacao();
   
-  // Debug da aprovação da antecipação
+  // Status de adesão e timeout do loading
   useEffect(() => {
-    console.log('🔍 Sidebar - Status antecipação:', {
-      antecipacaoAprovada,
-      loadingAntecipacao,
-      timestamp: new Date().toISOString()
-    });
-  }, [antecipacaoAprovada, loadingAntecipacao]);
-
-  // Debug da adesão à antecipação
-  useEffect(() => {
-    console.log('🔍 Sidebar - Status adesão antecipação:', {
-      jaAderiuAntecipacao,
-      loadingAdesaoAntecipacao,
-      menuItemAderirVisible: !jaAderiuAntecipacao,
-      menuItemAderirShouldShow: !jaAderiuAntecipacao,
-      negacao: !jaAderiuAntecipacao,
-      timestamp: new Date().toISOString()
-    });
-    
-    // Log específico para debug do menu
-    if (jaAderiuAntecipacao) {
-      console.log('🚫 ANTECIPAÇÃO: Item Aderir será OCULTO (usuário já aderiu)');
-    } else {
-      console.log('✅ ANTECIPAÇÃO: Item Aderir será MOSTRADO (usuário ainda não aderiu)');
-    }
-  }, [jaAderiuAntecipacao, loadingAdesaoAntecipacao]);
-// teste
-  // Debug do status de adesão e timeout do loading
-  useEffect(() => {
-    // Remover log excessivo para evitar spam no console
-    // console.log('🔍 Sidebar - Status adesão SasCred:', {
-    //   jaAderiuSasCred,
-    //   loadingAdesao,
-    //   loadingTimeout,
-    //   timestamp: new Date().toISOString()
-    // });
     
     // Timeout para loading infinito
     if (loadingAdesao && !loadingTimeout) {
@@ -129,12 +92,10 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
                 body: JSON.stringify({ codigo: userData.matricula.toString() })
               });
               const result = await response.json();
-              console.log('🔧 Fallback verification result:', result);
               setFallbackAdesao(result.jaAderiu || false);
             }
           }
         } catch (error) {
-          console.error('🔧 Fallback verification failed:', error);
           setFallbackAdesao(false);
         }
       }, 10000); // 10 segundos
@@ -259,34 +220,14 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
           label: 'O que é',
           icon: <FaInfoCircle size={16} />
         },
-        // 🔍 DEBUG ESPECÍFICO - Verificar valor da variável jaAderiuSasCred
-        ...(() => {
-          console.log('🎯 DEBUG MENU ADERIR - jaAderiuSasCred:', jaAderiuSasCred);
-          console.log('🎯 DEBUG MENU ADERIR - typeof jaAderiuSasCred:', typeof jaAderiuSasCred);
-          console.log('🎯 DEBUG MENU ADERIR - loadingAdesao:', loadingAdesao);
-          console.log('🎯 DEBUG MENU ADERIR - !jaAderiuSasCred:', !jaAderiuSasCred);
-          console.log('🎯 DEBUG MENU ADERIR - !loadingAdesao:', !loadingAdesao);
-          console.log('🎯 DEBUG MENU ADERIR - jaAderiuSasCred === true:', jaAderiuSasCred === true);
-          console.log('🎯 DEBUG MENU ADERIR - jaAderiuSasCred === false:', jaAderiuSasCred === false);
-          console.log('🎯 DEBUG MENU ADERIR - Condição completa (!loadingAdesao && !jaAderiuSasCred):', !loadingAdesao && !jaAderiuSasCred);
-          console.log('🎯 DEBUG MENU ADERIR - Menu Aderir será mostrado:', !loadingAdesao && !jaAderiuSasCred);
-          
-          return [];
-        })(),
         // Só mostrar "Aderir" se não estiver carregando E ainda não aderiu
         ...(!loadingAdesao && !jaAderiuSasCred ? [
-          (() => {
-            console.log('🚨🚨🚨 MENU ADERIR ESTÁ SENDO INCLUÍDO NA LISTA! 🚨🚨🚨');
-            return {
-              href: '/dashboard/adesao-sasapp',
-              label: 'Aderir',
-              icon: <FaFileContract size={16} className="text-blue-500" />
-            };
-          })()
-        ] : (() => {
-          console.log('✅✅✅ MENU ADERIR NÃO FOI INCLUÍDO - Usuário já aderiu ou está carregando ✅✅✅');
-          return [];
-        })()),
+          {
+            href: '/dashboard/adesao-sasapp',
+            label: 'Aderir',
+            icon: <FaFileContract size={16} className="text-blue-500" />
+          }
+        ] : []),
         // Submenus condicionais - só aparecem se o associado já aderiu
         ...(jaAderiuSasCred ? [
           {
@@ -376,22 +317,6 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
     }
   ];
 
-  // DEBUG: Verificar se menu Aderir está no array final
-  useEffect(() => {
-    const sasCredMenu = menuItems.find(item => item.label === 'SasCred');
-    if (sasCredMenu && sasCredMenu.items) {
-      const aderirItem = sasCredMenu.items.find((item: any) => item.label === 'Aderir');
-      console.log('🔍🔍🔍 DEBUG FINAL - Menu Aderir no array:', !!aderirItem);
-      console.log('🔍🔍🔍 DEBUG FINAL - Total itens SasCred:', sasCredMenu.items.length);
-      console.log('🔍🔍🔍 DEBUG FINAL - Itens SasCred:', sasCredMenu.items.map((item: any) => item.label));
-      
-      // Verificar localStorage para garantir que não há cache
-      const storedStatus = localStorage.getItem('sascred_adesao_status');
-      if (storedStatus) {
-        console.log('🔍🔍🔍 DEBUG FINAL - Status no localStorage:', JSON.parse(storedStatus));
-      }
-    }
-  }, [jaAderiuSasCred, loadingAdesao]);
 
   const handleLogout = () => {
     if (typeof window !== 'undefined') {
