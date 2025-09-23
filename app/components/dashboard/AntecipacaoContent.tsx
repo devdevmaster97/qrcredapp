@@ -29,6 +29,7 @@ interface AssociadoData {
   uf: string;
   id?: number;
   id_divisao?: number;
+  pix?: string;
 }
 
 interface SaldoData {
@@ -169,6 +170,9 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
   const [editandoChavePix, setEditandoChavePix] = useState<string | null>(null);
   const [novaChavePix, setNovaChavePix] = useState<string>('');
   const [salvandoChavePix, setSalvandoChavePix] = useState(false);
+  
+  // Estado para controlar se o campo PIX pode ser editado
+  const [pixEditavel, setPixEditavel] = useState(false);
 
   // Função para adicionar logs visíveis no debug
   const addDebugLog = (message: string) => {
@@ -351,6 +355,31 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         throw new Error('Dados do associado não encontrados');
       }
 
+      // Buscar também os dados com PIX se tivermos os dados necessários
+      if (associadoResponse.data.matricula && associadoResponse.data.empregador && 
+          associadoResponse.data.id && associadoResponse.data.id_divisao) {
+        try {
+          const formDataPix = new FormData();
+          formDataPix.append('matricula', associadoResponse.data.matricula);
+          formDataPix.append('id_empregador', associadoResponse.data.empregador);
+          formDataPix.append('id_associado', associadoResponse.data.id.toString());
+          formDataPix.append('id_divisao', associadoResponse.data.id_divisao.toString());
+          
+          const pixResponse = await axios.post('/api/buscar-dados-associado-pix', formDataPix, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+          
+          if (pixResponse.data && pixResponse.data.pix) {
+            associadoResponse.data.pix = pixResponse.data.pix;
+          }
+        } catch (pixError) {
+          console.log('Aviso: Não foi possível buscar dados do PIX:', pixError);
+          // Continuar sem o PIX se houver erro
+        }
+      }
+
       return associadoResponse.data;
     } catch (error) {
       console.error('Erro ao buscar dados do associado:', error);
@@ -502,6 +531,14 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
           setIsInitialLoading(true);
           const data = await fetchAssociado(cartao);
           setAssociadoData(data);
+          
+          // Se o associado já tem PIX cadastrado, preencher o campo
+          if (data.pix) {
+            setChavePix(data.pix);
+            setPixEditavel(false); // Campo desabilitado mas com opção de editar
+          } else {
+            setPixEditavel(true); // Campo habilitado para o usuário preencher
+          }
         } catch (error) {
           console.error('Erro ao buscar dados do associado:', error);
           setErro('Não foi possível carregar seus dados. Tente novamente.');
@@ -1287,15 +1324,29 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
                   <label htmlFor="chave-pix" className="block text-sm font-medium text-gray-700 mb-1">
                     Chave PIX para Recebimento
                   </label>
-                  <input
-                    type="text"
-                    id="chave-pix"
-                    placeholder="CPF, E-mail, Celular ou Chave Aleatória"
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                    value={chavePix}
-                    onChange={(e) => setChavePix(e.target.value)}
-                    disabled={loading}
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      id="chave-pix"
+                      placeholder="CPF, E-mail, Celular ou Chave Aleatória"
+                      className={`w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 ${
+                        associadoData?.pix && !pixEditavel ? 'pr-12 bg-gray-50' : ''
+                      }`}
+                      value={chavePix}
+                      onChange={(e) => setChavePix(e.target.value)}
+                      disabled={loading || (!!associadoData?.pix && !pixEditavel)}
+                    />
+                    {associadoData?.pix && !pixEditavel && (
+                      <button
+                        type="button"
+                        onClick={() => setPixEditavel(true)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-600 hover:text-blue-800"
+                        title="Editar chave PIX"
+                      >
+                        <FaEdit size={18} />
+                      </button>
+                    )}
+                  </div>
                 </div>
                 
                 {/* Seção senha com informação adicional */}
