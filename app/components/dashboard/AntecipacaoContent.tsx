@@ -1681,7 +1681,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
                       <p><strong>Total a Descontar:</strong> {formatarValor(parseFloat(solicitacao.valor_a_descontar || solicitacao.valor_descontar || '0'))}</p>
                       <p><strong>Mês:</strong> {solicitacao.mes_corrente}</p>
                       
-                      {/* Chave PIX com opção de edição xx */}
+                      {/* Chave PIX com opção de edição */}
                       {editandoChavePix === solicitacao.id ? (
                         <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
                           <div className="space-y-2">
