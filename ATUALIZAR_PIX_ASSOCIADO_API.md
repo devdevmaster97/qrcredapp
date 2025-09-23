@@ -46,22 +46,56 @@ try {
     $resultado = $stmt->execute();
     $linhasAfetadas = $stmt->rowCount();
     
+    // Debug: Buscar o registro para verificar se existe
+    $sqlVerifica = "SELECT codigo, empregador, id, id_divisao, pix 
+                    FROM sind.associado 
+                    WHERE codigo = :matricula 
+                    AND empregador = :id_empregador 
+                    AND id = :id_associado 
+                    AND id_divisao = :id_divisao";
+    
+    $stmtVerifica = $pdo->prepare($sqlVerifica);
+    $stmtVerifica->bindParam(':matricula', $matricula, PDO::PARAM_STR);
+    $stmtVerifica->bindParam(':id_empregador', $id_empregador, PDO::PARAM_STR);
+    $stmtVerifica->bindParam(':id_associado', $id_associado, PDO::PARAM_INT);
+    $stmtVerifica->bindParam(':id_divisao', $id_divisao, PDO::PARAM_INT);
+    $stmtVerifica->execute();
+    $registroEncontrado = $stmtVerifica->fetch(PDO::FETCH_ASSOC);
+    
     if ($resultado && $linhasAfetadas > 0) {
         echo json_encode([
             'success' => true,
             'message' => 'PIX atualizado com sucesso',
-            'linhas_afetadas' => $linhasAfetadas
+            'linhas_afetadas' => $linhasAfetadas,
+            'debug' => [
+                'registro_encontrado' => true,
+                'pix_anterior' => $registroEncontrado ? $registroEncontrado['pix'] : null,
+                'pix_novo' => $pix
+            ]
         ]);
     } else if ($resultado && $linhasAfetadas === 0) {
         echo json_encode([
             'success' => false,
             'message' => 'Nenhum registro encontrado para atualizar',
-            'linhas_afetadas' => 0
+            'linhas_afetadas' => 0,
+            'debug' => [
+                'parametros_busca' => [
+                    'matricula' => $matricula,
+                    'id_empregador' => $id_empregador,
+                    'id_associado' => $id_associado,
+                    'id_divisao' => $id_divisao
+                ],
+                'registro_encontrado' => $registroEncontrado ? true : false,
+                'registro_detalhes' => $registroEncontrado
+            ]
         ]);
     } else {
         echo json_encode([
             'success' => false,
-            'message' => 'Erro ao atualizar PIX'
+            'message' => 'Erro ao atualizar PIX',
+            'debug' => [
+                'erro_sql' => $stmt->errorInfo()
+            ]
         ]);
     }
     

@@ -980,7 +980,13 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         // Atualizar o PIX no banco de dados se foi informado
         if (chavePix && associadoData) {
           try {
-            addDebugLog(`🔄 [${requestId}] Atualizando PIX no banco de dados...`);
+            addDebugLog(`🔄 [${requestId}] Iniciando atualização do PIX no banco de dados...`);
+            addDebugLog(`📋 [${requestId}] Dados para atualização do PIX:`);
+            addDebugLog(`   - Chave PIX: ${chavePix}`);
+            addDebugLog(`   - Matrícula: ${associadoData.matricula}`);
+            addDebugLog(`   - ID Empregador: ${associadoData.empregador}`);
+            addDebugLog(`   - ID Associado: ${associadoData.id}`);
+            addDebugLog(`   - ID Divisão: ${associadoData.id_divisao}`);
             
             const formDataPix = new FormData();
             formDataPix.append('matricula', associadoData.matricula);
@@ -989,24 +995,80 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
             formDataPix.append('id_divisao', associadoData.id_divisao?.toString() || '');
             formDataPix.append('pix', chavePix);
             
+            // Log dos dados sendo enviados
+            console.log(`🔍 [${requestId}] FormData para atualizar PIX:`, {
+              matricula: associadoData.matricula,
+              id_empregador: associadoData.empregador.toString(),
+              id_associado: associadoData.id?.toString() || '',
+              id_divisao: associadoData.id_divisao?.toString() || '',
+              pix: chavePix
+            });
+            
+            addDebugLog(`📤 [${requestId}] Enviando requisição para /api/atualizar-pix-associado`);
+            
             const pixResponse = await axios.post('/api/atualizar-pix-associado', formDataPix, {
               headers: {
                 'Content-Type': 'multipart/form-data'
               }
             });
             
+            addDebugLog(`📥 [${requestId}] Resposta da API de atualização PIX:`);
+            addDebugLog(`   - Status: ${pixResponse.status}`);
+            addDebugLog(`   - Success: ${pixResponse.data?.success}`);
+            addDebugLog(`   - Message: ${pixResponse.data?.message || 'N/A'}`);
+            addDebugLog(`   - Linhas afetadas: ${pixResponse.data?.linhas_afetadas || 'N/A'}`);
+            
+            console.log(`📥 [${requestId}] Resposta completa da atualização PIX:`, pixResponse.data);
+            
             if (pixResponse.data && pixResponse.data.success) {
               addDebugLog(`✅ [${requestId}] PIX atualizado com sucesso no banco`);
+              if (pixResponse.data.debug) {
+                addDebugLog(`   - PIX anterior: ${pixResponse.data.debug.pix_anterior || 'vazio'}`);
+                addDebugLog(`   - PIX novo: ${pixResponse.data.debug.pix_novo}`);
+              }
               // Atualizar o estado local do PIX do associado
               setAssociadoData({...associadoData, pix: chavePix});
+              setPixEditavel(false); // Desabilitar edição do campo PIX
             } else {
-              addDebugLog(`⚠️ [${requestId}] Não foi possível atualizar o PIX: ${pixResponse.data?.message || 'Erro desconhecido'}`);
+              addDebugLog(`⚠️ [${requestId}] Não foi possível atualizar o PIX:`);
+              addDebugLog(`   - Mensagem: ${pixResponse.data?.message || 'Erro desconhecido'}`);
+              addDebugLog(`   - Erro: ${pixResponse.data?.erro || 'N/A'}`);
+              
+              // Mostrar informações de debug se disponíveis
+              if (pixResponse.data?.debug) {
+                addDebugLog(`📋 Debug da API PHP:`);
+                if (pixResponse.data.debug.parametros_busca) {
+                  addDebugLog(`   - Parâmetros de busca:`);
+                  Object.entries(pixResponse.data.debug.parametros_busca).forEach(([key, value]) => {
+                    addDebugLog(`     * ${key}: ${value}`);
+                  });
+                }
+                addDebugLog(`   - Registro encontrado: ${pixResponse.data.debug.registro_encontrado ? 'SIM' : 'NÃO'}`);
+                if (pixResponse.data.debug.registro_detalhes) {
+                  addDebugLog(`   - Detalhes do registro:`);
+                  Object.entries(pixResponse.data.debug.registro_detalhes).forEach(([key, value]) => {
+                    addDebugLog(`     * ${key}: ${value}`);
+                  });
+                }
+              }
+              
+              console.error(`⚠️ [${requestId}] Erro na resposta da API PIX:`, pixResponse.data);
             }
-          } catch (pixError) {
-            addDebugLog(`⚠️ [${requestId}] Erro ao atualizar PIX: ${pixError}`);
-            console.error('Erro ao atualizar PIX:', pixError);
+          } catch (pixError: any) {
+            addDebugLog(`💥 [${requestId}] Erro ao atualizar PIX:`);
+            addDebugLog(`   - Tipo: ${pixError.name || 'Erro desconhecido'}`);
+            addDebugLog(`   - Mensagem: ${pixError.message || 'Sem mensagem'}`);
+            addDebugLog(`   - Response: ${pixError.response?.data?.erro || 'N/A'}`);
+            console.error('Erro completo ao atualizar PIX:', pixError);
+            console.error('Response do erro:', pixError.response);
             // Não interromper o fluxo por causa do erro de atualização do PIX
           }
+        } else {
+          addDebugLog(`⚠️ [${requestId}] Atualização do PIX ignorada:`);
+          addDebugLog(`   - ChavePix presente: ${!!chavePix}`);
+          addDebugLog(`   - AssociadoData presente: ${!!associadoData}`);
+          if (!chavePix) addDebugLog(`   - Motivo: Chave PIX não informada`);
+          if (!associadoData) addDebugLog(`   - Motivo: Dados do associado não disponíveis`);
         }
         
         // Sucesso - mostrar dados da solicitação
