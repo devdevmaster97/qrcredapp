@@ -1502,6 +1502,9 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
                       </button>
                     )}
                   </div>
+                  {associadoData?.pix && !pixEditavel && (
+                    <p className="text-xs text-red-600 mt-1">PIX já cadastrado. Confira se está correto.</p>
+                  )}
                 </div>
                 
                 {/* Seção senha com informação adicional */}

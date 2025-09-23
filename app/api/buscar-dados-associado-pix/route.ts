@@ -72,10 +72,14 @@ export async function POST(request: NextRequest) {
       console.error('❌ Erro HTTP do PHP:', response.status, responseText);
       // Se o arquivo PHP não existe, retornar sem erro para não quebrar o fluxo
       if (response.status === 404) {
-        console.warn('⚠️ API PHP não encontrada, retornando sem PIX');
+        console.warn('⚠️ API PHP não encontrada (404), retornando sem PIX');
+        console.warn('⚠️ Verifique se o arquivo buscar_dados_associado_pix.php existe no servidor');
         return NextResponse.json({ pix: null });
       }
-      throw new Error(`Erro HTTP do PHP: ${response.status} - ${responseText}`);
+      
+      // Se for qualquer outro erro HTTP, também retornar sem PIX
+      console.warn(`⚠️ Erro HTTP ${response.status} ao buscar PIX, continuando sem PIX`);
+      return NextResponse.json({ pix: null });
     }
 
     // Tentar fazer parse do JSON
