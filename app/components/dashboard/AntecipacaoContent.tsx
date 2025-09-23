@@ -359,25 +359,52 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       if (associadoResponse.data.matricula && associadoResponse.data.empregador && 
           associadoResponse.data.id && associadoResponse.data.id_divisao) {
         try {
+          console.log('🔍 Tentando buscar PIX do associado...');
           const formDataPix = new FormData();
           formDataPix.append('matricula', associadoResponse.data.matricula);
-          formDataPix.append('id_empregador', associadoResponse.data.empregador);
+          formDataPix.append('id_empregador', associadoResponse.data.empregador.toString());
           formDataPix.append('id_associado', associadoResponse.data.id.toString());
           formDataPix.append('id_divisao', associadoResponse.data.id_divisao.toString());
+          
+          console.log('📤 Enviando dados para buscar PIX:', {
+            matricula: associadoResponse.data.matricula,
+            id_empregador: associadoResponse.data.empregador,
+            id_associado: associadoResponse.data.id,
+            id_divisao: associadoResponse.data.id_divisao
+          });
           
           const pixResponse = await axios.post('/api/buscar-dados-associado-pix', formDataPix, {
             headers: {
               'Content-Type': 'multipart/form-data'
+            },
+            validateStatus: function (status) {
+              // Aceitar qualquer status para não lançar erro
+              return true;
             }
           });
           
+          console.log('📥 Resposta da busca do PIX:', pixResponse.status, pixResponse.data);
+          
           if (pixResponse.data && pixResponse.data.pix) {
             associadoResponse.data.pix = pixResponse.data.pix;
+            console.log('✅ PIX encontrado:', pixResponse.data.pix);
+          } else if (pixResponse.data && pixResponse.data.erro) {
+            console.log('⚠️ Erro retornado pela API:', pixResponse.data.erro);
+          } else {
+            console.log('ℹ️ PIX não encontrado ou vazio');
           }
-        } catch (pixError) {
-          console.log('Aviso: Não foi possível buscar dados do PIX:', pixError);
+        } catch (pixError: any) {
+          console.log('⚠️ Não foi possível buscar dados do PIX:', pixError.message);
+          console.log('Detalhes do erro:', pixError.response?.data || pixError);
           // Continuar sem o PIX se houver erro
         }
+      } else {
+        console.log('⚠️ Dados insuficientes para buscar PIX:', {
+          matricula: !!associadoResponse.data.matricula,
+          empregador: !!associadoResponse.data.empregador,
+          id: !!associadoResponse.data.id,
+          id_divisao: !!associadoResponse.data.id_divisao
+        });
       }
 
       return associadoResponse.data;

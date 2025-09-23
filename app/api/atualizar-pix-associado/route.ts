@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+// Para APIs server-side, use a variável sem NEXT_PUBLIC_
+const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'https://sas.makecard.com.br';
 
 export async function POST(request: NextRequest) {
   try {
