@@ -976,6 +976,39 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       if (data.success) {
         addDebugLog(`✅ [${requestId}] Sucesso confirmado`);
         console.log(`✅ [${requestId}] Sucesso confirmado`);
+        
+        // Atualizar o PIX no banco de dados se foi informado
+        if (chavePix && associadoData) {
+          try {
+            addDebugLog(`🔄 [${requestId}] Atualizando PIX no banco de dados...`);
+            
+            const formDataPix = new FormData();
+            formDataPix.append('matricula', associadoData.matricula);
+            formDataPix.append('id_empregador', associadoData.empregador.toString());
+            formDataPix.append('id_associado', associadoData.id?.toString() || '');
+            formDataPix.append('id_divisao', associadoData.id_divisao?.toString() || '');
+            formDataPix.append('pix', chavePix);
+            
+            const pixResponse = await axios.post('/api/atualizar-pix-associado', formDataPix, {
+              headers: {
+                'Content-Type': 'multipart/form-data'
+              }
+            });
+            
+            if (pixResponse.data && pixResponse.data.success) {
+              addDebugLog(`✅ [${requestId}] PIX atualizado com sucesso no banco`);
+              // Atualizar o estado local do PIX do associado
+              setAssociadoData({...associadoData, pix: chavePix});
+            } else {
+              addDebugLog(`⚠️ [${requestId}] Não foi possível atualizar o PIX: ${pixResponse.data?.message || 'Erro desconhecido'}`);
+            }
+          } catch (pixError) {
+            addDebugLog(`⚠️ [${requestId}] Erro ao atualizar PIX: ${pixError}`);
+            console.error('Erro ao atualizar PIX:', pixError);
+            // Não interromper o fluxo por causa do erro de atualização do PIX
+          }
+        }
+        
         // Sucesso - mostrar dados da solicitação
         setSolicitado(true);
         setValorConfirmado(formatarValor(valorNumerico));
