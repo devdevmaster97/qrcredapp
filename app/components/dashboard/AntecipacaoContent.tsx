@@ -1675,73 +1675,112 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
                       </div>
                     </div>
                     
-                    {/* Detalhes da solicitação */}
-                    <div className="text-sm text-gray-600 space-y-1">
-                      <p><strong>Taxa:</strong> {formatarValor(parseFloat(solicitacao.taxa || '0'))}</p>
-                      <p><strong>Total a Descontar:</strong> {formatarValor(parseFloat(solicitacao.valor_a_descontar || solicitacao.valor_descontar || '0'))}</p>
-                      <p><strong>Mês:</strong> {solicitacao.mes_corrente}</p>
+                    {/* Detalhes da solicitação - Layout Profissional */}
+                    <div className="space-y-3">
+                      {/* Grid de Informações Organizadas */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="bg-white rounded-lg p-3 border border-gray-200">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-gray-500 uppercase tracking-wide">Taxa</span>
+                            <span className="font-semibold text-gray-800">
+                              {formatarValor(parseFloat(solicitacao.taxa || '0'))}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-white rounded-lg p-3 border border-gray-200">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-gray-500 uppercase tracking-wide">Total a Descontar</span>
+                            <span className="font-semibold text-gray-800">
+                              {formatarValor(parseFloat(solicitacao.valor_a_descontar || solicitacao.valor_descontar || '0'))}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-white rounded-lg p-3 border border-gray-200 sm:col-span-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-xs text-gray-500 uppercase tracking-wide">Mês de Referência</span>
+                            <span className="font-semibold text-gray-800">{solicitacao.mes_corrente}</span>
+                          </div>
+                        </div>
+                      </div>
                       
-                      {/* Chave PIX com opção de edição */}
-                      {editandoChavePix === solicitacao.id ? (
-                        <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                          <div className="space-y-2">
-                            <p className="text-sm font-medium text-gray-700">Editar Chave PIX:</p>
-                            <div className="flex flex-col sm:flex-row gap-2">
-                              <input
-                                type="text"
-                                value={novaChavePix}
-                                onChange={(e) => setNovaChavePix(e.target.value)}
-                                className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Digite a nova chave PIX"
-                                disabled={salvandoChavePix}
-                              />
-                              <div className="flex gap-2 justify-center sm:justify-start">
-                                <button
-                                  onClick={() => salvarChavePix(solicitacao.id)}
+                      {/* Chave PIX com layout melhorado */}
+                      <div className="bg-white rounded-lg p-3 border border-gray-200">
+                        {editandoChavePix === solicitacao.id ? (
+                          <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                            <div className="space-y-2">
+                              <p className="text-sm font-medium text-gray-700">Editar Chave PIX:</p>
+                              <div className="flex flex-col sm:flex-row gap-2">
+                                <input
+                                  type="text"
+                                  value={novaChavePix}
+                                  onChange={(e) => setNovaChavePix(e.target.value)}
+                                  className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  placeholder="Digite a nova chave PIX"
                                   disabled={salvandoChavePix}
-                                  className="px-3 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:opacity-50 flex items-center gap-1"
-                                  title="Salvar chave PIX"
-                                >
-                                  {salvandoChavePix ? (
-                                    <FaSpinner className="animate-spin" size={14} />
-                                  ) : (
-                                    <FaSave size={14} />
-                                  )}
-                                  Salvar
-                                </button>
-                                <button
-                                  onClick={cancelarEdicaoChavePix}
-                                  disabled={salvandoChavePix}
-                                  className="px-3 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700 disabled:opacity-50 flex items-center gap-1"
-                                  title="Cancelar edição"
-                                >
-                                  <FaTimes size={14} />
-                                  Cancelar
-                                </button>
+                                />
+                                <div className="flex gap-2 justify-center sm:justify-start">
+                                  <button
+                                    onClick={() => salvarChavePix(solicitacao.id)}
+                                    disabled={salvandoChavePix}
+                                    className="px-3 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:opacity-50 flex items-center gap-1"
+                                    title="Salvar chave PIX"
+                                  >
+                                    {salvandoChavePix ? (
+                                      <FaSpinner className="animate-spin" size={14} />
+                                    ) : (
+                                      <FaSave size={14} />
+                                    )}
+                                    Salvar
+                                  </button>
+                                  <button
+                                    onClick={cancelarEdicaoChavePix}
+                                    disabled={salvandoChavePix}
+                                    className="px-3 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700 disabled:opacity-50 flex items-center gap-1"
+                                    title="Cancelar edição"
+                                  >
+                                    <FaTimes size={14} />
+                                    Cancelar
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ) : (
-                        <div>
-                          <div className="flex items-center justify-between">
-                            <p>
-                              <strong>Chave PIX:</strong> {solicitacao.chave_pix || 'Não informada'}
-                            </p>
-                            <button
-                              onClick={() => iniciarEdicaoChavePix(solicitacao.id, solicitacao.chave_pix || '')}
-                              className="p-1 text-blue-600 hover:text-blue-800 ml-2"
-                              title="Editar chave PIX"
-                            >
-                              <FaEdit size={14} />
-                            </button>
+                        ) : (
+                          <div>
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-xs text-gray-500 uppercase tracking-wide">Chave PIX</span>
+                              <button
+                                onClick={() => iniciarEdicaoChavePix(solicitacao.id, solicitacao.chave_pix || '')}
+                                className="p-1 text-blue-600 hover:text-blue-800"
+                                title="Editar chave PIX"
+                              >
+                                <FaEdit size={14} />
+                              </button>
+                            </div>
+                            <div className="font-mono text-sm text-gray-800 break-all">
+                              {solicitacao.chave_pix || 'Não informada'}
+                            </div>
                           </div>
-                          {!(solicitacao.status === true || solicitacao.status === 'true' || solicitacao.status === '1') && 
-                           !(solicitacao.status === false || solicitacao.status === 'false' || solicitacao.status === '0') && (
-                            <p className="text-xs text-green-600 font-medium mt-1">
-                              ESTÁ TUDO CERTO. Previsão de pagamento em até 24 h.
-                            </p>
-                          )}
+                        )}
+                      </div>
+                      
+                      {/* Mensagem de Status em Destaque - Apenas para Pendentes */}
+                      {!(solicitacao.status === true || solicitacao.status === 'true' || solicitacao.status === '1') && 
+                       !(solicitacao.status === false || solicitacao.status === 'false' || solicitacao.status === '0') && (
+                        <div className="bg-green-100 border-l-4 border-green-500 p-4 rounded-r-lg">
+                          <div className="flex items-center">
+                            <FaCheckCircle className="text-green-600 mr-3 flex-shrink-0" size={20} />
+                            <div>
+                              <p className="text-green-800 font-bold text-sm">
+                                ESTÁ TUDO CERTO
+                              </p>
+                              <p className="text-green-700 text-xs mt-1">
+                                Previsão de pagamento em até 24 horas
+                              </p>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>
