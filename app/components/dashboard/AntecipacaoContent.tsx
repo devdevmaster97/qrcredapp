@@ -1642,7 +1642,17 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
                           {formatarValor(parseFloat(solicitacao.valor_solicitado))}
                         </p>
                         <p className="text-sm text-gray-600">
-                          {new Date(solicitacao.data_solicitacao).toLocaleDateString('pt-BR')}
+                          {(() => {
+                            // Formatar data sem conversão de fuso horário
+                            const dataStr = solicitacao.data_solicitacao;
+                            if (dataStr.includes('-')) {
+                              // Formato YYYY-MM-DD ou YYYY-MM-DD HH:mm:ss
+                              const [ano, mes, dia] = dataStr.split(' ')[0].split('-');
+                              return `${dia}/${mes}/${ano}`;
+                            }
+                            // Fallback para outros formatos
+                            return new Date(dataStr).toLocaleDateString('pt-BR');
+                          })()}
                         </p>
                       </div>
                       <div className="text-right">
@@ -1713,17 +1723,25 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
                           </div>
                         </div>
                       ) : (
-                        <div className="flex items-center justify-between">
-                          <p>
-                            <strong>Chave PIX:</strong> {solicitacao.chave_pix || 'Não informada'}
-                          </p>
-                          <button
-                            onClick={() => iniciarEdicaoChavePix(solicitacao.id, solicitacao.chave_pix || '')}
-                            className="p-1 text-blue-600 hover:text-blue-800 ml-2"
-                            title="Editar chave PIX"
-                          >
-                            <FaEdit size={14} />
-                          </button>
+                        <div>
+                          <div className="flex items-center justify-between">
+                            <p>
+                              <strong>Chave PIX:</strong> {solicitacao.chave_pix || 'Não informada'}
+                            </p>
+                            <button
+                              onClick={() => iniciarEdicaoChavePix(solicitacao.id, solicitacao.chave_pix || '')}
+                              className="p-1 text-blue-600 hover:text-blue-800 ml-2"
+                              title="Editar chave PIX"
+                            >
+                              <FaEdit size={14} />
+                            </button>
+                          </div>
+                          {!(solicitacao.status === true || solicitacao.status === 'true' || solicitacao.status === '1') && 
+                           !(solicitacao.status === false || solicitacao.status === 'false' || solicitacao.status === '0') && (
+                            <p className="text-xs text-green-600 font-medium mt-1">
+                              ESTÁ TUDO CERTO. Previsão de pagamento em até 24 h.
+                            </p>
+                          )}
                         </div>
                       )}
                     </div>
