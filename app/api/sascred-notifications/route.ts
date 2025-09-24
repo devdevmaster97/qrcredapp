@@ -8,10 +8,12 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { codigo } = body;
+    const id = parseInt(body.id);
+    const id_divisao = parseInt(body.id_divisao);
 
-    if (!codigo) {
+    if (!codigo || !body.id || !body.id_divisao) {
       return NextResponse.json(
-        { success: false, message: 'Código é obrigatório' },
+        { success: false, message: 'Código, ID e ID divisão são obrigatórios' },
         { status: 400 }
       );
     }
@@ -22,7 +24,11 @@ export async function POST(request: NextRequest) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ codigo }),
+      body: JSON.stringify({ 
+        codigo, 
+        id, 
+        id_divisao 
+      }),
       cache: 'no-store'
     });
 

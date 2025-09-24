@@ -5,11 +5,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // Valida os dados recebidos
-    if (!body.codigo) {
+    if (!body.codigo || !body.id || !body.id_divisao) {
       return NextResponse.json(
         { 
           status: 'erro', 
-          mensagem: 'Código do associado é obrigatório.' 
+          mensagem: 'Código, ID e ID divisão do associado são obrigatórios.' 
         },
         { 
           status: 400,
@@ -22,7 +22,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('🔍 Verificando adesão para código:', body.codigo);
+    console.log('🔍 Verificando adesão para:', { 
+      codigo: body.codigo, 
+      id: body.id, 
+      id_divisao: body.id_divisao 
+    });
 
     // Faz a requisição para verificar se o associado já está na tabela sind.associados_sasmais
     const response = await fetch('https://sas.makecard.com.br/api_verificar_adesao_sasmais.php', {
@@ -33,7 +37,9 @@ export async function POST(request: NextRequest) {
         'User-Agent': 'SasApp-VerificacaoAdesao/1.0',
       },
       body: JSON.stringify({
-        codigo: body.codigo.toString().trim()
+        codigo: body.codigo.toString().trim(),
+        id: parseInt(body.id),
+        id_divisao: parseInt(body.id_divisao)
       }),
     });
 

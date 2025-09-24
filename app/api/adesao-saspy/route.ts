@@ -37,11 +37,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // Valida os dados recebidos
-    if (!body.codigo || !body.nome || !body.celular) {
+    if (!body.codigo || !body.nome || !body.celular || !body.id || !body.id_divisao) {
       return NextResponse.json(
         { 
           status: 'erro', 
-          mensagem: 'Dados incompletos. Código, nome e celular são obrigatórios.' 
+          mensagem: 'Dados incompletos. Código, nome, celular, ID e ID divisão são obrigatórios.' 
         },
         { 
           status: 400,
@@ -59,6 +59,8 @@ export async function POST(request: NextRequest) {
 
     // Criar chave única baseada apenas no código para mutex
     codigoKey = body.codigo.toString().trim();
+    const id = parseInt(body.id);
+    const id_divisao = parseInt(body.id_divisao);
     const requestKey = `${body.codigo}-${body.nome}-${body.celular}`.toLowerCase().replace(/\s+/g, '');
     const now = Date.now();
 
@@ -117,7 +119,11 @@ export async function POST(request: NextRequest) {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
           },
-          body: JSON.stringify({ codigo: codigoKey }),
+          body: JSON.stringify({ 
+            codigo: codigoKey, 
+            id: id, 
+            id_divisao: id_divisao 
+          }),
         });
 
         if (verificaResponse.ok) {
@@ -190,7 +196,11 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: JSON.stringify({ codigo: body.codigo }),
+        body: JSON.stringify({ 
+          codigo: body.codigo, 
+          id: id, 
+          id_divisao: id_divisao 
+        }),
       });
 
       if (verificaResponse.ok) {
@@ -285,7 +295,11 @@ export async function POST(request: NextRequest) {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
         },
-        body: JSON.stringify({ codigo: body.codigo }),
+        body: JSON.stringify({ 
+          codigo: body.codigo, 
+          id: id, 
+          id_divisao: id_divisao 
+        }),
       });
 
       if (posGravacaoResponse.ok) {

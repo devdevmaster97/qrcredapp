@@ -24,19 +24,26 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    if (!body.codigo) {
+    if (!body.codigo || !body.id || !body.id_divisao) {
       return NextResponse.json(
         { 
           status: 'erro', 
-          mensagem: 'Código do associado é obrigatório.',
-          debug: 'Código não fornecido'
+          mensagem: 'Código, ID e ID divisão do associado são obrigatórios.',
+          debug: 'Código, ID ou ID divisão não fornecidos'
         },
         { status: 400 }
       );
     }
 
     const codigo = body.codigo.toString().trim();
-    console.log('🔍 DEBUG - Verificando adesão SasCred para código:', codigo);
+    const id = parseInt(body.id);
+    const id_divisao = parseInt(body.id_divisao);
+    
+    console.log('🔍 DEBUG - Verificando adesão SasCred para:', { 
+      codigo, 
+      id, 
+      id_divisao 
+    });
 
     // Chamar a API PHP diretamente
     const response = await fetch('https://sas.makecard.com.br/api_verificar_adesao_sasmais.php', {
@@ -45,7 +52,11 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      body: JSON.stringify({ codigo }),
+      body: JSON.stringify({ 
+        codigo, 
+        id, 
+        id_divisao 
+      }),
       cache: 'no-store'
     });
 
@@ -151,10 +162,14 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   return NextResponse.json({
-    mensagem: 'Use POST com { "codigo": "matricula_do_associado" }',
+    mensagem: 'Use POST com { "codigo": "matricula", "id": id_associado, "id_divisao": id_divisao }',
     exemplo: {
       method: 'POST',
-      body: { codigo: '123456' }
+      body: { 
+        codigo: '123456',
+        id: 174,
+        id_divisao: 1
+      }
     }
   });
 }
