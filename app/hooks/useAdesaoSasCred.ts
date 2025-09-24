@@ -96,23 +96,77 @@ export function useAdesaoSasCred(): AdesaoStatus {
       console.log('🔍 Buscando dados completos do associado...');
       const formDataAssociado = new FormData();
       formDataAssociado.append('cartao', userData.cartao);
+      formDataAssociado.append('senha', userData.senha || '');
       
       const associadoResponse = await fetch('/api/localiza-associado', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        },
         body: formDataAssociado
       });
 
       if (!associadoResponse.ok) {
-        throw new Error('Erro ao buscar dados do associado');
+        console.warn('⚠️ Erro ao buscar dados do associado, usando apenas código');
+        // Fallback: usar apenas código se não conseguir buscar dados completos
+        const requestBody = {
+          codigo: userData.matricula.toString()
+        };
+        
+        const response = await fetch('/api/verificar-adesao-sasmais-simples', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody)
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          
+          if (isMountedRef.current) {
+            setStatus(prev => ({
+              ...prev,
+              jaAderiu: result.jaAderiu || false,
+              loading: false,
+              dadosAdesao: result.dados || null
+            }));
+            lastStatusRef.current = result.jaAderiu || false;
+          }
+          return result?.jaAderiu || false;
+        }
+        return false;
       }
 
       const associadoData = await associadoResponse.json();
       
       if (!associadoData?.id || !associadoData?.id_divisao) {
-        throw new Error('ID ou ID divisão do associado não encontrados');
+        console.warn('⚠️ ID ou ID divisão não encontrados, usando apenas código');
+        // Fallback: usar apenas código
+        const requestBody = {
+          codigo: userData.matricula.toString()
+        };
+        
+        const response = await fetch('/api/verificar-adesao-sasmais-simples', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestBody)
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          
+          if (isMountedRef.current) {
+            setStatus(prev => ({
+              ...prev,
+              jaAderiu: result.jaAderiu || false,
+              loading: false,
+              dadosAdesao: result.dados || null
+            }));
+            lastStatusRef.current = result.jaAderiu || false;
+          }
+          return result?.jaAderiu || false;
+        }
+        return false;
       }
 
       console.log('📋 Dados do associado obtidos:', {

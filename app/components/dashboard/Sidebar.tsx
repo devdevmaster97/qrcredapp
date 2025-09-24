@@ -89,6 +89,7 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
               // Primeiro buscar dados completos do associado
               const formDataAssociado = new FormData();
               formDataAssociado.append('cartao', userData.cartao);
+              formDataAssociado.append('senha', userData.senha || '');
               
               const associadoResponse = await fetch('/api/localiza-associado', {
                 method: 'POST',
