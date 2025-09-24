@@ -1351,7 +1351,26 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
                 Sua solicitação está em análise. Em breve você receberá o resultado.
               </p>
               <button
-                onClick={() => setSolicitado(false)}
+                onClick={() => {
+                  console.log('🔄 Nova Solicitação - Resetando formulário...');
+                  console.log('📋 Dados do associado disponíveis:', {
+                    pix: associadoData?.pix || 'VAZIO',
+                    temPix: !!associadoData?.pix
+                  });
+                  
+                  setSolicitado(false);
+                  
+                  // Sempre tentar buscar o PIX mais atualizado
+                  if (associadoData?.pix) {
+                    console.log('✅ PIX encontrado, preenchendo campo:', associadoData.pix);
+                    setChavePix(associadoData.pix);
+                    setPixEditavel(false);
+                  } else {
+                    console.log('⚠️ PIX não encontrado, habilitando campo para preenchimento');
+                    setChavePix("");
+                    setPixEditavel(true);
+                  }
+                }}
                 className="mt-2 py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                 type="button"
               >
