@@ -11,14 +11,15 @@ export async function POST(request: NextRequest) {
     // DEBUG ESPECÍFICO - Mostrar o que foi recebido
     console.log(' DEBUG API RECEBIDA - Body completo:', body);
     console.log(' DEBUG API RECEBIDA - body.codigo:', body.codigo);
-    console.log(' DEBUG API RECEBIDA - typeof body.codigo:', typeof body.codigo);
+    console.log(' DEBUG API RECEBIDA - body.id:', body.id);
+    console.log(' DEBUG API RECEBIDA - body.id_divisao:', body.id_divisao);
     
     // Valida os dados recebidos
-    if (!body.codigo) {
+    if (!body.codigo || !body.id || !body.id_divisao) {
       return NextResponse.json(
         { 
           status: 'erro', 
-          mensagem: 'Código do associado é obrigatório.',
+          mensagem: 'Código, ID e ID divisão do associado são obrigatórios.',
           jaAderiu: false
         },
         { status: 400 }
@@ -26,10 +27,17 @@ export async function POST(request: NextRequest) {
     }
 
     const codigo = body.codigo.toString().trim();
-    console.log(' Verificando existência do registro para código:', codigo);
+    const id = parseInt(body.id);
+    const id_divisao = parseInt(body.id_divisao);
+    
+    console.log(' Verificando existência do registro para:', { codigo, id, id_divisao });
 
     // DEBUG ESPECÍFICO - Mostrar o que será enviado para a API PHP
-    const phpRequestBody = { codigo };
+    const phpRequestBody = { 
+      codigo, 
+      id, 
+      id_divisao 
+    };
     console.log(' DEBUG PHP REQUEST - Body que será enviado para PHP:', phpRequestBody);
     console.log(' DEBUG PHP REQUEST - JSON.stringify:', JSON.stringify(phpRequestBody));
 

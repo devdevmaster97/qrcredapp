@@ -85,14 +85,33 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
           const storedUser = localStorage.getItem('qrcred_user');
           if (storedUser) {
             const userData = JSON.parse(storedUser);
-            if (userData.matricula) {
-              const response = await fetch('/api/verificar-adesao-sasmais-simples', {
+            if (userData.matricula && userData.cartao) {
+              // Primeiro buscar dados completos do associado
+              const formDataAssociado = new FormData();
+              formDataAssociado.append('cartao', userData.cartao);
+              
+              const associadoResponse = await fetch('/api/localiza-associado', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ codigo: userData.matricula.toString() })
+                body: formDataAssociado
               });
-              const result = await response.json();
-              setFallbackAdesao(result.jaAderiu || false);
+              
+              if (associadoResponse.ok) {
+                const associadoData = await associadoResponse.json();
+                
+                if (associadoData?.id && associadoData?.id_divisao) {
+                  const response = await fetch('/api/verificar-adesao-sasmais-simples', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                      codigo: userData.matricula.toString(),
+                      id: associadoData.id,
+                      id_divisao: associadoData.id_divisao
+                    })
+                  });
+                  const result = await response.json();
+                  setFallbackAdesao(result.jaAderiu || false);
+                }
+              }
             }
           }
         } catch (error) {

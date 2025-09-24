@@ -92,19 +92,46 @@ export function useAdesaoSasCred(): AdesaoStatus {
         return false;
       }
 
-      // Fazer chamada para a API de verificação de adesão (versão simples - apenas existência)
+      // Primeiro buscar dados completos do associado para obter id e id_divisao
+      console.log('🔍 Buscando dados completos do associado...');
+      const formDataAssociado = new FormData();
+      formDataAssociado.append('cartao', userData.cartao);
+      
+      const associadoResponse = await fetch('/api/localiza-associado', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        },
+        body: formDataAssociado
+      });
+
+      if (!associadoResponse.ok) {
+        throw new Error('Erro ao buscar dados do associado');
+      }
+
+      const associadoData = await associadoResponse.json();
+      
+      if (!associadoData?.id || !associadoData?.id_divisao) {
+        throw new Error('ID ou ID divisão do associado não encontrados');
+      }
+
+      console.log('📋 Dados do associado obtidos:', {
+        matricula: associadoData.matricula,
+        id: associadoData.id,
+        id_divisao: associadoData.id_divisao
+      });
+
+      // Fazer chamada para a API de verificação de adesão com todos os parâmetros
       const requestBody = {
-        codigo: userData.matricula.toString()
+        codigo: userData.matricula.toString(),
+        id: associadoData.id,
+        id_divisao: associadoData.id_divisao
       };
       
       console.log('🎯 DEBUG API REQUEST - Body que será enviado:', requestBody);
-      console.log('🎯 DEBUG API REQUEST - userData.matricula original:', userData.matricula);
-      console.log('🎯 DEBUG API REQUEST - userData.matricula.toString():', userData.matricula.toString());
       
       const apiUrl = '/api/verificar-adesao-sasmais-simples';
       console.log('🎯 DEBUG API REQUEST - URL que será chamada:', apiUrl);
-      console.log('🎯 DEBUG API REQUEST - window.location.origin:', window.location.origin);
-      console.log('🎯 DEBUG API REQUEST - URL completa:', window.location.origin + apiUrl);
       
       const response = await fetch('/api/verificar-adesao-sasmais-simples', {
         method: 'POST',

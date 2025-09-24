@@ -70,7 +70,9 @@ export function useAntecipacaoAprovada(): UseAntecipacaoAprovadaResult {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            codigo: localizaData.matricula.toString()
+            codigo: localizaData.matricula.toString(),
+            id: localizaData.id,
+            id_divisao: localizaData.id_divisao
           })
         });
 

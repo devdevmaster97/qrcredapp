@@ -9,11 +9,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // Valida os dados recebidos
-    if (!body.codigo) {
+    if (!body.codigo || !body.id || !body.id_divisao) {
       return NextResponse.json(
         { 
           status: 'erro', 
-          mensagem: 'Código do associado é obrigatório.',
+          mensagem: 'Código, ID e ID divisão do associado são obrigatórios.',
           jaAderiu: false
         },
         { status: 400 }
@@ -21,7 +21,10 @@ export async function POST(request: NextRequest) {
     }
 
     const codigo = body.codigo.toString().trim();
-    console.log('🔍 Verificando existência de adesão à antecipação para código:', codigo);
+    const id = parseInt(body.id);
+    const id_divisao = parseInt(body.id_divisao);
+    
+    console.log('🔍 Verificando existência de adesão à antecipação para:', { codigo, id, id_divisao });
 
     // Usar a API PHP específica para antecipação que retorna todos os campos
     const response = await fetch('https://sas.makecard.com.br/verificar_antecipacao_sasmais.php', {
@@ -30,7 +33,11 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      body: JSON.stringify({ codigo }),
+      body: JSON.stringify({ 
+        codigo, 
+        id, 
+        id_divisao 
+      }),
       cache: 'no-store'
     });
 
