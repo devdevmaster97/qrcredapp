@@ -72,6 +72,9 @@ export async function POST(request: NextRequest) {
     // Tentar fornecer detalhes mais específicos sobre o erro
     let errorMessage = 'Erro ao processar a requisição';
     let statusCode = 500;
+    let backendStatus: number | undefined;
+    let backendData: any;
+    let backendHeaders: any;
     
     if (axios.isAxiosError(error)) {
       if (error.code === 'ECONNABORTED') {
@@ -79,6 +82,9 @@ export async function POST(request: NextRequest) {
       } else if (error.response) {
         statusCode = error.response.status;
         errorMessage = `Erro ${statusCode} do servidor`;
+        backendStatus = error.response.status;
+        backendData = error.response.data;
+        backendHeaders = error.response.headers;
         console.log('Dados do erro:', error.response.data);
       } else if (error.request) {
         errorMessage = 'Sem resposta do servidor';
@@ -88,7 +94,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { 
         error: errorMessage, 
-        details: error instanceof Error ? error.message : String(error)
+        details: error instanceof Error ? error.message : String(error),
+        backend: backendStatus ? {
+          status: backendStatus,
+          data: backendData,
+          headers: backendHeaders
+        } : undefined
       },
       { status: statusCode }
     );
