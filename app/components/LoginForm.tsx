@@ -243,12 +243,20 @@ export default function LoginForm({ onSubmit, loading }: LoginFormProps) {
     const situacaoNum = Number(resultado);
     
     // Verificar se o empregador está bloqueado (campo boolean simples)
+    console.log('🔍 DEBUG - Dados completos recebidos:', JSON.stringify(data, null, 2));
+    console.log('🔍 DEBUG - Campo empregador_boqueio:', (data as any)?.empregador_boqueio);
+    console.log('🔍 DEBUG - Tipo do campo:', typeof (data as any)?.empregador_boqueio);
+    
     const empregadorBloqueado = (data as any)?.empregador_boqueio === true;
+    console.log('🔍 DEBUG - empregadorBloqueado calculado:', empregadorBloqueado);
     
     if (empregadorBloqueado) {
+      console.log('🚫 BLOQUEANDO LOGIN - Empregador bloqueado!');
       setErrorMessage('Cartão suspenso');
       return;
     }
+    
+    console.log('✅ DEBUG - Prosseguindo com login normal (empregador não bloqueado)');
     
     if (situacaoNum === 1) {
       // Antes de prosseguir, mostrar o objeto para diagnóstico
