@@ -242,26 +242,8 @@ export default function LoginForm({ onSubmit, loading }: LoginFormProps) {
     // Converter para número para garantir a comparação correta
     const situacaoNum = Number(resultado);
     
-    // Verificar se o empregador está bloqueado em possíveis campos da resposta
-    const empregadorBloqueadoRaw: any = (data as any)?.empregador_boqueio ?? (data as any)?.empregador_bloqueado ?? (data as any)?.bloqueio_empregador ?? (data as any)?.empregadorBloqueado ?? (data as any)?.status_empregador;
-    const empregadorBloqueado: boolean = (() => {
-      if (typeof empregadorBloqueadoRaw === 'boolean') return empregadorBloqueadoRaw;
-      if (typeof empregadorBloqueadoRaw === 'number') return empregadorBloqueadoRaw === 1;
-      if (typeof empregadorBloqueadoRaw === 'string') {
-        const v = empregadorBloqueadoRaw.toLowerCase();
-        return v === '1' || v === 'true' || v === 'sim' || v === 'bloqueado' || v === 'suspenso' || v === 'suspenso temporariamente';
-      }
-      if (empregadorBloqueadoRaw && typeof empregadorBloqueadoRaw === 'object') {
-        const valor = (empregadorBloqueadoRaw as any).bloqueado ?? (empregadorBloqueadoRaw as any).status;
-        if (typeof valor === 'boolean') return valor;
-        if (typeof valor === 'number') return valor === 1;
-        if (typeof valor === 'string') {
-          const v = valor.toLowerCase();
-          return v === '1' || v === 'true' || v === 'sim' || v === 'bloqueado' || v === 'suspenso';
-        }
-      }
-      return false;
-    })();
+    // Verificar se o empregador está bloqueado (campo boolean simples)
+    const empregadorBloqueado = (data as any)?.empregador_boqueio === true;
     
     if (empregadorBloqueado) {
       setErrorMessage('Cartão suspenso');
