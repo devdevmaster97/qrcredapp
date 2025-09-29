@@ -244,10 +244,10 @@ export default function LoginForm({ onSubmit, loading }: LoginFormProps) {
     
     // Verificar se o empregador está bloqueado (campo boolean simples)
     console.log('🔍 DEBUG - Dados completos recebidos:', JSON.stringify(data, null, 2));
-    console.log('🔍 DEBUG - Campo empregador_boqueio:', (data as any)?.empregador_boqueio);
-    console.log('🔍 DEBUG - Tipo do campo:', typeof (data as any)?.empregador_boqueio);
+    console.log('🔍 DEBUG - Campo empregador_bloqueio:', (data as any)?.empregador_bloqueio);
+    console.log('🔍 DEBUG - Tipo do campo:', typeof (data as any)?.empregador_bloqueio);
     
-    const empregadorBloqueado = (data as any)?.empregador_boqueio === true;
+    const empregadorBloqueado = (data as any)?.empregador_bloqueio === true;
     console.log('🔍 DEBUG - empregadorBloqueado calculado:', empregadorBloqueado);
     
     if (empregadorBloqueado) {
