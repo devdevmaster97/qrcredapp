@@ -853,62 +853,89 @@ export default function NovoLancamentoPage() {
           
           console.log('📱 Solicitando permissão da câmera...');
           
-          html5QrCodeRef.current.start(
-            { facingMode: "environment" }, // Usar câmera traseira
-            {
-              fps: 10,
-              qrbox: { width: 250, height: 250 },
-              aspectRatio: 1.0,
-            },
-            (decodedText) => {
-              // Sucesso ao ler QR Code
-              console.log('📱 QR Code lido com sucesso:', decodedText);
-              if (html5QrCodeRef.current) {
-                // Verificar se o scanner está rodando antes de tentar parar
-                const state = html5QrCodeRef.current.getState();
-                if (state === 2) { // 2 = SCANNING (scanner está rodando)
-                  html5QrCodeRef.current.stop().then(() => {
-                    setShowQrReader(false);
-                    setCartao(decodedText);
-                    
-                    console.log('🔍 QR Code processado, executando busca automática...');
-                    
-                    // Executar busca automaticamente passando o número do cartão diretamente
-                    setTimeout(() => {
-                      buscarAssociado(decodedText);
-                    }, 100); // Pequeno delay para garantir que o state foi atualizado
-                  }).catch(err => {
-                    console.error("Erro ao parar o scanner:", err);
-                  });
-                } else {
-                  // Se não estiver rodando, apenas atualiza o estado
-                  setShowQrReader(false);
-                  setCartao(decodedText);
-                  console.log('🔍 QR Code processado, executando busca automática...');
-                  setTimeout(() => {
-                    buscarAssociado(decodedText);
-                  }, 100);
+          // Primeiro, vamos listar as câmeras disponíveis
+          Html5Qrcode.getCameras().then(devices => {
+            console.log('📷 Câmeras disponíveis:', devices);
+            
+            if (devices && devices.length > 0) {
+              // Preferir câmera traseira se disponível
+              const cameraId = devices.length > 1 ? devices[1].id : devices[0].id;
+              console.log('📷 Usando câmera:', cameraId);
+              
+              // Iniciar com ID da câmera específica
+              html5QrCodeRef.current!.start(
+                cameraId,
+                {
+                  fps: 10,
+                  qrbox: { width: 250, height: 250 },
+                  aspectRatio: 1.0,
+                },
+                (decodedText) => {
+                  // Sucesso ao ler QR Code
+                  console.log('📱 QR Code lido com sucesso:', decodedText);
+                  if (html5QrCodeRef.current) {
+                    // Verificar se o scanner está rodando antes de tentar parar
+                    const state = html5QrCodeRef.current.getState();
+                    if (state === 2) { // 2 = SCANNING (scanner está rodando)
+                      html5QrCodeRef.current.stop().then(() => {
+                        setShowQrReader(false);
+                        setCartao(decodedText);
+                        
+                        console.log('🔍 QR Code processado, executando busca automática...');
+                        
+                        // Executar busca automaticamente passando o número do cartão diretamente
+                        setTimeout(() => {
+                          buscarAssociado(decodedText);
+                        }, 100); // Pequeno delay para garantir que o state foi atualizado
+                      }).catch(err => {
+                        console.error("Erro ao parar o scanner:", err);
+                      });
+                    } else {
+                      // Se não estiver rodando, apenas atualiza o estado
+                      setShowQrReader(false);
+                      setCartao(decodedText);
+                      console.log('🔍 QR Code processado, executando busca automática...');
+                      setTimeout(() => {
+                        buscarAssociado(decodedText);
+                      }, 100);
+                    }
+                  }
+                },
+                (errorMessage) => {
+                  // Erro ou QR não encontrado (ignorar - isso é normal durante a varredura)
                 }
-              }
-            },
-            (errorMessage) => {
-              // Erro ou QR não encontrado (ignorar - isso é normal durante a varredura)
+              ).then(() => {
+                console.log('✅ Scanner QR Code iniciado com sucesso');
+                setQrReaderLoading(false);
+              }).catch(err => {
+                console.error("❌ Erro ao iniciar o scanner:", err);
+                console.error("❌ Detalhes do erro:", JSON.stringify(err));
+                setQrReaderLoading(false);
+                closeAlert();
+                error('Erro na Câmera', `Não foi possível acessar a câmera. ${err.message || 'Verifique as permissões.'}`);
+                setShowQrReader(false);
+              });
+            } else {
+              console.error("❌ Nenhuma câmera encontrada");
+              setQrReaderLoading(false);
+              closeAlert();
+              error('Erro', 'Nenhuma câmera foi encontrada no dispositivo.');
+              setShowQrReader(false);
             }
-          ).then(() => {
-            console.log('✅ Scanner QR Code iniciado com sucesso');
-            setQrReaderLoading(false);
           }).catch(err => {
-            console.error("❌ Erro ao iniciar o scanner:", err);
+            console.error("❌ Erro ao listar câmeras:", err);
+            console.error("❌ Detalhes do erro:", JSON.stringify(err));
             setQrReaderLoading(false);
             closeAlert();
-            error('Erro na Câmera', 'Não foi possível acessar a câmera do dispositivo. Verifique as permissões.');
+            error('Erro', `Erro ao acessar câmeras: ${err.message || 'Permissão negada'}`);
             setShowQrReader(false);
           });
-        } catch (err) {
+        } catch (err: any) {
           console.error("❌ Erro ao criar scanner:", err);
+          console.error("❌ Detalhes do erro:", JSON.stringify(err));
           setQrReaderLoading(false);
           closeAlert();
-          error('Erro', 'Erro ao inicializar o leitor de QR Code.');
+          error('Erro', `Erro ao inicializar: ${err.message || 'Erro desconhecido'}`);
           setShowQrReader(false);
         }
       }, 100); // Delay de 100ms para garantir que o modal está renderizado
