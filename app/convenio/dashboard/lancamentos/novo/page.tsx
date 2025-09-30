@@ -973,23 +973,58 @@ export default function NovoLancamentoPage() {
                   }
                   
                   // Forçar visibilidade e estilo da caixa de leitura (QR box)
-                  const qrShadedRegion = document.querySelector(`#${qrCodeId} div[style*="position: absolute"]`) as HTMLDivElement;
-                  if (qrShadedRegion) {
+                  let qrShadedRegion = document.querySelector(`#${qrCodeId} div[style*="position: absolute"]`) as HTMLDivElement;
+                  
+                  if (!qrShadedRegion) {
+                    // QR box não foi criada pela biblioteca, vamos criar manualmente
+                    console.warn('⚠️ QR box não encontrada, criando manualmente...');
+                    
+                    const container = document.getElementById(qrCodeId);
+                    if (container && videoElement) {
+                      // Criar div da caixa de leitura
+                      qrShadedRegion = document.createElement('div');
+                      
+                      // Calcular posição centralizada
+                      const boxSize = 250;
+                      const videoWidth = videoElement.clientWidth;
+                      const videoHeight = videoElement.clientHeight;
+                      const left = (videoWidth - boxSize) / 2;
+                      const top = (videoHeight - boxSize) / 2;
+                      
+                      // Estilizar a caixa
+                      qrShadedRegion.style.position = 'absolute';
+                      qrShadedRegion.style.width = `${boxSize}px`;
+                      qrShadedRegion.style.height = `${boxSize}px`;
+                      qrShadedRegion.style.left = `${left}px`;
+                      qrShadedRegion.style.top = `${top}px`;
+                      qrShadedRegion.style.border = '4px solid #00ff00';
+                      qrShadedRegion.style.boxShadow = '0 0 0 9999px rgba(0, 0, 0, 0.5)';
+                      qrShadedRegion.style.borderRadius = '12px';
+                      qrShadedRegion.style.zIndex = '1000';
+                      qrShadedRegion.style.pointerEvents = 'none';
+                      
+                      // Adicionar ao container
+                      container.style.position = 'relative';
+                      container.appendChild(qrShadedRegion);
+                      
+                      console.log('✅ QR box criada manualmente:', {
+                        width: boxSize,
+                        height: boxSize,
+                        left: left,
+                        top: top,
+                        videoWidth: videoWidth,
+                        videoHeight: videoHeight
+                      });
+                    }
+                  } else {
+                    // QR box existe, apenas estilizar
                     qrShadedRegion.style.display = 'block';
                     qrShadedRegion.style.visibility = 'visible';
-                    qrShadedRegion.style.border = '4px solid #00ff00'; // Borda verde bem visível
-                    qrShadedRegion.style.boxShadow = '0 0 0 9999px rgba(0, 0, 0, 0.5)'; // Escurecer área fora da caixa
-                    qrShadedRegion.style.borderRadius = '8px';
+                    qrShadedRegion.style.border = '4px solid #00ff00';
+                    qrShadedRegion.style.boxShadow = '0 0 0 9999px rgba(0, 0, 0, 0.5)';
+                    qrShadedRegion.style.borderRadius = '12px';
                     qrShadedRegion.style.zIndex = '1000';
-                    console.log('✅ QR box (região sombreada) forçada a aparecer com estilo verde');
-                    console.log('📦 QR box dimensões:', {
-                      width: qrShadedRegion.style.width,
-                      height: qrShadedRegion.style.height,
-                      top: qrShadedRegion.style.top,
-                      left: qrShadedRegion.style.left
-                    });
-                  } else {
-                    console.warn('⚠️ QR box não encontrada');
+                    console.log('✅ QR box encontrada e estilizada');
                   }
                   
                   // Listar todos os elementos criados pelo Html5Qrcode
