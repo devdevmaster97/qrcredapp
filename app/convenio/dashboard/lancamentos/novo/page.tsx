@@ -6,7 +6,7 @@ import { toast } from 'react-hot-toast';
 import ModernAlert from '@/app/components/ModernAlert';
 import { useModernAlert } from '@/app/hooks/useModernAlert';
 import { FaArrowLeft, FaCreditCard, FaSpinner, FaCheckCircle, FaQrcode } from 'react-icons/fa';
-import { Html5Qrcode } from 'html5-qrcode';
+import { BrowserQRCodeReader } from '@zxing/browser';
 import Header from '../../../../components/Header';
 
 interface AssociadoData {
@@ -46,8 +46,8 @@ export default function NovoLancamentoPage() {
   // Hook para alertas modernos
   const { alert, success, error, warning, info, closeAlert } = useModernAlert();
   const [valorPagamento, setValorPagamento] = useState('');
-  const qrReaderRef = useRef<HTMLDivElement>(null);
-  const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
+  const qrReaderRef = useRef<HTMLVideoElement>(null);
+  const codeReaderRef = useRef<BrowserQRCodeReader | null>(null);
   const [maxParcelas, setMaxParcelas] = useState(12);
   const cartaoInputRef = useRef<HTMLInputElement>(null);
 
@@ -810,186 +810,92 @@ export default function NovoLancamentoPage() {
     }
   };
 
-  // Inicializa e limpa o leitor QR ao montar/desmontar
+  // Inicializa e limpa o leitor QR ao montar/desmontar com ZXing
   useEffect(() => {
-    // Limpar o scanner QR quando o componente for desmontado
     return () => {
-      if (html5QrCodeRef.current) {
-        // Verificar se o scanner está rodando antes de tentar parar
-        const state = html5QrCodeRef.current.getState();
-        if (state === 2) { // 2 = SCANNING (scanner está rodando)
-          html5QrCodeRef.current.stop().catch(error => {
-            console.error("Erro ao parar o scanner:", error);
-          });
+      // Limpar o scanner quando o componente for desmontado
+      if (qrReaderRef.current) {
+        const stream = qrReaderRef.current.srcObject as MediaStream;
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
         }
+        console.log('🧹 Scanner ZXing limpo');
       }
     };
   }, []);
 
-  // Inicializa o leitor QR quando o modal é aberto
+  // Inicializa o leitor QR quando o modal é aberto com ZXing
   useEffect(() => {
     if (showQrReader && qrReaderRef.current) {
-      console.log('📷 Iniciando leitor QR Code...');
+      console.log('📷 Iniciando leitor QR Code com ZXing...');
       setQrReaderLoading(true);
       
-      const qrCodeId = "qr-reader-" + Date.now();
+      const codeReader = new BrowserQRCodeReader();
+      codeReaderRef.current = codeReader;
       
       // Pequeno delay para garantir que o DOM está pronto
-      setTimeout(() => {
-        if (!qrReaderRef.current) {
-          console.error('❌ qrReaderRef.current não está disponível');
-          setQrReaderLoading(false);
-          return;
-        }
-        
+      setTimeout(async () => {
         try {
-          // Limpa o conteúdo anterior e adiciona um novo elemento
-          qrReaderRef.current.innerHTML = `<div id="${qrCodeId}" style="width:100%; min-height:300px;"></div>`;
-          
-          console.log('✅ Elemento QR Code criado:', qrCodeId);
-
-          // Inicializa o scanner
-          html5QrCodeRef.current = new Html5Qrcode(qrCodeId);
-          
           console.log('📱 Solicitando permissão da câmera...');
           
-          // Iniciar diretamente com facingMode (configuração original simples)
-          html5QrCodeRef.current.start(
-            { facingMode: "environment" }, // Usar câmera traseira
-            {
-              fps: 10,
-              qrbox: { width: 250, height: 250 },
-              aspectRatio: 1.0,
-            },
-            (decodedText) => {
-                  // Sucesso ao ler QR Code
-                  console.log('📱 QR Code lido com sucesso:', decodedText);
-                  if (html5QrCodeRef.current) {
-                    // Verificar se o scanner está rodando antes de tentar parar
-                    const state = html5QrCodeRef.current.getState();
-                    if (state === 2) { // 2 = SCANNING (scanner está rodando)
-                      html5QrCodeRef.current.stop().then(() => {
-                        setShowQrReader(false);
-                        setCartao(decodedText);
-                        
-                        console.log('🔍 QR Code processado, executando busca automática...');
-                        
-                        // Executar busca automaticamente passando o número do cartão diretamente
-                        setTimeout(() => {
-                          buscarAssociado(decodedText);
-                        }, 100); // Pequeno delay para garantir que o state foi atualizado
-                      }).catch(err => {
-                        console.error("Erro ao parar o scanner:", err);
-                      });
-                    } else {
-                      // Se não estiver rodando, apenas atualiza o estado
-                      setShowQrReader(false);
-                      setCartao(decodedText);
-                      console.log('🔍 QR Code processado, executando busca automática...');
-                      setTimeout(() => {
-                        buscarAssociado(decodedText);
-                      }, 100);
-                    }
-                  }
-                },
-                (errorMessage) => {
-                  // Erro ou QR não encontrado durante a varredura
-                  // Isso é normal e acontece continuamente até encontrar um QR Code
-                  // Não precisa logar para não poluir o console
-                }
-              ).then(() => {
-                console.log('✅ Scanner QR Code iniciado com sucesso');
-                setQrReaderLoading(false);
+          // Listar dispositivos de vídeo (método estático)
+          const videoInputDevices = await BrowserQRCodeReader.listVideoInputDevices();
+          console.log('📷 Câmeras disponíveis:', videoInputDevices.length);
+          
+          if (videoInputDevices.length === 0) {
+            throw new Error('Nenhuma câmera encontrada');
+          }
+          
+          // Preferir câmera traseira (environment)
+          const selectedDevice = videoInputDevices.find((device: any) => 
+            device.label.toLowerCase().includes('back') || 
+            device.label.toLowerCase().includes('traseira') ||
+            device.label.toLowerCase().includes('environment')
+          ) || videoInputDevices[videoInputDevices.length - 1];
+          
+          console.log('📷 Usando câmera:', selectedDevice.label);
+          
+          // Iniciar decodificação contínua
+          await codeReader.decodeFromVideoDevice(
+            selectedDevice.deviceId,
+            qrReaderRef.current!,
+            (result, error) => {
+              if (result) {
+                // QR Code lido com sucesso!
+                console.log('📱 QR Code lido com sucesso:', result.getText());
                 
-                // Forçar dimensões do vídeo (corrige bug do Html5Qrcode em mobile)
-                setTimeout(() => {
-                  const videoElement = document.querySelector(`#${qrCodeId} video`) as HTMLVideoElement;
-                  console.log('🎥 Elemento de vídeo encontrado:', videoElement);
-                  
-                  if (videoElement) {
-                    // Forçar dimensões do vídeo
-                    videoElement.style.width = '100%';
-                    videoElement.style.height = 'auto';
-                    videoElement.style.maxWidth = '100%';
-                    videoElement.style.display = 'block';
-                    
-                    console.log('✅ Dimensões do vídeo forçadas');
-                    console.log('🎥 Novas dimensões:', {
-                      width: videoElement.clientWidth,
-                      height: videoElement.clientHeight,
-                      styleWidth: videoElement.style.width,
-                      styleHeight: videoElement.style.height
-                    });
-                  } else {
-                    console.error('❌ Elemento de vídeo não encontrado');
+                // Parar o stream de vídeo
+                if (qrReaderRef.current) {
+                  const stream = qrReaderRef.current.srcObject as MediaStream;
+                  if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
                   }
-                  
-                  // Também forçar dimensões do canvas se existir
-                  const canvasElement = document.querySelector(`#${qrCodeId} canvas`) as HTMLCanvasElement;
-                  if (canvasElement) {
-                    canvasElement.style.width = '100%';
-                    canvasElement.style.height = 'auto';
-                    canvasElement.style.display = 'block';
-                    console.log('✅ Dimensões do canvas forçadas');
-                  }
-                  
-                  // Verificar estado do scanner e retomar se estiver pausado
-                  if (html5QrCodeRef.current) {
-                    const scannerState = html5QrCodeRef.current.getState();
-                    console.log('📊 Estado do scanner:', scannerState);
-                    console.log('📊 Estados possíveis: 0=NOT_STARTED, 1=UNKNOWN, 2=SCANNING, 3=PAUSED');
-                    
-                    // Se não estiver em SCANNING (2), tentar retomar
-                    if (scannerState === 3) { // PAUSED
-                      console.log('⚠️ Scanner está pausado (estado 3), tentando retomar...');
-                      try {
-                        html5QrCodeRef.current.resume();
-                        console.log('✅ Scanner retomado com sucesso');
-                      } catch (err) {
-                        console.error('❌ Erro ao retomar scanner:', err);
-                      }
-                    } else if (scannerState !== 2) {
-                      console.warn(`⚠️ Scanner em estado inesperado: ${scannerState} (esperado: 2=SCANNING)`);
-                    } else {
-                      console.log('✅ Scanner em estado correto: SCANNING (2)');
-                    }
-                  }
-                  
-                  // Remover mensagem "Scanner paused" se existir
-                  const pausedMessage = document.querySelector(`#${qrCodeId} div[style*="text-align"]`);
-                  if (pausedMessage && pausedMessage.textContent?.includes('paused')) {
-                    console.log('🗑️ Removendo mensagem "Scanner paused"');
-                    pausedMessage.remove();
-                  }
-                  
-                  // A biblioteca Html5Qrcode cria a QR box automaticamente
-                  // Não precisamos criar manualmente, isso interfere na leitura
-                  console.log('✅ Scanner configurado e pronto para ler QR Code');
-                  
-                  // Listar todos os elementos criados pelo Html5Qrcode
-                  const allElements = document.querySelectorAll(`#${qrCodeId} *`);
-                  console.log('📋 Elementos criados pelo scanner:', allElements.length);
-                  allElements.forEach((el, index) => {
-                    console.log(`  ${index}: ${el.tagName} - display: ${window.getComputedStyle(el).display}, visibility: ${window.getComputedStyle(el).visibility}`);
-                  });
-                }, 500);
-              }).catch((err: any) => {
-                console.error("❌ Erro ao iniciar o scanner:", err);
-                console.error("❌ Detalhes do erro:", JSON.stringify(err));
-                setQrReaderLoading(false);
-                closeAlert();
-                error('Erro na Câmera', `Não foi possível acessar a câmera. ${err.message || 'Verifique as permissões.'}`);
+                }
+                
+                // Fechar modal e processar
                 setShowQrReader(false);
-              });
+                setCartao(result.getText());
+                
+                console.log('🔍 QR Code processado, executando busca automática...');
+                setTimeout(() => {
+                  buscarAssociado(result.getText());
+                }, 100);
+              }
+              // Erros durante varredura são normais, não precisa logar
+            }
+          );
+          
+          console.log('✅ Scanner ZXing iniciado com sucesso');
+          setQrReaderLoading(false);
+          
         } catch (err: any) {
-          console.error("❌ Erro ao criar scanner:", err);
-          console.error("❌ Detalhes do erro:", JSON.stringify(err));
+          console.error("❌ Erro ao iniciar scanner ZXing:", err);
           setQrReaderLoading(false);
           closeAlert();
-          error('Erro', `Erro ao inicializar: ${err.message || 'Erro desconhecido'}`);
+          error('Erro na Câmera', `Não foi possível acessar a câmera. ${err.message || 'Verifique as permissões.'}`);
           setShowQrReader(false);
         }
-      }, 100); // Delay de 100ms para garantir que o modal está renderizado
+      }, 100);
     }
   }, [showQrReader, error, closeAlert]);
 
@@ -1126,14 +1032,13 @@ export default function NovoLancamentoPage() {
   };
 
   const handleCloseQrReader = () => {
-    if (html5QrCodeRef.current) {
-      // Verificar se o scanner está rodando antes de tentar parar
-      const state = html5QrCodeRef.current.getState();
-      if (state === 2) { // 2 = SCANNING (scanner está rodando)
-        html5QrCodeRef.current.stop().catch(error => {
-          console.error("Erro ao parar o scanner:", error);
-        });
+    if (codeReaderRef.current && qrReaderRef.current) {
+      // Parar stream de vídeo
+      const stream = qrReaderRef.current.srcObject as MediaStream;
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
       }
+      console.log('🛑 Scanner ZXing parado');
     }
     setShowQrReader(false);
   };
@@ -1204,22 +1109,22 @@ export default function NovoLancamentoPage() {
                 {!qrReaderLoading && (
                   <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                     <p className="text-sm text-blue-800 text-center">
-                      📱 Posicione o QR Code dentro da caixa verde
+                      📱 Posicione o QR Code na frente da câmera
                     </p>
                     <p className="text-xs text-blue-600 text-center mt-1">
-                      A leitura é automática
+                      A leitura é automática e super rápida
                     </p>
                   </div>
                 )}
-                <div 
+                <video 
                   ref={qrReaderRef} 
-                  className="w-full"
+                  className="w-full rounded-lg"
                   style={{ 
                     display: qrReaderLoading ? 'none' : 'block',
-                    minHeight: '300px',
-                    position: 'relative'
+                    maxHeight: '400px',
+                    objectFit: 'cover'
                   }}
-                ></div>
+                />
               </div>
             </div>
           )}
