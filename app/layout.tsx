@@ -134,8 +134,8 @@ export default function RootLayout({
         />
       </head>
       <body className={inter.className}>
+        <SplashScreen />
         <Providers>
-          <SplashScreen />
           {children}
           <ServiceWorkerRegistration />
           <PWAInstallPrompt />
