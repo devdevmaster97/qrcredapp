@@ -853,24 +853,15 @@ export default function NovoLancamentoPage() {
           
           console.log('📱 Solicitando permissão da câmera...');
           
-          // Primeiro, vamos listar as câmeras disponíveis
-          Html5Qrcode.getCameras().then(devices => {
-            console.log('📷 Câmeras disponíveis:', devices);
-            
-            if (devices && devices.length > 0) {
-              // Preferir câmera traseira se disponível
-              const cameraId = devices.length > 1 ? devices[1].id : devices[0].id;
-              console.log('📷 Usando câmera:', cameraId);
-              
-              // Iniciar com configuração original que funcionava
-              html5QrCodeRef.current!.start(
-                { facingMode: "environment" }, // Usar câmera traseira (configuração original)
-                {
-                  fps: 10,
-                  qrbox: { width: 250, height: 250 },
-                  aspectRatio: 1.0,
-                },
-                (decodedText) => {
+          // Iniciar diretamente com facingMode (configuração original simples)
+          html5QrCodeRef.current.start(
+            { facingMode: "environment" }, // Usar câmera traseira
+            {
+              fps: 10,
+              qrbox: { width: 250, height: 250 },
+              aspectRatio: 1.0,
+            },
+            (decodedText) => {
                   // Sucesso ao ler QR Code
                   console.log('📱 QR Code lido com sucesso:', decodedText);
                   if (html5QrCodeRef.current) {
@@ -982,7 +973,7 @@ export default function NovoLancamentoPage() {
                     console.log(`  ${index}: ${el.tagName} - display: ${window.getComputedStyle(el).display}, visibility: ${window.getComputedStyle(el).visibility}`);
                   });
                 }, 500);
-              }).catch(err => {
+              }).catch((err: any) => {
                 console.error("❌ Erro ao iniciar o scanner:", err);
                 console.error("❌ Detalhes do erro:", JSON.stringify(err));
                 setQrReaderLoading(false);
@@ -990,21 +981,6 @@ export default function NovoLancamentoPage() {
                 error('Erro na Câmera', `Não foi possível acessar a câmera. ${err.message || 'Verifique as permissões.'}`);
                 setShowQrReader(false);
               });
-            } else {
-              console.error("❌ Nenhuma câmera encontrada");
-              setQrReaderLoading(false);
-              closeAlert();
-              error('Erro', 'Nenhuma câmera foi encontrada no dispositivo.');
-              setShowQrReader(false);
-            }
-          }).catch(err => {
-            console.error("❌ Erro ao listar câmeras:", err);
-            console.error("❌ Detalhes do erro:", JSON.stringify(err));
-            setQrReaderLoading(false);
-            closeAlert();
-            error('Erro', `Erro ao acessar câmeras: ${err.message || 'Permissão negada'}`);
-            setShowQrReader(false);
-          });
         } catch (err: any) {
           console.error("❌ Erro ao criar scanner:", err);
           console.error("❌ Detalhes do erro:", JSON.stringify(err));
