@@ -2,25 +2,37 @@
   "name": "SaSapp",
   "short_name": "SaSapp",
   "description": "Sistema de Assistência Social por Convênio.",
-  "theme_color": "#1e40af",
+  "theme_color": "#ffffff",
   "background_color": "#ffffff",
   "display": "standalone",
   "orientation": "portrait",
   "scope": "/",
-  "start_url": "/",
+  "start_url": "/?source=pwa",
   "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "shortcuts": [
