@@ -6,6 +6,7 @@ import PWAInstallPrompt from './components/PWAInstallPrompt';
 import IOSInstallPrompt from './components/IOSInstallPrompt';
 import UpdateNotification from './components/UpdateNotification';
 import Providers from './components/Providers';
+import SplashScreen from './components/SplashScreen';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -134,6 +135,7 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <Providers>
+          <SplashScreen />
           {children}
           <ServiceWorkerRegistration />
           <PWAInstallPrompt />
