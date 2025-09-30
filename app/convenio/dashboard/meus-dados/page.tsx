@@ -93,20 +93,6 @@ export default function MeusDadosPage() {
                 timestamp: new Date().toISOString()
               });
               
-              // Para dispositivos móveis, validação extra de consistência
-              if (isMobile && decodedToken.user === 'emp' && data.data.cod_convenio !== '243') {
-                console.error('❌ INCONSISTÊNCIA DETECTADA - Usuário emp deveria ter cod_convenio 243, mas retornou:', data.data.cod_convenio);
-                toast.error('Dados inconsistentes detectados. Fazendo logout...');
-                
-                // Limpeza agressiva e logout
-                localStorage.clear();
-                sessionStorage.clear();
-                
-                setTimeout(() => {
-                  window.location.href = '/convenio/login';
-                }, 2000);
-                return;
-              }
             } catch (tokenError) {
               console.error('Erro ao decodificar token:', tokenError);
             }

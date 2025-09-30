@@ -99,20 +99,6 @@ export default function RelatoriosPage() {
           
           if (data.debug_info) {
             console.log('🔍 RELATÓRIOS - Info de debug da API:', data.debug_info);
-            
-            // Validação extra para dispositivos móveis
-            if (isMobile && data.debug_info.usuario_token === 'emp' && data.debug_info.cod_convenio_usado !== 243) {
-              console.log('❌ RELATÓRIOS - ERRO CRÍTICO: Dados incorretos no mobile!');
-              console.log('❌ RELATÓRIOS - Usuário "emp" deveria ter cod_convenio 243, mas API retornou:', data.debug_info.cod_convenio_usado);
-              
-              toast.error('Dados inconsistentes detectados. Redirecionando para novo login...');
-              
-              // Forçar logout e novo login
-              setTimeout(() => {
-                window.location.href = '/convenio/login';
-              }, 2000);
-              return;
-            }
           }
           
           if (data.data.length > 0) {

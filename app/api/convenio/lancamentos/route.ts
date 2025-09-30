@@ -27,25 +27,9 @@ export async function POST(request: NextRequest) {
       timestamp: new Date(tokenData.timestamp).toISOString()
     });
 
-    // Validação adicional para dispositivos móveis
+    // Detectar dispositivo móvel para logs
     const userAgent = request.headers.get('user-agent') || '';
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
-    
-    if (isMobile) {
-      console.log(' LANÇAMENTOS - Dispositivo móvel detectado, validação extra');
-      
-      // Verificar se o convênio é realmente o 243 (caso específico do usuário)
-      if (tokenData.user === 'emp' && codConvenio !== 243) {
-        console.log(' LANÇAMENTOS - ERRO: Usuário "emp" deveria ter cod_convenio 243, mas tem:', codConvenio);
-        console.log(' LANÇAMENTOS - Limpando token inválido');
-        
-        // Retornar erro para forçar novo login
-        return NextResponse.json(
-          { success: false, message: 'Sessão inválida. Faça login novamente.' },
-          { status: 401 }
-        );
-      }
-    }
 
     // Criar parâmetros para a API PHP
     const params = new URLSearchParams();
