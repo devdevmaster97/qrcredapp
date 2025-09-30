@@ -943,6 +943,35 @@ export default function NovoLancamentoPage() {
                     console.log('✅ Dimensões do canvas forçadas');
                   }
                   
+                  // Verificar estado do scanner e retomar se estiver pausado
+                  if (html5QrCodeRef.current) {
+                    const scannerState = html5QrCodeRef.current.getState();
+                    console.log('📊 Estado do scanner:', scannerState);
+                    console.log('📊 Estados possíveis: 0=NOT_STARTED, 1=UNKNOWN, 2=SCANNING, 3=PAUSED');
+                    
+                    // Se não estiver em SCANNING (2), tentar retomar
+                    if (scannerState === 3) { // PAUSED
+                      console.log('⚠️ Scanner está pausado (estado 3), tentando retomar...');
+                      try {
+                        html5QrCodeRef.current.resume();
+                        console.log('✅ Scanner retomado com sucesso');
+                      } catch (err) {
+                        console.error('❌ Erro ao retomar scanner:', err);
+                      }
+                    } else if (scannerState !== 2) {
+                      console.warn(`⚠️ Scanner em estado inesperado: ${scannerState} (esperado: 2=SCANNING)`);
+                    } else {
+                      console.log('✅ Scanner em estado correto: SCANNING (2)');
+                    }
+                  }
+                  
+                  // Remover mensagem "Scanner paused" se existir
+                  const pausedMessage = document.querySelector(`#${qrCodeId} div[style*="text-align"]`);
+                  if (pausedMessage && pausedMessage.textContent?.includes('paused')) {
+                    console.log('🗑️ Removendo mensagem "Scanner paused"');
+                    pausedMessage.remove();
+                  }
+                  
                   // Forçar visibilidade e estilo da caixa de leitura (QR box)
                   const qrShadedRegion = document.querySelector(`#${qrCodeId} div[style*="position: absolute"]`) as HTMLDivElement;
                   if (qrShadedRegion) {
