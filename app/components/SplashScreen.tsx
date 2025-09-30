@@ -2,28 +2,33 @@
 
 import { useEffect, useState } from 'react';
 
+// Verifica no carregamento inicial se deve mostrar
+const shouldShowSplash = () => {
+  if (typeof window === 'undefined') return false;
+  const splashShown = sessionStorage.getItem('splashShown');
+  return !splashShown;
+};
+
 export default function SplashScreen() {
-  const [show, setShow] = useState(false);
+  const [show, setShow] = useState(shouldShowSplash);
 
   useEffect(() => {
-    // Verifica se já mostrou o splash nesta sessão
     if (typeof window !== 'undefined') {
       const splashShown = sessionStorage.getItem('splashShown');
       
       if (splashShown) {
-        // Já mostrou nesta sessão, não mostra novamente
+        // Já mostrou nesta sessão, garante que está oculto
         if (process.env.NODE_ENV === 'development') {
           console.log('[SPLASH] Já foi exibido nesta sessão, pulando');
         }
+        setShow(false);
         return;
       }
 
-      // Primeira vez nesta sessão, mostra o splash
+      // Primeira vez nesta sessão
       if (process.env.NODE_ENV === 'development') {
         console.log('[SPLASH] Primeira abertura, exibindo splash');
       }
-      
-      setShow(true);
       
       // Marca que já foi mostrado
       sessionStorage.setItem('splashShown', 'true');
