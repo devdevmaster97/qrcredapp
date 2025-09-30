@@ -7,7 +7,6 @@ import MenuCard from '../components/MenuCard';
 import Logo from '../components/Logo';
 import UpdateChecker from '../components/UpdateChecker';
 
-// Interfaces para tipos de Window em ambientes específicos
 interface ReactNativeWindow extends Window {
   ReactNativeWebView?: {
     postMessage: (message: string) => void;
@@ -63,10 +62,14 @@ export default function MenuPage() {
       if (windowWithRN.ReactNativeWebView) {
         windowWithRN.ReactNativeWebView.postMessage(JSON.stringify({ type: 'EXIT_APP' }));
         return;
-      } else if (windowWithAndroid.Android) {
+      }
+      
+      if (windowWithAndroid.Android) {
         windowWithAndroid.Android.exitApp();
         return;
-      } else if (windowWithWebkit.webkit?.messageHandlers?.exitApp) {
+      }
+      
+      if (windowWithWebkit.webkit?.messageHandlers?.exitApp) {
         windowWithWebkit.webkit.messageHandlers.exitApp.postMessage('');
         return;
       }
@@ -76,11 +79,15 @@ export default function MenuPage() {
       if (confirmExit) {
         router.push('/');
       }
-    } else if (typeof window !== 'undefined' && window.close) {
-      window.close();
-    } else {
-      alert('Aplicativo encerrado com sucesso!');
+      return;
     }
+    
+    if (typeof window !== 'undefined' && window.close) {
+      window.close();
+      return;
+    }
+    
+    alert('Aplicativo encerrado com sucesso!');
   };
 
   if (!isMounted) {
