@@ -867,18 +867,9 @@ export default function NovoLancamentoPage() {
                 cameraId,
                 {
                   fps: 10,
-                  qrbox: function(viewfinderWidth, viewfinderHeight) {
-                    // Caixa de leitura responsiva - 70% da menor dimensão
-                    const minEdgePercentage = 0.7;
-                    const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
-                    const qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
-                    return {
-                      width: qrboxSize,
-                      height: qrboxSize
-                    };
-                  },
+                  qrbox: 250, // Tamanho fixo de 250x250px para garantir que a caixa apareça
                   aspectRatio: 1.777778, // 16:9
-                  disableFlip: false, // Permite espelhar a imagem
+                  disableFlip: false // Permite espelhar a imagem
                 },
                 (decodedText) => {
                   // Sucesso ao ler QR Code
@@ -951,6 +942,23 @@ export default function NovoLancamentoPage() {
                     canvasElement.style.display = 'block';
                     console.log('✅ Dimensões do canvas forçadas');
                   }
+                  
+                  // Forçar visibilidade da caixa de leitura (QR box)
+                  const qrShadedRegion = document.querySelector(`#${qrCodeId} div[style*="position: absolute"]`) as HTMLDivElement;
+                  if (qrShadedRegion) {
+                    qrShadedRegion.style.display = 'block';
+                    qrShadedRegion.style.visibility = 'visible';
+                    console.log('✅ QR box (região sombreada) forçada a aparecer');
+                  } else {
+                    console.warn('⚠️ QR box não encontrada');
+                  }
+                  
+                  // Listar todos os elementos criados pelo Html5Qrcode
+                  const allElements = document.querySelectorAll(`#${qrCodeId} *`);
+                  console.log('📋 Elementos criados pelo scanner:', allElements.length);
+                  allElements.forEach((el, index) => {
+                    console.log(`  ${index}: ${el.tagName} - display: ${window.getComputedStyle(el).display}, visibility: ${window.getComputedStyle(el).visibility}`);
+                  });
                 }, 500);
               }).catch(err => {
                 console.error("❌ Erro ao iniciar o scanner:", err);
