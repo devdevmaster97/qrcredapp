@@ -87,24 +87,15 @@ export default function MenuPage() {
     } else if (typeof window !== 'undefined' && window.close) {
       // Em navegadores desktop, tenta fechar a janela
       window.close();
-    } else {
       // Fallback para web - redireciona para uma página de logout ou exibe mensagem
       alert('Aplicativo encerrado com sucesso!');
     }
-  };
 
   // Para evitar problemas de hidratação, renderize somente no cliente após a montagem
   if (!isMounted) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
-        <div className="container mx-auto px-4 py-4 flex flex-col items-center">
-          <div className="mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-lg mx-auto">
-            <div className="flex flex-col items-center justify-center bg-white rounded-lg shadow-md p-4"></div>
-            <div className="flex flex-col items-center justify-center bg-white rounded-lg shadow-md p-4"></div>
-          </div>
-          <div className="mt-8 text-center"></div>
-        </div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        {/* Tela em branco durante carregamento - splash screen */}
       </div>
     );
   }
@@ -118,7 +109,6 @@ export default function MenuPage() {
           <div className="mb-3 md:mb-4">
             <Logo size="md" />
           </div>
-          <div className="max-w-sm md:max-w-md mx-auto">
             <h1 className="text-xl md:text-3xl font-bold text-gray-800 leading-tight">
               Sistema de Assistência Social
             </h1>
