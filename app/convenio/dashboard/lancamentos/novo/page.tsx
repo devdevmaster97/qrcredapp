@@ -862,14 +862,13 @@ export default function NovoLancamentoPage() {
               const cameraId = devices.length > 1 ? devices[1].id : devices[0].id;
               console.log('📷 Usando câmera:', cameraId);
               
-              // Iniciar com ID da câmera específica
+              // Iniciar com configuração original que funcionava
               html5QrCodeRef.current!.start(
-                cameraId,
+                { facingMode: "environment" }, // Usar câmera traseira (configuração original)
                 {
-                  fps: 30, // Aumentado para 30 fps para melhor detecção
-                  qrbox: 250, // Tamanho fixo de 250x250px para garantir que a caixa apareça
-                  aspectRatio: 1.777778, // 16:9
-                  disableFlip: false // Permite espelhar a imagem
+                  fps: 10,
+                  qrbox: { width: 250, height: 250 },
+                  aspectRatio: 1.0,
                 },
                 (decodedText) => {
                   // Sucesso ao ler QR Code
