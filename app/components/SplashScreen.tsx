@@ -3,22 +3,41 @@
 import { useEffect, useState } from 'react';
 
 export default function SplashScreen() {
-  const [show, setShow] = useState(true);
+  const [show, setShow] = useState(false);
 
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[SPLASH] Componente montado');
-    }
-    
-    // Timer para ocultar após 3 segundos
-    const timer = setTimeout(() => {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[SPLASH] Ocultando splash após 3s');
+    // Verifica se já mostrou o splash nesta sessão
+    if (typeof window !== 'undefined') {
+      const splashShown = sessionStorage.getItem('splashShown');
+      
+      if (splashShown) {
+        // Já mostrou nesta sessão, não mostra novamente
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[SPLASH] Já foi exibido nesta sessão, pulando');
+        }
+        return;
       }
-      setShow(false);
-    }, 3000);
 
-    return () => clearTimeout(timer);
+      // Primeira vez nesta sessão, mostra o splash
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[SPLASH] Primeira abertura, exibindo splash');
+      }
+      
+      setShow(true);
+      
+      // Marca que já foi mostrado
+      sessionStorage.setItem('splashShown', 'true');
+      
+      // Timer para ocultar após 3 segundos
+      const timer = setTimeout(() => {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[SPLASH] Ocultando splash após 3s');
+        }
+        setShow(false);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   if (!show) {
