@@ -907,6 +907,30 @@ export default function NovoLancamentoPage() {
               ).then(() => {
                 console.log('✅ Scanner QR Code iniciado com sucesso');
                 setQrReaderLoading(false);
+                
+                // Verificar se o vídeo foi criado
+                setTimeout(() => {
+                  const videoElement = document.querySelector(`#${qrCodeId} video`);
+                  console.log('🎥 Elemento de vídeo encontrado:', videoElement);
+                  if (videoElement) {
+                    console.log('🎥 Dimensões do vídeo:', {
+                      width: videoElement.clientWidth,
+                      height: videoElement.clientHeight,
+                      display: window.getComputedStyle(videoElement).display,
+                      visibility: window.getComputedStyle(videoElement).visibility
+                    });
+                  }
+                  
+                  const qrContainer = document.getElementById(qrCodeId);
+                  if (qrContainer) {
+                    console.log('📦 Container QR Code:', {
+                      width: qrContainer.clientWidth,
+                      height: qrContainer.clientHeight,
+                      display: window.getComputedStyle(qrContainer).display,
+                      innerHTML: qrContainer.innerHTML.substring(0, 200)
+                    });
+                  }
+                }, 500);
               }).catch(err => {
                 console.error("❌ Erro ao iniciar o scanner:", err);
                 console.error("❌ Detalhes do erro:", JSON.stringify(err));
@@ -1132,8 +1156,8 @@ export default function NovoLancamentoPage() {
 
           {/* Modal do QR Reader */}
           {showQrReader && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white p-6 rounded-lg max-w-md w-full">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-semibold">Ler QR Code</h3>
                   <button
@@ -1150,7 +1174,15 @@ export default function NovoLancamentoPage() {
                     <p className="text-sm text-gray-500 mt-2">Aguarde a permissão da câmera</p>
                   </div>
                 )}
-                <div ref={qrReaderRef} className="w-full" style={{ display: qrReaderLoading ? 'none' : 'block' }}></div>
+                <div 
+                  ref={qrReaderRef} 
+                  className="w-full"
+                  style={{ 
+                    display: qrReaderLoading ? 'none' : 'block',
+                    minHeight: '300px',
+                    position: 'relative'
+                  }}
+                ></div>
               </div>
             </div>
           )}
