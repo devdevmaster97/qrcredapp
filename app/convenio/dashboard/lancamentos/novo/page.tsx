@@ -943,12 +943,22 @@ export default function NovoLancamentoPage() {
                     console.log('✅ Dimensões do canvas forçadas');
                   }
                   
-                  // Forçar visibilidade da caixa de leitura (QR box)
+                  // Forçar visibilidade e estilo da caixa de leitura (QR box)
                   const qrShadedRegion = document.querySelector(`#${qrCodeId} div[style*="position: absolute"]`) as HTMLDivElement;
                   if (qrShadedRegion) {
                     qrShadedRegion.style.display = 'block';
                     qrShadedRegion.style.visibility = 'visible';
-                    console.log('✅ QR box (região sombreada) forçada a aparecer');
+                    qrShadedRegion.style.border = '4px solid #00ff00'; // Borda verde bem visível
+                    qrShadedRegion.style.boxShadow = '0 0 0 9999px rgba(0, 0, 0, 0.5)'; // Escurecer área fora da caixa
+                    qrShadedRegion.style.borderRadius = '8px';
+                    qrShadedRegion.style.zIndex = '1000';
+                    console.log('✅ QR box (região sombreada) forçada a aparecer com estilo verde');
+                    console.log('📦 QR box dimensões:', {
+                      width: qrShadedRegion.style.width,
+                      height: qrShadedRegion.style.height,
+                      top: qrShadedRegion.style.top,
+                      left: qrShadedRegion.style.left
+                    });
                   } else {
                     console.warn('⚠️ QR box não encontrada');
                   }
