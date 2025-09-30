@@ -866,7 +866,7 @@ export default function NovoLancamentoPage() {
               html5QrCodeRef.current!.start(
                 cameraId,
                 {
-                  fps: 10,
+                  fps: 30, // Aumentado para 30 fps para melhor detecção
                   qrbox: 250, // Tamanho fixo de 250x250px para garantir que a caixa apareça
                   aspectRatio: 1.777778, // 16:9
                   disableFlip: false // Permite espelhar a imagem
