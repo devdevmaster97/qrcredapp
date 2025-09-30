@@ -27,6 +27,28 @@ export async function POST(request: NextRequest) {
       timestamp: new Date(tokenData.timestamp).toISOString()
     });
 
+    // Verificar se o token não expirou (1 semana = 7 dias)
+    const tokenTime = tokenData.timestamp;
+    const currentTime = Date.now();
+    const tokenAge = currentTime - tokenTime;
+    const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 dias em milissegundos
+    
+    console.log('🔍 LANÇAMENTOS - Verificação de expiração:', {
+      tokenTime: new Date(tokenTime).toISOString(),
+      currentTime: new Date(currentTime).toISOString(),
+      tokenAgeInMinutes: Math.floor(tokenAge / 60000),
+      maxAgeInMinutes: Math.floor(maxAge / 60000),
+      isExpired: tokenAge > maxAge
+    });
+    
+    if (tokenAge > maxAge) {
+      console.log('❌ LANÇAMENTOS - Token expirado localmente');
+      return NextResponse.json({
+        success: false,
+        message: 'Sessão expirada. Faça login novamente.'
+      }, { status: 401 });
+    }
+
     // Validação adicional para dispositivos móveis
     const userAgent = request.headers.get('user-agent') || '';
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);

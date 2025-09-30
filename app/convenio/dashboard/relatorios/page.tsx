@@ -70,6 +70,24 @@ export default function RelatoriosPage() {
           cache: 'no-store'
         });
         
+        // Verificar se a resposta foi bem-sucedida
+        if (!response.ok) {
+          console.log('❌ RELATÓRIOS - Erro HTTP na busca de lançamentos:', response.status);
+          
+          // Se for erro 401 (não autorizado), redirecionar para login
+          if (response.status === 401) {
+            console.log('❌ RELATÓRIOS - Sessão expirada, redirecionando para login');
+            toast.error('Sessão expirada. Redirecionando para login...');
+            setTimeout(() => {
+              window.location.href = '/convenio/login';
+            }, 2000);
+            return;
+          }
+          
+          toast.error('Erro ao buscar lançamentos. Tente novamente.');
+          return;
+        }
+        
         const data = await response.json();
 
         if (data.success) {
@@ -225,6 +243,15 @@ export default function RelatoriosPage() {
       
       if (!dadosResponse.ok) {
         console.log('❌ MÊS CORRENTE - Erro ao obter dados do convênio:', dadosResponse.status);
+        
+        // Se for erro 401 (não autorizado), redirecionar para login
+        if (dadosResponse.status === 401) {
+          console.log('❌ MÊS CORRENTE - Sessão expirada, redirecionando para login');
+          toast.error('Sessão expirada. Redirecionando para login...');
+          setTimeout(() => {
+            window.location.href = '/convenio/login';
+          }, 2000);
+        }
         return;
       }
       
