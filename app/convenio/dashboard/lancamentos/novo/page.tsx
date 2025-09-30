@@ -430,7 +430,6 @@ export default function NovoLancamentoPage() {
     }
   };
 
-  // Função para autorizar pagamento (incluindo o campo divisao)
   const autorizarPagamento = async () => {
     if (!associado || !valor || !senha) {
       closeAlert();
@@ -815,9 +814,13 @@ export default function NovoLancamentoPage() {
     // Limpar o scanner QR quando o componente for desmontado
     return () => {
       if (html5QrCodeRef.current) {
-        html5QrCodeRef.current.stop().catch(error => {
-          console.error("Erro ao parar o scanner:", error);
-        });
+        // Verificar se o scanner está rodando antes de tentar parar
+        const state = html5QrCodeRef.current.getState();
+        if (state === 2) { // 2 = SCANNING (scanner está rodando)
+          html5QrCodeRef.current.stop().catch(error => {
+            console.error("Erro ao parar o scanner:", error);
+          });
+        }
       }
     };
   }, []);
@@ -843,19 +846,31 @@ export default function NovoLancamentoPage() {
           // Sucesso ao ler QR Code
           console.log('📱 QR Code lido com sucesso:', decodedText);
           if (html5QrCodeRef.current) {
-            html5QrCodeRef.current.stop().then(() => {
+            // Verificar se o scanner está rodando antes de tentar parar
+            const state = html5QrCodeRef.current.getState();
+            if (state === 2) { // 2 = SCANNING (scanner está rodando)
+              html5QrCodeRef.current.stop().then(() => {
+                setShowQrReader(false);
+                setCartao(decodedText);
+                
+                console.log('🔍 QR Code processado, executando busca automática...');
+                
+                // Executar busca automaticamente passando o número do cartão diretamente
+                setTimeout(() => {
+                  buscarAssociado(decodedText);
+                }, 100); // Pequeno delay para garantir que o state foi atualizado
+              }).catch(err => {
+                console.error("Erro ao parar o scanner:", err);
+              });
+            } else {
+              // Se não estiver rodando, apenas atualiza o estado
               setShowQrReader(false);
               setCartao(decodedText);
-              
               console.log('🔍 QR Code processado, executando busca automática...');
-              
-              // Executar busca automaticamente passando o número do cartão diretamente
               setTimeout(() => {
                 buscarAssociado(decodedText);
-              }, 100); // Pequeno delay para garantir que o state foi atualizado
-            }).catch(err => {
-              console.error("Erro ao parar o scanner:", err);
-            });
+              }, 100);
+            }
           }
         },
         (errorMessage) => {
@@ -1004,9 +1019,13 @@ export default function NovoLancamentoPage() {
 
   const handleCloseQrReader = () => {
     if (html5QrCodeRef.current) {
-      html5QrCodeRef.current.stop().catch(error => {
-        console.error("Erro ao parar o scanner:", error);
-      });
+      // Verificar se o scanner está rodando antes de tentar parar
+      const state = html5QrCodeRef.current.getState();
+      if (state === 2) { // 2 = SCANNING (scanner está rodando)
+        html5QrCodeRef.current.stop().catch(error => {
+          console.error("Erro ao parar o scanner:", error);
+        });
+      }
     }
     setShowQrReader(false);
   };
