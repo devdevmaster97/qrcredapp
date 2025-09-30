@@ -21,27 +21,6 @@ export async function GET(request: NextRequest) {
     const tokenData = JSON.parse(atob(convenioToken.value));
     const codConvenio = parseInt(tokenData.id);
 
-    // Verificar se o token não expirou (1 semana = 7 dias)
-    const tokenTime = tokenData.timestamp;
-    const currentTime = Date.now();
-    const tokenAge = currentTime - tokenTime;
-    const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 dias em milissegundos
-    
-    console.log('🔍 ESTORNOS - Verificação de expiração:', {
-      tokenTime: new Date(tokenTime).toISOString(),
-      currentTime: new Date(currentTime).toISOString(),
-      tokenAgeInMinutes: Math.floor(tokenAge / 60000),
-      maxAgeInMinutes: Math.floor(maxAge / 60000),
-      isExpired: tokenAge > maxAge
-    });
-    
-    if (tokenAge > maxAge) {
-      console.log('❌ ESTORNOS - Token expirado localmente');
-      return NextResponse.json({
-        success: false,
-        message: 'Sessão expirada. Faça login novamente.'
-      }, { status: 401 });
-    }
 
     // Preparar dados para enviar para a API PHP
     const params = {

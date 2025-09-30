@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import axios from 'axios';
 
 export const dynamic = 'force-dynamic';
@@ -8,38 +7,6 @@ export async function GET(request: NextRequest) {
   try {
     console.log('🔍 API MÊS CORRENTE - Iniciada (GET)');
     
-    // Verificar token de autenticação
-    const cookieStore = cookies();
-    const tokenEncoded = cookieStore.get('convenioToken')?.value;
-    
-    if (!tokenEncoded) {
-      console.log('❌ MÊS CORRENTE - Token não encontrado');
-      return NextResponse.json(
-        { success: false, message: 'Não autenticado' },
-        { status: 401 }
-      );
-    }
-
-    // Decodificar e verificar expiração do token
-    const tokenData = JSON.parse(atob(tokenEncoded));
-    const tokenTime = tokenData.timestamp;
-    const currentTime = Date.now();
-    const tokenAge = currentTime - tokenTime;
-    const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 dias em milissegundos
-    
-    console.log('🔍 MÊS CORRENTE - Verificação de token:', {
-      tokenAgeInMinutes: Math.floor(tokenAge / 60000),
-      maxAgeInMinutes: Math.floor(maxAge / 60000),
-      isExpired: tokenAge > maxAge
-    });
-    
-    if (tokenAge > maxAge) {
-      console.log('❌ MÊS CORRENTE - Token expirado');
-      return NextResponse.json({
-        success: false,
-        message: 'Sessão expirada. Faça login novamente.'
-      }, { status: 401 });
-    }
     
     // Recuperar parâmetros da URL para logs
     const { searchParams } = new URL(request.url);
@@ -244,38 +211,6 @@ export async function POST(request: NextRequest) {
   try {
     console.log('🔍 API MÊS CORRENTE - Iniciada (POST)');
     
-    // Verificar token de autenticação
-    const cookieStore = cookies();
-    const tokenEncoded = cookieStore.get('convenioToken')?.value;
-    
-    if (!tokenEncoded) {
-      console.log('❌ MÊS CORRENTE POST - Token não encontrado');
-      return NextResponse.json(
-        { success: false, message: 'Não autenticado' },
-        { status: 401 }
-      );
-    }
-
-    // Decodificar e verificar expiração do token
-    const tokenData = JSON.parse(atob(tokenEncoded));
-    const tokenTime = tokenData.timestamp;
-    const currentTime = Date.now();
-    const tokenAge = currentTime - tokenTime;
-    const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 dias em milissegundos
-    
-    console.log('🔍 MÊS CORRENTE POST - Verificação de token:', {
-      tokenAgeInMinutes: Math.floor(tokenAge / 60000),
-      maxAgeInMinutes: Math.floor(maxAge / 60000),
-      isExpired: tokenAge > maxAge
-    });
-    
-    if (tokenAge > maxAge) {
-      console.log('❌ MÊS CORRENTE POST - Token expirado');
-      return NextResponse.json({
-        success: false,
-        message: 'Sessão expirada. Faça login novamente.'
-      }, { status: 401 });
-    }
     
     // Processar dados da requisição POST
     const body = await request.json();
