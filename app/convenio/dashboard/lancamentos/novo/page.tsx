@@ -300,13 +300,12 @@ export default function NovoLancamentoPage() {
         console.error('❌ Erro ao consultar API interna de mês:', errorApi);
       }
       
-      // Se não conseguiu obter da API, falhar o processo
+      // Se não conseguiu obter da API, avisar mas continuar
       if (!tentativaApiSucesso) {
-        console.error('❌ Falha obrigatória: não foi possível obter mês corrente da API');
-        closeAlert();
-        error('Erro no Mês Corrente', 'Não foi possível obter o mês corrente. Tente novamente.');
-        setLoading(false);
-        return; // Parar o processo aqui
+        console.warn('⚠️ API de mês corrente falhou, mas continuando o processo...');
+        warning('Aviso', 'Não foi possível obter o mês corrente, mas o lançamento foi processado.');
+        // Usar valor vazio para não bloquear o fluxo
+        mesAtual = '';
       }
       
       // Atualizar o estado apenas com o mês obtido da API
@@ -655,13 +654,20 @@ export default function NovoLancamentoPage() {
         }
       };
 
-      const abreviacaoMes = await buscarMesCorrente();
-      
-      // Atualizar dadosVenda com a abreviação obtida da API
-      dadosVenda.mes_corrente = abreviacaoMes;
-      dadosVenda.primeiro_mes = abreviacaoMes;
-      
-      console.log('📅 Mês corrente atualizado nos dados de venda:', abreviacaoMes);
+      let abreviacaoMes = '';
+      try {
+        abreviacaoMes = await buscarMesCorrente();
+        
+        // Atualizar dadosVenda com a abreviação obtida da API
+        dadosVenda.mes_corrente = abreviacaoMes;
+        dadosVenda.primeiro_mes = abreviacaoMes;
+        
+        console.log('📅 Mês corrente atualizado nos dados de venda:', abreviacaoMes);
+      } catch (errorMes) {
+        console.error('❌ Erro ao buscar mês corrente, mas continuando o processo:', errorMes);
+        warning('Aviso', 'Não foi possível obter o mês corrente da API, mas o lançamento será processado.');
+        // Continuar sem o mês corrente
+      }
 
       // 4. Gravar venda na API
       console.log('💾 Gravando venda na API...');
