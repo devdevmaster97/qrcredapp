@@ -37,7 +37,6 @@ export default function MenuPage() {
 
   useEffect(() => {
     setIsMounted(true);
-    // Em uma aplicação real, você obteria a versão do package.json ou de uma variável de ambiente
     setAppVersion('1.0.0');
   }, []);
 
@@ -54,59 +53,47 @@ export default function MenuPage() {
   };
   
   const handleEncerrarApp = () => {
-    // Detectar o tipo de dispositivo
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     
     if (isMobile) {
-      // Em apps mobile nativos embutidos em WebView, podemos tentar chamar uma ponte nativa
       const windowWithRN = window as ReactNativeWindow;
       const windowWithAndroid = window as AndroidWindow;
       const windowWithWebkit = window as WebkitWindow;
       
       if (windowWithRN.ReactNativeWebView) {
-        // Para React Native WebView
         windowWithRN.ReactNativeWebView.postMessage(JSON.stringify({ type: 'EXIT_APP' }));
         return;
       } else if (windowWithAndroid.Android) {
-        // Para Android WebView com interface JavaScript
         windowWithAndroid.Android.exitApp();
         return;
       } else if (windowWithWebkit.webkit?.messageHandlers?.exitApp) {
-        // Para iOS WKWebView
         windowWithWebkit.webkit.messageHandlers.exitApp.postMessage('');
         return;
       }
       
-      // Se não conseguir fechar nativamente, mostra mensagem explicativa
       const confirmExit = confirm('Para sair completamente do aplicativo, feche-o usando os controles do seu dispositivo:\n\n• Android: botão Recentes e deslize o app para cima\n• iOS: deslize para cima a partir da parte inferior da tela');
       
       if (confirmExit) {
-        // Redireciona para tela inicial como fallback
         router.push('/');
       }
     } else if (typeof window !== 'undefined' && window.close) {
-      // Em navegadores desktop, tenta fechar a janela
       window.close();
     } else {
-      // Fallback para web - redireciona para uma página de logout ou exibe mensagem
       alert('Aplicativo encerrado com sucesso!');
     }
   };
 
-  // Para evitar problemas de hidratação, renderize somente no cliente após a montagem
   if (!isMounted) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        {/* Tela em branco durante carregamento - splash screen */}
+        {/* Tela em branco durante carregamento - splash screen cuida da exibição inicial */}
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4">
-      {/* Conteúdo principal */}
       <main className="container mx-auto py-4 md:py-8 flex flex-col items-center w-full max-w-md md:max-w-2xl">
-        {/* Header com Logo e Título - Reduzido para mobile */}
         <div className="mb-6 md:mb-10 text-center">
           <div className="mb-3 md:mb-4">
             <Logo size="md" />
@@ -122,7 +109,6 @@ export default function MenuPage() {
           </div>
         </div>
 
-        {/* Cards dos menus */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 w-full max-w-sm md:max-w-lg mx-auto">
           <MenuCard 
             icon={<FaUser />} 
@@ -136,7 +122,6 @@ export default function MenuPage() {
           />
         </div>
         
-        {/* Footer - Compacto para mobile */}
         <div className="mt-6 md:mt-12 text-center">
           <div className="flex flex-wrap justify-center gap-4 mb-2">
             <button 
@@ -152,8 +137,7 @@ export default function MenuPage() {
         </div>
       </main>
 
-      {/* Verificador de atualizações */}
       <UpdateChecker />
     </div>
   );
-} 
+}
