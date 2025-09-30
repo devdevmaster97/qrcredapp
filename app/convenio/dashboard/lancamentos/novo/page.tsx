@@ -908,27 +908,36 @@ export default function NovoLancamentoPage() {
                 console.log('✅ Scanner QR Code iniciado com sucesso');
                 setQrReaderLoading(false);
                 
-                // Verificar se o vídeo foi criado
+                // Forçar dimensões do vídeo (corrige bug do Html5Qrcode em mobile)
                 setTimeout(() => {
-                  const videoElement = document.querySelector(`#${qrCodeId} video`);
+                  const videoElement = document.querySelector(`#${qrCodeId} video`) as HTMLVideoElement;
                   console.log('🎥 Elemento de vídeo encontrado:', videoElement);
+                  
                   if (videoElement) {
-                    console.log('🎥 Dimensões do vídeo:', {
+                    // Forçar dimensões do vídeo
+                    videoElement.style.width = '100%';
+                    videoElement.style.height = 'auto';
+                    videoElement.style.maxWidth = '100%';
+                    videoElement.style.display = 'block';
+                    
+                    console.log('✅ Dimensões do vídeo forçadas');
+                    console.log('🎥 Novas dimensões:', {
                       width: videoElement.clientWidth,
                       height: videoElement.clientHeight,
-                      display: window.getComputedStyle(videoElement).display,
-                      visibility: window.getComputedStyle(videoElement).visibility
+                      styleWidth: videoElement.style.width,
+                      styleHeight: videoElement.style.height
                     });
+                  } else {
+                    console.error('❌ Elemento de vídeo não encontrado');
                   }
                   
-                  const qrContainer = document.getElementById(qrCodeId);
-                  if (qrContainer) {
-                    console.log('📦 Container QR Code:', {
-                      width: qrContainer.clientWidth,
-                      height: qrContainer.clientHeight,
-                      display: window.getComputedStyle(qrContainer).display,
-                      innerHTML: qrContainer.innerHTML.substring(0, 200)
-                    });
+                  // Também forçar dimensões do canvas se existir
+                  const canvasElement = document.querySelector(`#${qrCodeId} canvas`) as HTMLCanvasElement;
+                  if (canvasElement) {
+                    canvasElement.style.width = '100%';
+                    canvasElement.style.height = 'auto';
+                    canvasElement.style.display = 'block';
+                    console.log('✅ Dimensões do canvas forçadas');
                   }
                 }, 500);
               }).catch(err => {
