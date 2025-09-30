@@ -87,9 +87,11 @@ export default function MenuPage() {
     } else if (typeof window !== 'undefined' && window.close) {
       // Em navegadores desktop, tenta fechar a janela
       window.close();
+    } else {
       // Fallback para web - redireciona para uma página de logout ou exibe mensagem
       alert('Aplicativo encerrado com sucesso!');
     }
+  };
 
   // Para evitar problemas de hidratação, renderize somente no cliente após a montagem
   if (!isMounted) {
@@ -109,6 +111,7 @@ export default function MenuPage() {
           <div className="mb-3 md:mb-4">
             <Logo size="md" />
           </div>
+          <div className="max-w-sm md:max-w-md mx-auto">
             <h1 className="text-xl md:text-3xl font-bold text-gray-800 leading-tight">
               Sistema de Assistência Social
             </h1>
