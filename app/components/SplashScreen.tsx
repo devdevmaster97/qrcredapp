@@ -6,11 +6,15 @@ export default function SplashScreen() {
   const [show, setShow] = useState(true);
 
   useEffect(() => {
-    console.log('[SPLASH] Componente montado');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[SPLASH] Componente montado');
+    }
     
     // Timer para ocultar após 3 segundos
     const timer = setTimeout(() => {
-      console.log('[SPLASH] Ocultando splash após 3s');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[SPLASH] Ocultando splash após 3s');
+      }
       setShow(false);
     }, 3000);
 
@@ -18,11 +22,8 @@ export default function SplashScreen() {
   }, []);
 
   if (!show) {
-    console.log('[SPLASH] Splash oculto');
     return null;
   }
-
-  console.log('[SPLASH] Renderizando splash');
 
   return (
     <div 
@@ -49,13 +50,21 @@ export default function SplashScreen() {
           objectFit: 'contain',
           maxWidth: '500px'
         }}
-        onLoadedData={() => console.log('[SPLASH] Vídeo carregado')}
+        onLoadedData={() => {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[SPLASH] Vídeo carregado');
+          }
+        }}
         onError={(e) => {
-          console.error('[SPLASH] Erro ao carregar vídeo:', e);
+          if (process.env.NODE_ENV === 'development') {
+            console.error('[SPLASH] Erro ao carregar vídeo:', e);
+          }
           setShow(false);
         }}
         onEnded={() => {
-          console.log('[SPLASH] Vídeo terminou');
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[SPLASH] Vídeo terminou');
+          }
           setShow(false);
         }}
       >
