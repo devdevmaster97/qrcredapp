@@ -867,8 +867,18 @@ export default function NovoLancamentoPage() {
                 cameraId,
                 {
                   fps: 10,
-                  qrbox: { width: 250, height: 250 },
-                  aspectRatio: 1.0,
+                  qrbox: function(viewfinderWidth, viewfinderHeight) {
+                    // Caixa de leitura responsiva - 70% da menor dimensão
+                    const minEdgePercentage = 0.7;
+                    const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+                    const qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+                    return {
+                      width: qrboxSize,
+                      height: qrboxSize
+                    };
+                  },
+                  aspectRatio: 1.777778, // 16:9
+                  disableFlip: false, // Permite espelhar a imagem
                 },
                 (decodedText) => {
                   // Sucesso ao ler QR Code
@@ -902,7 +912,9 @@ export default function NovoLancamentoPage() {
                   }
                 },
                 (errorMessage) => {
-                  // Erro ou QR não encontrado (ignorar - isso é normal durante a varredura)
+                  // Erro ou QR não encontrado durante a varredura
+                  // Isso é normal e acontece continuamente até encontrar um QR Code
+                  // Não precisa logar para não poluir o console
                 }
               ).then(() => {
                 console.log('✅ Scanner QR Code iniciado com sucesso');
@@ -1181,6 +1193,16 @@ export default function NovoLancamentoPage() {
                     <FaSpinner className="animate-spin text-blue-600 text-4xl mb-4" />
                     <p className="text-gray-600">Iniciando câmera...</p>
                     <p className="text-sm text-gray-500 mt-2">Aguarde a permissão da câmera</p>
+                  </div>
+                )}
+                {!qrReaderLoading && (
+                  <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm text-blue-800 text-center">
+                      📱 Posicione o QR Code dentro da caixa verde
+                    </p>
+                    <p className="text-xs text-blue-600 text-center mt-1">
+                      A leitura é automática
+                    </p>
                   </div>
                 )}
                 <div 
