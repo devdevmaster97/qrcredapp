@@ -1,6 +1,9 @@
 .next/
 node_modules/
 .env
+.env.local
+.env.production
+.env.development
 id_ed25519.pub
 id_ed25519
 .vercel
