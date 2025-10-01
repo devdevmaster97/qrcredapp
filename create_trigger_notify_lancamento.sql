@@ -16,9 +16,10 @@ DECLARE
   v_id_divisao INTEGER;
   v_payload JSON;
 BEGIN
-  -- Buscar dados do associado (cartão, nome, id e id_divisao)
+  -- Buscar dados do associado com JOIN na tabela c_cartaoassociado
+  -- para obter o número do cartão
   SELECT 
-    a.cartao,
+    c.id AS cartao,
     a.nome,
     a.id,
     a.id_divisao
@@ -28,11 +29,14 @@ BEGIN
     v_id_associado,
     v_id_divisao
   FROM sind.associado a
+  INNER JOIN sind.c_cartaoassociado c 
+    ON c.id_associado = a.id 
+    AND c.id_divisao = a.id_divisao
   WHERE a.codigo = NEW.associado;
 
-  -- Se não encontrou o associado, não faz nada
+  -- Se não encontrou o associado ou cartão, não faz nada
   IF v_cartao IS NULL THEN
-    RAISE NOTICE 'Associado não encontrado para código: %', NEW.associado;
+    RAISE NOTICE 'Associado ou cartão não encontrado para código: %', NEW.associado;
     RETURN NEW;
   END IF;
 
