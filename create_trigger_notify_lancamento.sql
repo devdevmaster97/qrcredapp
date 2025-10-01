@@ -12,21 +12,27 @@ RETURNS TRIGGER AS $$
 DECLARE
   v_cartao VARCHAR;
   v_nome VARCHAR;
+  v_id_associado INTEGER;
+  v_id_divisao INTEGER;
   v_payload JSON;
 BEGIN
-  -- Buscar dados do associado (cartão e nome)
+  -- Buscar dados do associado (cartão, nome, id e id_divisao)
   SELECT 
-    a.cod_cartao,
-    a.nome
+    a.cartao,
+    a.nome,
+    a.id,
+    a.id_divisao
   INTO 
     v_cartao,
-    v_nome
+    v_nome,
+    v_id_associado,
+    v_id_divisao
   FROM sind.associado a
-  WHERE a.matricula = NEW.associado;
+  WHERE a.codigo = NEW.associado;
 
   -- Se não encontrou o associado, não faz nada
   IF v_cartao IS NULL THEN
-    RAISE NOTICE 'Associado não encontrado para matrícula: %', NEW.associado;
+    RAISE NOTICE 'Associado não encontrado para código: %', NEW.associado;
     RETURN NEW;
   END IF;
 
@@ -36,6 +42,8 @@ BEGIN
     'lancamento_id', NEW.lancamento,
     'cartao', v_cartao,
     'associado', NEW.associado,
+    'id_associado', v_id_associado,
+    'id_divisao', v_id_divisao,
     'nome_associado', v_nome,
     'valor', NEW.valor::text,
     'descricao', COALESCE(NEW.descricao, 'Lançamento'),
