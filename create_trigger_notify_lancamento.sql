@@ -17,9 +17,9 @@ DECLARE
   v_payload JSON;
 BEGIN
   -- Buscar dados do associado com JOIN na tabela c_cartaoassociado
-  -- para obter o número do cartão
+  -- para obter o número do cartão (campo cod_verificacao)
   SELECT 
-    c.id AS cartao,
+    c.cod_verificacao AS cartao,
     a.nome,
     a.id,
     a.id_divisao
