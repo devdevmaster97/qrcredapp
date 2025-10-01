@@ -4,7 +4,7 @@ import webpush from 'web-push';
 // =====================================================
 // CONFIGURAÇÃO VAPID PARA PUSH NOTIFICATIONS
 // =====================================================
-const vapidPublicKey = 'BMpJvAe-NVu8XEeReHPqFS-yeY-yo9rYTnnTt2Nok4Au_2PuBtqh-qbUwv0F-YMSnOJYlQGg1rUJZtJH_B2bcFo';
+const vapidPublicKey = 'BBkhuawdLxFdinzSuGIlZme8m6fwELiHR6g7xA601KN3NQ9EgAqNUglRFM3vysv_Nc0gwkPqG4aYdPnKK2eY5Yc';
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || '';
 
 if (!vapidPrivateKey) {
