@@ -9,6 +9,7 @@
  * APENAS para o usuário específico daquele lançamento.
  * =====================================================
  */
+require('dotenv').config();
 
 const { Client } = require('pg');
 const axios = require('axios');
@@ -22,6 +23,10 @@ const dbConfig = {
   database: process.env.DB_NAME || 'postgres',
   user: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || '',
+  // SSL Configuration
+  ssl: process.env.DB_SSL === 'false' ? false : {
+    rejectUnauthorized: false
+  },
   // Manter conexão ativa
   keepAlive: true,
   keepAliveInitialDelayMillis: 10000
