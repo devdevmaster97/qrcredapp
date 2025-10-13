@@ -7,3 +7,6 @@ node_modules/
 id_ed25519.pub
 id_ed25519
 .vercel
+
+# Scripts com credenciais sensíveis
+scripts/push-notification-listener.js
