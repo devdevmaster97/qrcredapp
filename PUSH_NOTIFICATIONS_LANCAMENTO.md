@@ -219,7 +219,7 @@ Configurar para iniciar no boot:
 ```bash
 pm2 startup
 pm2 save
-```
+``` cx
 
 Comandos úteis:
 

@@ -16,10 +16,10 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Fazer requisição para API PHP que verifica assinaturas digitais aprovadas
+    // Fazer requisição para API PHP atualizada
+    // Nova lógica PHP: verifica has_signed = true E tipo = 2 na tabela sind.associados_sasmais
     const params = new URLSearchParams();
     params.append('codigo', codigo.toString());
-    params.append('tipo', 'antecipação'); // Usar com acento como provavelmente está no banco
 
     const response = await axios.post(
       'https://sas.makecard.com.br/verificar_assinatura_aprovada.php',
@@ -34,18 +34,21 @@ export async function POST(request: NextRequest) {
 
     console.log('📋 Resposta da API verificar_assinatura_aprovada:', response.data);
 
-    // Verificar se a resposta indica aprovação
+    // Nova lógica: usar diretamente o campo 'aprovada' retornado pela API PHP
+    // A API PHP verifica: has_signed = true E tipo = 2
     let aprovada = false;
     
-    if (response.data) {
-      // Se a API retornar dados, verificar se há aprovação
-      if (typeof response.data === 'object') {
-        // Verificar se tem valor_aprovado e data_pgto preenchidos
-        aprovada = !!(response.data.valor_aprovado && response.data.data_pgto && response.data.tipo === 'antecipacao');
-      } else if (typeof response.data === 'string') {
-        // Se retornar string, verificar conteúdo
-        aprovada = response.data.toLowerCase().includes('aprovado') || response.data.toLowerCase().includes('aprovada');
-      }
+    if (response.data && typeof response.data === 'object') {
+      // A API PHP retorna: { success, aprovada, message, debug }
+      aprovada = response.data.aprovada === true;
+      
+      console.log('📊 Debug da verificação:', {
+        success: response.data.success,
+        aprovada: response.data.aprovada,
+        message: response.data.message,
+        has_signed: response.data.debug?.has_signed,
+        tipo: response.data.debug?.tipo
+      });
     }
 
     console.log('✅ Status de aprovação da antecipação:', aprovada);
@@ -53,6 +56,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       aprovada: aprovada,
+      message: response.data?.message || (aprovada ? 'Assinatura aprovada' : 'Assinatura não aprovada'),
+      debug: response.data?.debug || null,
       detalhes: response.data
     });
 
