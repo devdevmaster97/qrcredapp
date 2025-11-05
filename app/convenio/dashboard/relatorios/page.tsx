@@ -162,15 +162,8 @@ export default function RelatoriosPage() {
           
           setMesesDisponiveis(mesesOrdenados);
           
-          // Definir o mês selecionado com prioridade para o mês corrente da API
-          if (mesCorrente && mesesOrdenados.includes(mesCorrente)) {
-            setMesSelecionado(mesCorrente);
-            console.log('✅ RELATÓRIOS - Usando mês corrente da API como selecionado:', mesCorrente);
-          } else if (mesesOrdenados.length > 0) {
-            setMesSelecionado(mesesOrdenados[0]);
-            console.log('⚠️ RELATÓRIOS - Mês da API não encontrado nos lançamentos, usando primeiro disponível:', mesesOrdenados[0]);
-            console.log('⚠️ RELATÓRIOS - Mês corrente da API era:', mesCorrente);
-          }
+          // Buscar mês corrente da API após ter os meses disponíveis
+          await buscarMesCorrente(mesesOrdenados);
         } else {
           console.log('❌ RELATÓRIOS - Erro da API:', data.message);
           
@@ -196,12 +189,8 @@ export default function RelatoriosPage() {
     buscarLancamentos();
   }, []);
 
-  useEffect(() => {
-    buscarMesCorrente();
-  }, []);
-
   // Função para buscar o mês corrente da API
-  const buscarMesCorrente = async () => {
+  const buscarMesCorrente = async (mesesDisponiveis: string[]) => {
     try {
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       const isDesktop = !isMobile;
@@ -218,6 +207,7 @@ export default function RelatoriosPage() {
       };
       
       console.log(`🔍 MÊS CORRENTE - Buscando da API (${isMobile ? 'Mobile' : 'Desktop'})`);
+      console.log('🔍 MÊS CORRENTE - Meses disponíveis nos lançamentos:', mesesDisponiveis);
       
       // Primeiro, obter os dados do convênio para pegar o código da divisão
       console.log('🔍 MÊS CORRENTE - Obtendo dados do convênio para divisão...');
@@ -238,6 +228,12 @@ export default function RelatoriosPage() {
             window.location.href = '/convenio/login';
           }, 2000);
         }
+        
+        // Fallback: usar primeiro mês disponível se houver erro
+        if (mesesDisponiveis.length > 0) {
+          console.log('⚠️ MÊS CORRENTE - Usando primeiro mês disponível como fallback:', mesesDisponiveis[0]);
+          setMesSelecionado(mesesDisponiveis[0]);
+        }
         return;
       }
       
@@ -249,6 +245,12 @@ export default function RelatoriosPage() {
       
       if (!dadosConvenio.success) {
         console.log('❌ MÊS CORRENTE - API dados retornou erro:', dadosConvenio.message);
+        
+        // Fallback: usar primeiro mês disponível
+        if (mesesDisponiveis.length > 0) {
+          console.log('⚠️ MÊS CORRENTE - Usando primeiro mês disponível como fallback:', mesesDisponiveis[0]);
+          setMesSelecionado(mesesDisponiveis[0]);
+        }
         return;
       }
       
@@ -258,6 +260,12 @@ export default function RelatoriosPage() {
       
       if (!divisao) {
         console.log('❌ MÊS CORRENTE - Nem divisao nem cod_convenio encontrados');
+        
+        // Fallback: usar primeiro mês disponível
+        if (mesesDisponiveis.length > 0) {
+          console.log('⚠️ MÊS CORRENTE - Usando primeiro mês disponível como fallback:', mesesDisponiveis[0]);
+          setMesSelecionado(mesesDisponiveis[0]);
+        }
         return;
       }
       
@@ -276,21 +284,47 @@ export default function RelatoriosPage() {
         console.log('🔍 MÊS CORRENTE - Campo mes_corrente:', data.data?.mes_corrente);
         
         if (data.success && data.data && data.data.abreviacao) {
-          console.log('✅ MÊS CORRENTE - Recebido da API:', data.data.abreviacao);
-          setMesCorrente(data.data.abreviacao);
-          setMesSelecionado(data.data.abreviacao);
-          return; // Sucesso - não usar fallback
+          const mesCorrenteAPI = data.data.abreviacao;
+          console.log('✅ MÊS CORRENTE - Recebido da API:', mesCorrenteAPI);
+          setMesCorrente(mesCorrenteAPI);
+          
+          // VALIDAÇÃO CRÍTICA: Verificar se o mês corrente da API existe nos lançamentos
+          if (mesesDisponiveis.includes(mesCorrenteAPI)) {
+            console.log('✅ MÊS CORRENTE - Mês da API encontrado nos lançamentos, usando como selecionado:', mesCorrenteAPI);
+            setMesSelecionado(mesCorrenteAPI);
+          } else {
+            console.log('⚠️ MÊS CORRENTE - Mês da API NÃO encontrado nos lançamentos!');
+            console.log('⚠️ MÊS CORRENTE - Mês da API:', mesCorrenteAPI);
+            console.log('⚠️ MÊS CORRENTE - Meses disponíveis:', mesesDisponiveis);
+            
+            // Usar primeiro mês disponível dos lançamentos
+            if (mesesDisponiveis.length > 0) {
+              console.log('⚠️ MÊS CORRENTE - Usando primeiro mês disponível dos lançamentos:', mesesDisponiveis[0]);
+              setMesSelecionado(mesesDisponiveis[0]);
+            }
+          }
+          return;
         } else {
           console.log('⚠️ MÊS CORRENTE - Campo abreviacao não encontrado na resposta');
         }
       } else {
         console.log('⚠️ MÊS CORRENTE - Erro HTTP:', response.status, response.statusText);
       }
+      
+      // Fallback final: usar primeiro mês disponível
+      if (mesesDisponiveis.length > 0) {
+        console.log('⚠️ MÊS CORRENTE - Usando primeiro mês disponível como fallback final:', mesesDisponiveis[0]);
+        setMesSelecionado(mesesDisponiveis[0]);
+      }
     } catch (error) {
       console.error('❌ MÊS CORRENTE - Erro ao buscar da API:', error);
+      
+      // Fallback em caso de erro: usar primeiro mês disponível
+      if (mesesDisponiveis.length > 0) {
+        console.log('⚠️ MÊS CORRENTE - Erro na API, usando primeiro mês disponível:', mesesDisponiveis[0]);
+        setMesSelecionado(mesesDisponiveis[0]);
+      }
     }
-    
-    // Sem fallback - usar apenas dados da API
   };
 
   // Filtrar lançamentos pelo mês selecionado e termo de busca
