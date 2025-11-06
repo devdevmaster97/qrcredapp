@@ -242,6 +242,13 @@ export default function SucessoPage() {
                   </div>
                 )}
                 
+                <div className="grid grid-cols-[140px_1fr] gap-2">
+                  <span className="text-gray-600 text-sm font-semibold">Data/Hora:</span>
+                  <span className="font-medium text-gray-900 text-sm text-right">
+                    {new Date(dadosTransacao.timestamp).toLocaleDateString('pt-BR')} {new Date(dadosTransacao.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+                
                 {dadosTransacao.nomeConvenio && (
                   <div className="space-y-1.5 bg-gray-50 p-3 rounded-lg">
                     <div className="grid grid-cols-[140px_1fr] gap-2">
@@ -281,38 +288,32 @@ export default function SucessoPage() {
                   </div>
                 )}
                 
-                <div className="grid grid-cols-[140px_1fr] gap-2">
-                  <span className="text-gray-600 text-sm font-semibold">Valor Total:</span>
-                  <span className="font-bold text-green-600 text-sm text-right">{dadosTransacao.valor}</span>
-                </div>
-                
-                <div className="grid grid-cols-[140px_1fr] gap-2">
-                  <span className="text-gray-600 text-sm font-semibold">Parcelas:</span>
-                  <span className="font-medium text-gray-900 text-sm text-right">{dadosTransacao.parcelas}x</span>
-                </div>
-                
-                {dadosTransacao.valorParcela > 0 && (
+                <div className="border-t border-gray-200 my-2 pt-2 space-y-2">
                   <div className="grid grid-cols-[140px_1fr] gap-2">
-                    <span className="text-gray-600 text-sm font-semibold">Valor por Parcela:</span>
-                    <span className="font-medium text-gray-900 text-sm text-right">
-                      {dadosTransacao.valorParcela.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                    </span>
+                    <span className="text-gray-600 text-sm font-semibold">Parcelas:</span>
+                    <span className="font-medium text-gray-900 text-sm text-right">{dadosTransacao.parcelas}x</span>
                   </div>
-                )}
-                
-                <div className="grid grid-cols-[140px_1fr] gap-2">
-                  <span className="text-gray-600 text-sm font-semibold">Data Emissão:</span>
-                  <span className="font-medium text-gray-900 text-sm text-right">{new Date(dadosTransacao.timestamp).toLocaleDateString('pt-BR')}</span>
+                  
+                  {dadosTransacao.valorParcela > 0 && (
+                    <div className="grid grid-cols-[140px_1fr] gap-2">
+                      <span className="text-gray-600 text-sm font-semibold">Valor por Parcela:</span>
+                      <span className="font-medium text-gray-900 text-sm text-right">
+                        {dadosTransacao.valorParcela.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                      </span>
+                    </div>
+                  )}
+                  
+                  <div className="grid grid-cols-[140px_1fr] gap-2">
+                    <span className="text-gray-600 text-sm font-semibold">Descrição:</span>
+                    <span className="font-medium text-gray-900 text-sm text-right">{obterDescricaoDispositivo()}</span>
+                  </div>
                 </div>
                 
-                <div className="grid grid-cols-[140px_1fr] gap-2">
-                  <span className="text-gray-600 text-sm font-semibold">Hora:</span>
-                  <span className="font-medium text-gray-900 text-sm text-right">{new Date(dadosTransacao.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
-                </div>
-                
-                <div className="grid grid-cols-[140px_1fr] gap-2">
-                  <span className="text-gray-600 text-sm font-semibold">Descrição:</span>
-                  <span className="font-medium text-gray-900 text-sm text-right">{obterDescricaoDispositivo()}</span>
+                <div className="border-t border-gray-200 my-2 pt-2">
+                  <div className="grid grid-cols-[140px_1fr] gap-2">
+                    <span className="text-gray-700 text-sm font-bold">VALOR TOTAL:</span>
+                    <span className="text-gray-900 text-sm font-bold text-right">{dadosTransacao.valor}</span>
+                  </div>
                 </div>
               </div>
 
@@ -684,6 +685,11 @@ export default function SucessoPage() {
               </div>
               ` : ''}
               
+              <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px;">
+                <span class="text-gray-600 text-sm font-semibold">Data/Hora:</span>
+                <span class="font-medium text-gray-900 text-sm" style="text-align: right;">${new Date(dadosTransacao.timestamp).toLocaleDateString('pt-BR')} ${new Date(dadosTransacao.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+              
               ${dadosTransacao.nomeConvenio ? `
               <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px; background: #f9fafb; padding: 12px; border-radius: 6px; margin-bottom: 8px;">
                 <div style="display: grid; gap: 6px;">
@@ -725,38 +731,34 @@ export default function SucessoPage() {
               </div>
               ` : ''}
               
-              <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px;">
-                <span class="text-gray-600 text-sm font-semibold">Valor Total:</span>
-                <span class="font-bold text-green-600 text-sm" style="text-align: right;">${dadosTransacao.valor}</span>
+              <div style="border-top: 1px solid #e5e7eb; margin: 8px 0; padding-top: 8px;">
+                <div style="display: grid; gap: 8px;">
+                  <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px;">
+                    <span class="text-gray-600 text-sm font-semibold">Parcelas:</span>
+                    <span class="font-medium text-gray-900 text-sm" style="text-align: right;">${dadosTransacao.parcelas}x</span>
+                  </div>
+                  
+                  ${dadosTransacao.valorParcela > 0 ? `
+                  <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px;">
+                    <span class="text-gray-600 text-sm font-semibold">Valor por Parcela:</span>
+                    <span class="font-medium text-gray-900 text-sm" style="text-align: right;">
+                      ${dadosTransacao.valorParcela.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </span>
+                  </div>
+                  ` : ''}
+                  
+                  <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px;">
+                    <span class="text-gray-600 text-sm font-semibold">Descrição:</span>
+                    <span class="font-medium text-gray-900 text-sm" style="text-align: right;">${obterDescricaoDispositivo()}</span>
+                  </div>
+                </div>
               </div>
               
-              <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px;">
-                <span class="text-gray-600 text-sm font-semibold">Parcelas:</span>
-                <span class="font-medium text-gray-900 text-sm" style="text-align: right;">${dadosTransacao.parcelas}x</span>
-              </div>
-              
-              ${dadosTransacao.valorParcela > 0 ? `
-              <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px;">
-                <span class="text-gray-600 text-sm font-semibold">Valor por Parcela:</span>
-                <span class="font-medium text-gray-900 text-sm" style="text-align: right;">
-                  ${dadosTransacao.valorParcela.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                </span>
-              </div>
-              ` : ''}
-              
-              <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px;">
-                <span class="text-gray-600 text-sm font-semibold">Data Emissão:</span>
-                <span class="font-medium text-gray-900 text-sm" style="text-align: right;">${new Date(dadosTransacao.timestamp).toLocaleDateString('pt-BR')}</span>
-              </div>
-              
-              <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px;">
-                <span class="text-gray-600 text-sm font-semibold">Hora:</span>
-                <span class="font-medium text-gray-900 text-sm" style="text-align: right;">${new Date(dadosTransacao.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
-              </div>
-              
-              <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px;">
-                <span class="text-gray-600 text-sm font-semibold">Descrição:</span>
-                <span class="font-medium text-gray-900 text-sm" style="text-align: right;">${obterDescricaoDispositivo()}</span>
+              <div style="border-top: 1px solid #e5e7eb; margin: 8px 0; padding-top: 8px;">
+                <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px;">
+                  <span class="text-gray-700 text-sm font-bold">VALOR TOTAL:</span>
+                  <span class="text-gray-900 text-sm font-bold" style="text-align: right;">${dadosTransacao.valor}</span>
+                </div>
               </div>
             </div>
 
