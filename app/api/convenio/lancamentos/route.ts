@@ -73,13 +73,75 @@ export async function POST(request: NextRequest) {
       // Validação adicional: verificar se os lançamentos pertencem ao convênio correto
       const lancamentos = response.data.lancamentos || [];
       
-      if (lancamentos.length > 0) {
+      // Buscar dados do convênio para adicionar nome_fantasia, cnpj e endereço
+      let dadosConvenio: any = null;
+      try {
+        console.log('🏢 LANÇAMENTOS - Buscando dados do convênio para enriquecer lançamentos...');
+        const convenioResponse = await axios.post(
+          'https://sas.makecard.com.br/convenio_autenticar_app.php',
+          new URLSearchParams({
+            userconv: tokenData.user,
+            passconv: tokenData.senha || ''
+          }),
+          {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+          }
+        );
+        
+        if (convenioResponse.data && convenioResponse.data.tipo_login === 'login sucesso') {
+          dadosConvenio = {
+            nome_fantasia: convenioResponse.data.nomefantasia,
+            cnpj: convenioResponse.data.cnpj,
+            endereco: convenioResponse.data.endereco,
+            numero: convenioResponse.data.numero,
+            bairro: convenioResponse.data.bairro,
+            cidade: convenioResponse.data.cidade,
+            estado: convenioResponse.data.estado
+          };
+          
+          console.log('✅ LANÇAMENTOS - Dados do convênio obtidos:', {
+            nome_fantasia: dadosConvenio.nome_fantasia,
+            cnpj: dadosConvenio.cnpj,
+            tem_endereco: !!dadosConvenio.endereco
+          });
+        }
+      } catch (error) {
+        console.log('⚠️ LANÇAMENTOS - Erro ao buscar dados do convênio:', error);
+      }
+      
+      // Enriquecer lançamentos com dados do convênio
+      const lancamentosEnriquecidos = lancamentos.map((lancamento: any) => {
+        const lancamentoEnriquecido = { ...lancamento };
+        
+        if (dadosConvenio) {
+          lancamentoEnriquecido.nome_fantasia = dadosConvenio.nome_fantasia;
+          lancamentoEnriquecido.cnpj = dadosConvenio.cnpj;
+          
+          // Montar endereço completo
+          if (dadosConvenio.endereco) {
+            const partesEndereco = [
+              dadosConvenio.endereco,
+              dadosConvenio.numero ? `, ${dadosConvenio.numero}` : '',
+              dadosConvenio.bairro ? ` - ${dadosConvenio.bairro}` : '',
+              dadosConvenio.cidade ? ` - ${dadosConvenio.cidade}` : '',
+              dadosConvenio.estado ? `/${dadosConvenio.estado}` : ''
+            ];
+            lancamentoEnriquecido.endereco = partesEndereco.join('');
+          }
+        }
+        
+        return lancamentoEnriquecido;
+      });
+      
+      if (lancamentosEnriquecidos.length > 0) {
         console.log(' LANÇAMENTOS - Validando consistência dos dados...');
         console.log(' LANÇAMENTOS - Convênio esperado:', codConvenio);
-        console.log(' LANÇAMENTOS - Total de lançamentos recebidos:', lancamentos.length);
+        console.log(' LANÇAMENTOS - Total de lançamentos recebidos:', lancamentosEnriquecidos.length);
         
         // Log dos primeiros lançamentos para debug
-        lancamentos.slice(0, 3).forEach((lancamento: any, index: number) => {
+        lancamentosEnriquecidos.slice(0, 3).forEach((lancamento: any, index: number) => {
           console.log(`🔍 LANÇAMENTOS - Lançamento ${index + 1}:`, {
             id: lancamento.id,
             associado: lancamento.associado,
@@ -89,14 +151,17 @@ export async function POST(request: NextRequest) {
             empregador: lancamento.empregador,
             nome_empregador: lancamento.nome_empregador,
             cpf_associado: lancamento.cpf_associado,
-            parcela: lancamento.parcela
+            parcela: lancamento.parcela,
+            nome_fantasia: lancamento.nome_fantasia,
+            cnpj: lancamento.cnpj,
+            tem_endereco: !!lancamento.endereco
           });
         });
       }
 
       return NextResponse.json({
         success: true,
-        data: response.data.lancamentos,
+        data: lancamentosEnriquecidos,
         debug_info: {
           cod_convenio_usado: codConvenio,
           usuario_token: tokenData.user,
