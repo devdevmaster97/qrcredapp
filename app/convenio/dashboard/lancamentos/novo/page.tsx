@@ -781,7 +781,12 @@ export default function NovoLancamentoPage() {
         descricao: descricao || 'Lançamento via app',
         timestamp: new Date().toISOString(),
         nomeConvenio: dadosConvenio.razaosocial || dadosConvenio.nome || 'Convênio',
-        lancamento: registroLan
+        lancamento: registroLan,
+        nomeFantasia: dadosConvenio.nome_fantasia || '',
+        cnpj: dadosConvenio.cnpj || '',
+        endereco: dadosConvenio.endereco ? 
+          `${dadosConvenio.endereco}${dadosConvenio.numero ? ', ' + dadosConvenio.numero : ''}${dadosConvenio.bairro ? ' - ' + dadosConvenio.bairro : ''}${dadosConvenio.cidade ? ' - ' + dadosConvenio.cidade : ''}${dadosConvenio.estado ? '/' + dadosConvenio.estado : ''}` 
+          : ''
       };
       
       try {

@@ -17,6 +17,9 @@ interface DadosTransacao {
   timestamp: string;
   nomeConvenio?: string;
   lancamento?: string;
+  nomeFantasia?: string;
+  cnpj?: string;
+  endereco?: string;
 }
 
 export default function SucessoPage() {
@@ -240,9 +243,29 @@ export default function SucessoPage() {
                 )}
                 
                 {dadosTransacao.nomeConvenio && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Estabelecimento:</span>
-                    <span className="font-medium text-gray-900">{dadosTransacao.nomeConvenio}</span>
+                  <div className="space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Estabelecimento:</span>
+                      <span className="font-medium text-gray-900">{dadosTransacao.nomeConvenio}</span>
+                    </div>
+                    {dadosTransacao.nomeFantasia && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 text-xs">Nome Fantasia:</span>
+                        <span className="font-medium text-gray-900 text-xs">{dadosTransacao.nomeFantasia}</span>
+                      </div>
+                    )}
+                    {dadosTransacao.cnpj && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 text-xs">CNPJ:</span>
+                        <span className="font-medium text-gray-900 text-xs">{dadosTransacao.cnpj}</span>
+                      </div>
+                    )}
+                    {dadosTransacao.endereco && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 text-xs">Endereço:</span>
+                        <span className="font-medium text-gray-900 text-xs text-right ml-2">{dadosTransacao.endereco}</span>
+                      </div>
+                    )}
                   </div>
                 )}
                 
@@ -389,6 +412,9 @@ export default function SucessoPage() {
       const dados = [
         ...(dadosTransacao.lancamento ? [['Lançamento:', dadosTransacao.lancamento]] : []),
         ...(dadosTransacao.nomeConvenio ? [['Estabelecimento:', dadosTransacao.nomeConvenio]] : []),
+        ...(dadosTransacao.nomeFantasia ? [['Nome Fantasia:', dadosTransacao.nomeFantasia, true]] : []),
+        ...(dadosTransacao.cnpj ? [['CNPJ:', dadosTransacao.cnpj, true]] : []),
+        ...(dadosTransacao.endereco ? [['Endereço:', dadosTransacao.endereco, true]] : []),
         ['Associado:', dadosTransacao.associado],
         ['CPF:', dadosTransacao.cpf || 'Não informado'],
         ['Valor Total:', dadosTransacao.valor],
@@ -406,14 +432,44 @@ export default function SucessoPage() {
       let yPosition = 160;
       const lineHeight = 25;
 
-      dados.forEach(([label, value]) => {
+      dados.forEach((item) => {
+        const [label, value, isSmall] = item as [string, string, boolean?];
+        const fontSize = isSmall ? '10px' : '11px';
+        const boldSize = isSmall ? '10px' : '11px';
+        
         ctx.fillStyle = '#666666';
+        ctx.font = fontSize + ' Arial';
         ctx.fillText(label, 30, yPosition);
         ctx.fillStyle = '#000000';
-        ctx.font = 'bold 11px Arial';
-        ctx.fillText(String(value), 150, yPosition);
+        ctx.font = 'bold ' + boldSize + ' Arial';
+        
+        // Para endereço, quebrar texto se for muito longo
+        if (label === 'Endereço:' && String(value).length > 30) {
+          const maxWidth = canvas.width - 160;
+          const words = String(value).split(' ');
+          let line = '';
+          let testLine = '';
+          let lineY = yPosition;
+          
+          for (let n = 0; n < words.length; n++) {
+            testLine = line + words[n] + ' ';
+            const metrics = ctx.measureText(testLine);
+            if (metrics.width > maxWidth && n > 0) {
+              ctx.fillText(line, 150, lineY);
+              line = words[n] + ' ';
+              lineY += 15;
+            } else {
+              line = testLine;
+            }
+          }
+          ctx.fillText(line, 150, lineY);
+          yPosition = lineY + lineHeight;
+        } else {
+          ctx.fillText(String(value), 150, yPosition);
+          yPosition += lineHeight;
+        }
+        
         ctx.font = '11px Arial';
-        yPosition += lineHeight;
       });
 
       // Linha separadora final
@@ -618,6 +674,34 @@ export default function SucessoPage() {
               <div class="flex-justify-between">
                 <span class="text-gray-600">Lançamento:</span>
                 <span class="font-medium text-gray-900">${dadosTransacao.lancamento}</span>
+              </div>
+              ` : ''}
+              
+              ${dadosTransacao.nomeConvenio ? `
+              <div class="flex-justify-between">
+                <span class="text-gray-600">Estabelecimento:</span>
+                <span class="font-medium text-gray-900">${dadosTransacao.nomeConvenio}</span>
+              </div>
+              ` : ''}
+              
+              ${dadosTransacao.nomeFantasia ? `
+              <div class="flex-justify-between">
+                <span class="text-gray-600 text-xs">Nome Fantasia:</span>
+                <span class="font-medium text-gray-900 text-xs">${dadosTransacao.nomeFantasia}</span>
+              </div>
+              ` : ''}
+              
+              ${dadosTransacao.cnpj ? `
+              <div class="flex-justify-between">
+                <span class="text-gray-600 text-xs">CNPJ:</span>
+                <span class="font-medium text-gray-900 text-xs">${dadosTransacao.cnpj}</span>
+              </div>
+              ` : ''}
+              
+              ${dadosTransacao.endereco ? `
+              <div class="flex-justify-between">
+                <span class="text-gray-600 text-xs">Endereço:</span>
+                <span class="font-medium text-gray-900 text-xs" style="text-align: right; margin-left: 8px;">${dadosTransacao.endereco}</span>
               </div>
               ` : ''}
               
