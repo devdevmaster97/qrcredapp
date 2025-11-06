@@ -606,7 +606,7 @@ export default function RelatoriosPage() {
         ...(lancamentoSelecionado.cpf_associado || lancamentoSelecionado.cpf ? [['CPF:', lancamentoSelecionado.cpf_associado || lancamentoSelecionado.cpf]] : []),
         ...(lancamentoSelecionado.nome_empregador ? [['Empregador:', lancamentoSelecionado.nome_empregador]] : []),
         ['Mês Referência:', lancamentoSelecionado.mes],
-        ['Parcela:', lancamentoSelecionado.parcela],
+        ['Parcela:', lancamentoSelecionado.parcela || '01/01'],
         ['VALOR TOTAL:', formatarValor(lancamentoSelecionado.valor)]
       ];
 
@@ -1235,15 +1235,8 @@ export default function RelatoriosPage() {
                       
                       <div className="grid grid-cols-[140px_1fr] gap-2">
                         <span className="text-sm text-gray-600 font-semibold">Parcela:</span>
-                        <span className="text-sm font-medium text-gray-900 text-right">{lancamentoSelecionado.parcela}</span>
+                        <span className="text-sm font-medium text-gray-900 text-right">{lancamentoSelecionado.parcela || '01/01'}</span>
                       </div>
-                      
-                      {lancamentoSelecionado.data_fatura && (
-                        <div className="grid grid-cols-[140px_1fr] gap-2">
-                          <span className="text-sm text-gray-600 font-semibold">Data Emissão:</span>
-                          <span className="text-sm font-medium text-gray-900 text-right">{formatarDataFatura(lancamentoSelecionado.data_fatura)}</span>
-                        </div>
-                      )}
                     </div>
                     
                     <div className="border-t border-gray-200 my-2 pt-2">
