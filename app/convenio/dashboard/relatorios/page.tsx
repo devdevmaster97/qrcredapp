@@ -16,6 +16,9 @@ interface Lancamento {
   empregador: string;
   nome_empregador?: string; // nome do empregador
   razaosocial?: string; // razão social do convênio
+  nome_fantasia?: string; // nome fantasia do convênio
+  cnpj?: string; // CNPJ do convênio
+  endereco?: string; // endereço completo do convênio
   mes: string;
   parcela: string;
   lancamento?: string; // campo lancamento da tabela conta
@@ -585,46 +588,66 @@ export default function RelatoriosPage() {
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Dados da transação
-      ctx.font = '12px Arial';
-      ctx.textAlign = 'left';
-      ctx.fillStyle = '#333333';
-
+      // Dados da transação com layout tabulado
       let yPosition = 160;
       const lineHeight = 25;
+      const fontSize = '10px'; // Fonte uniforme
 
       const dados = [
-        `Lançamento: ${lancamentoSelecionado.lancamento || 'N/A'}`,
-        `Data/Hora: ${formatarData(lancamentoSelecionado.data)} ${lancamentoSelecionado.hora}`,
-        `Estabelecimento: ${lancamentoSelecionado.razaosocial || lancamentoSelecionado.nome_empregador || lancamentoSelecionado.empregador}`,
-        `Associado: ${lancamentoSelecionado.nome_associado || lancamentoSelecionado.associado}`,
-        `Empregador: ${lancamentoSelecionado.empregador}`,
-        `Mês Referência: ${lancamentoSelecionado.mes}`,
-        `Parcela: ${lancamentoSelecionado.parcela}`,
-        '', // Espaço
-        `VALOR TOTAL: ${formatarValor(lancamentoSelecionado.valor)}`
+        ['Lançamento:', lancamentoSelecionado.lancamento || 'N/A'],
+        ['Data/Hora:', `${formatarData(lancamentoSelecionado.data)} ${lancamentoSelecionado.hora}`],
+        ...(lancamentoSelecionado.razaosocial || lancamentoSelecionado.nome_empregador || lancamentoSelecionado.empregador ? [
+          ['Estabelecimento:', lancamentoSelecionado.razaosocial || lancamentoSelecionado.nome_empregador || lancamentoSelecionado.empregador, true]
+        ] : []),
+        ...(lancamentoSelecionado.nome_fantasia ? [['Nome Fantasia:', lancamentoSelecionado.nome_fantasia, true]] : []),
+        ...(lancamentoSelecionado.cnpj ? [['CNPJ:', lancamentoSelecionado.cnpj, true]] : []),
+        ...(lancamentoSelecionado.endereco ? [['Endereço:', lancamentoSelecionado.endereco, true]] : []),
+        ['Associado:', lancamentoSelecionado.nome_associado || lancamentoSelecionado.associado],
+        ...(lancamentoSelecionado.cpf_associado || lancamentoSelecionado.cpf ? [['CPF:', lancamentoSelecionado.cpf_associado || lancamentoSelecionado.cpf]] : []),
+        ...(lancamentoSelecionado.nome_empregador ? [['Empregador:', lancamentoSelecionado.nome_empregador]] : []),
+        ['Mês Referência:', lancamentoSelecionado.mes],
+        ['Parcela:', lancamentoSelecionado.parcela],
+        ['VALOR TOTAL:', formatarValor(lancamentoSelecionado.valor)]
       ];
 
-      // Debug: verificar dados antes de renderizar
-      console.log('🖼️ COMPROVANTE - Dados para renderizar:', dados);
-      console.log('🖼️ COMPROVANTE - Campo lancamento:', {
-        lancamento: lancamentoSelecionado.lancamento,
-        id: lancamentoSelecionado.id,
-        tipo_lancamento: typeof lancamentoSelecionado.lancamento,
-        valor_usado: lancamentoSelecionado.lancamento || 'N/A'
-      });
-
-      dados.forEach((texto, index) => {
-        if (texto && texto.trim() !== '') {
-          if (texto.includes('VALOR TOTAL')) {
-            ctx.font = 'bold 14px Arial';
-            ctx.fillStyle = '#000000';
-          } else {
-            ctx.font = '12px Arial';
-            ctx.fillStyle = '#333333';
+      dados.forEach((item) => {
+        const [label, value, isSmall] = item as [string, string, boolean?];
+        
+        ctx.fillStyle = '#666666';
+        ctx.font = 'bold ' + fontSize + ' Arial';
+        ctx.fillText(label, 30, yPosition);
+        ctx.fillStyle = '#000000';
+        ctx.font = fontSize + ' Arial';
+        
+        // Para endereço, quebrar texto se for muito longo
+        if (label === 'Endereço:' && String(value).length > 30) {
+          const maxWidth = canvas.width - 180;
+          const words = String(value).split(' ');
+          let line = '';
+          let testLine = '';
+          let lineY = yPosition;
+          
+          for (let n = 0; n < words.length; n++) {
+            testLine = line + words[n] + ' ';
+            const metrics = ctx.measureText(testLine);
+            if (metrics.width > maxWidth && n > 0) {
+              // Alinhar à direita
+              const lineWidth = ctx.measureText(line).width;
+              ctx.fillText(line, canvas.width - lineWidth - 30, lineY);
+              line = words[n] + ' ';
+              lineY += 15;
+            } else {
+              line = testLine;
+            }
           }
-          console.log(`🖼️ COMPROVANTE - Renderizando linha ${index}: "${texto}"`);
-          ctx.fillText(texto, 30, yPosition + (index * lineHeight));
+          const lineWidth = ctx.measureText(line).width;
+          ctx.fillText(line, canvas.width - lineWidth - 30, lineY);
+          yPosition = lineY + lineHeight;
+        } else {
+          // Alinhar valor à direita
+          const textWidth = ctx.measureText(String(value)).width;
+          ctx.fillText(String(value), canvas.width - textWidth - 30, yPosition);
+          yPosition += lineHeight;
         }
       });
 
@@ -632,16 +655,16 @@ export default function RelatoriosPage() {
       ctx.strokeStyle = '#cccccc';
       ctx.setLineDash([5, 5]);
       ctx.beginPath();
-      ctx.moveTo(20, yPosition + (dados.length * lineHeight) + 20);
-      ctx.lineTo(canvas.width - 20, yPosition + (dados.length * lineHeight) + 20);
+      ctx.moveTo(20, yPosition + 10);
+      ctx.lineTo(canvas.width - 20, yPosition + 10);
       ctx.stroke();
 
       // Texto final
       ctx.font = '10px Arial';
       ctx.textAlign = 'center';
       ctx.fillStyle = '#666666';
-      ctx.fillText('TRANSAÇÃO AUTORIZADA - CRÉDITO NO CONVÊNIO', canvas.width / 2, yPosition + (dados.length * lineHeight) + 45);
-      ctx.fillText('DOCUMENTO DIGITAL VÁLIDO', canvas.width / 2, yPosition + (dados.length * lineHeight) + 60);
+      ctx.fillText('TRANSAÇÃO AUTORIZADA - CRÉDITO NO CONVÊNIO', canvas.width / 2, yPosition + 35);
+      ctx.fillText('DOCUMENTO DIGITAL VÁLIDO', canvas.width / 2, yPosition + 50);
 
       // Converter canvas para blob
       canvas.toBlob(async (blob) => {
@@ -1147,64 +1170,86 @@ export default function RelatoriosPage() {
                     <p className="text-sm text-gray-600">Comprovante de Transação</p>
                   </div>
                   
-                  <div className="space-y-2 text-left">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Lançamento:</span>
-                      <span className="text-sm font-semibold">{lancamentoSelecionado.lancamento || 'N/A'}</span>
+                  <div className="space-y-3 text-left">
+                    <div className="grid grid-cols-[140px_1fr] gap-2">
+                      <span className="text-sm text-gray-600 font-semibold">Lançamento:</span>
+                      <span className="text-sm font-medium text-gray-900 text-right">{lancamentoSelecionado.lancamento || 'N/A'}</span>
                     </div>
                     
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Data/Hora:</span>
-                      <span className="text-sm font-semibold">{formatarData(lancamentoSelecionado.data)} {lancamentoSelecionado.hora}</span>
+                    <div className="grid grid-cols-[140px_1fr] gap-2">
+                      <span className="text-sm text-gray-600 font-semibold">Data/Hora:</span>
+                      <span className="text-sm font-medium text-gray-900 text-right">{formatarData(lancamentoSelecionado.data)} {lancamentoSelecionado.hora}</span>
                     </div>
 
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Estabelecimento:</span>
-                      <span className="text-sm font-semibold">{lancamentoSelecionado.razaosocial || lancamentoSelecionado.nome_empregador || lancamentoSelecionado.empregador}</span>
-                    </div>
+                    {(lancamentoSelecionado.razaosocial || lancamentoSelecionado.nome_empregador || lancamentoSelecionado.empregador) && (
+                      <div className="space-y-1.5 bg-gray-50 p-3 rounded-lg">
+                        <div className="grid grid-cols-[140px_1fr] gap-2">
+                          <span className="text-xs text-gray-600 font-semibold">Estabelecimento:</span>
+                          <span className="text-xs font-medium text-gray-900 text-right">{lancamentoSelecionado.razaosocial || lancamentoSelecionado.nome_empregador || lancamentoSelecionado.empregador}</span>
+                        </div>
+                        {lancamentoSelecionado.nome_fantasia && (
+                          <div className="grid grid-cols-[140px_1fr] gap-2">
+                            <span className="text-xs text-gray-600 font-semibold">Nome Fantasia:</span>
+                            <span className="text-xs font-medium text-gray-900 text-right">{lancamentoSelecionado.nome_fantasia}</span>
+                          </div>
+                        )}
+                        {lancamentoSelecionado.cnpj && (
+                          <div className="grid grid-cols-[140px_1fr] gap-2">
+                            <span className="text-xs text-gray-600 font-semibold">CNPJ:</span>
+                            <span className="text-xs font-medium text-gray-900 text-right">{lancamentoSelecionado.cnpj}</span>
+                          </div>
+                        )}
+                        {lancamentoSelecionado.endereco && (
+                          <div className="grid grid-cols-[140px_1fr] gap-2">
+                            <span className="text-xs text-gray-600 font-semibold">Endereço:</span>
+                            <span className="text-xs font-medium text-gray-900 text-right leading-tight">{lancamentoSelecionado.endereco}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
 
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Associado:</span>
-                      <span className="text-sm font-semibold">{lancamentoSelecionado.nome_associado || lancamentoSelecionado.associado}</span>
+                    <div className="grid grid-cols-[140px_1fr] gap-2">
+                      <span className="text-sm text-gray-600 font-semibold">Associado:</span>
+                      <span className="text-sm font-medium text-gray-900 text-right">{lancamentoSelecionado.nome_associado || lancamentoSelecionado.associado}</span>
                     </div>
                     
                     {(lancamentoSelecionado.cpf_associado || lancamentoSelecionado.cpf) && (
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">CPF:</span>
-                        <span className="text-sm font-semibold">{lancamentoSelecionado.cpf_associado || lancamentoSelecionado.cpf}</span>
+                      <div className="grid grid-cols-[140px_1fr] gap-2">
+                        <span className="text-sm text-gray-600 font-semibold">CPF:</span>
+                        <span className="text-sm font-medium text-gray-900 text-right">{lancamentoSelecionado.cpf_associado || lancamentoSelecionado.cpf}</span>
                       </div>
                     )}
                     
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Empregador:</span>
-                      <span className="text-sm font-semibold">{lancamentoSelecionado.nome_empregador}</span>
-                    </div>
+                    {lancamentoSelecionado.nome_empregador && (
+                      <div className="grid grid-cols-[140px_1fr] gap-2">
+                        <span className="text-sm text-gray-600 font-semibold">Empregador:</span>
+                        <span className="text-sm font-medium text-gray-900 text-right">{lancamentoSelecionado.nome_empregador}</span>
+                      </div>
+                    )}
                     
-                    <div className="border-t border-gray-200 my-2 pt-2">
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Mês Referência:</span>
-                        <span className="text-sm font-semibold">{lancamentoSelecionado.mes}</span>
+                    <div className="border-t border-gray-200 my-2 pt-2 space-y-2">
+                      <div className="grid grid-cols-[140px_1fr] gap-2">
+                        <span className="text-sm text-gray-600 font-semibold">Mês Referência:</span>
+                        <span className="text-sm font-medium text-gray-900 text-right">{lancamentoSelecionado.mes}</span>
                       </div>
                       
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-600">Parcela:</span>
-                        <span className="text-sm font-semibold">{lancamentoSelecionado.parcela}</span>
+                      <div className="grid grid-cols-[140px_1fr] gap-2">
+                        <span className="text-sm text-gray-600 font-semibold">Parcela:</span>
+                        <span className="text-sm font-medium text-gray-900 text-right">{lancamentoSelecionado.parcela}</span>
                       </div>
                       
                       {lancamentoSelecionado.data_fatura && (
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">Data Emissão:</span>
-                          <span className="text-sm font-semibold">{formatarDataFatura(lancamentoSelecionado.data_fatura)}</span>
+                        <div className="grid grid-cols-[140px_1fr] gap-2">
+                          <span className="text-sm text-gray-600 font-semibold">Data Emissão:</span>
+                          <span className="text-sm font-medium text-gray-900 text-right">{formatarDataFatura(lancamentoSelecionado.data_fatura)}</span>
                         </div>
                       )}
-                      
-                     
                     </div>
                     
                     <div className="border-t border-gray-200 my-2 pt-2">
-                      <div className="flex justify-between font-bold">
-                        <span className="text-gray-700">VALOR TOTAL:</span>
-                        <span className="text-gray-900">{formatarValor(lancamentoSelecionado.valor)}</span>
+                      <div className="grid grid-cols-[140px_1fr] gap-2">
+                        <span className="text-sm text-gray-700 font-bold">VALOR TOTAL:</span>
+                        <span className="text-sm text-gray-900 font-bold text-right">{formatarValor(lancamentoSelecionado.valor)}</span>
                       </div>
                     </div>
                   </div>
