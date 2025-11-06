@@ -236,83 +236,83 @@ export default function SucessoPage() {
               {/* Dados da transação */}
               <div className="space-y-3 text-sm">
                 {dadosTransacao.lancamento && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Lançamento:</span>
-                    <span className="font-medium text-gray-900">{dadosTransacao.lancamento}</span>
+                  <div className="grid grid-cols-[140px_1fr] gap-2">
+                    <span className="text-gray-600 text-sm font-semibold">Lançamento:</span>
+                    <span className="font-medium text-gray-900 text-sm text-right">{dadosTransacao.lancamento}</span>
                   </div>
                 )}
                 
                 {dadosTransacao.nomeConvenio && (
-                  <div className="space-y-1">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Estabelecimento:</span>
-                      <span className="font-medium text-gray-900">{dadosTransacao.nomeConvenio}</span>
+                  <div className="space-y-1.5 bg-gray-50 p-3 rounded-lg">
+                    <div className="grid grid-cols-[140px_1fr] gap-2">
+                      <span className="text-gray-600 text-xs font-semibold">Estabelecimento:</span>
+                      <span className="font-medium text-gray-900 text-xs text-right">{dadosTransacao.nomeConvenio}</span>
                     </div>
                     {dadosTransacao.nomeFantasia && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 text-xs">Nome Fantasia:</span>
-                        <span className="font-medium text-gray-900 text-xs">{dadosTransacao.nomeFantasia}</span>
+                      <div className="grid grid-cols-[140px_1fr] gap-2">
+                        <span className="text-gray-600 text-xs font-semibold">Nome Fantasia:</span>
+                        <span className="font-medium text-gray-900 text-xs text-right">{dadosTransacao.nomeFantasia}</span>
                       </div>
                     )}
                     {dadosTransacao.cnpj && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 text-xs">CNPJ:</span>
-                        <span className="font-medium text-gray-900 text-xs">{dadosTransacao.cnpj}</span>
+                      <div className="grid grid-cols-[140px_1fr] gap-2">
+                        <span className="text-gray-600 text-xs font-semibold">CNPJ:</span>
+                        <span className="font-medium text-gray-900 text-xs text-right">{dadosTransacao.cnpj}</span>
                       </div>
                     )}
                     {dadosTransacao.endereco && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600 text-xs">Endereço:</span>
-                        <span className="font-medium text-gray-900 text-xs text-right ml-2">{dadosTransacao.endereco}</span>
+                      <div className="grid grid-cols-[140px_1fr] gap-2">
+                        <span className="text-gray-600 text-xs font-semibold">Endereço:</span>
+                        <span className="font-medium text-gray-900 text-xs text-right leading-tight">{dadosTransacao.endereco}</span>
                       </div>
                     )}
                   </div>
                 )}
                 
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Associado:</span>
-                  <span className="font-medium text-gray-900">{dadosTransacao.associado}</span>
+                <div className="grid grid-cols-[140px_1fr] gap-2">
+                  <span className="text-gray-600 text-sm font-semibold">Associado:</span>
+                  <span className="font-medium text-gray-900 text-sm text-right">{dadosTransacao.associado}</span>
                 </div>
                 
                 {dadosTransacao.cpf && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">CPF:</span>
-                    <span className="font-medium text-gray-900">{dadosTransacao.cpf}</span>
+                  <div className="grid grid-cols-[140px_1fr] gap-2">
+                    <span className="text-gray-600 text-sm font-semibold">CPF:</span>
+                    <span className="font-medium text-gray-900 text-sm text-right">{dadosTransacao.cpf}</span>
                   </div>
                 )}
                 
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Valor Total:</span>
-                  <span className="font-bold text-green-600">{dadosTransacao.valor}</span>
+                <div className="grid grid-cols-[140px_1fr] gap-2">
+                  <span className="text-gray-600 text-sm font-semibold">Valor Total:</span>
+                  <span className="font-bold text-green-600 text-sm text-right">{dadosTransacao.valor}</span>
                 </div>
                 
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Parcelas:</span>
-                  <span className="font-medium text-gray-900">{dadosTransacao.parcelas}x</span>
+                <div className="grid grid-cols-[140px_1fr] gap-2">
+                  <span className="text-gray-600 text-sm font-semibold">Parcelas:</span>
+                  <span className="font-medium text-gray-900 text-sm text-right">{dadosTransacao.parcelas}x</span>
                 </div>
                 
                 {dadosTransacao.valorParcela > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Valor por Parcela:</span>
-                    <span className="font-medium text-gray-900">
+                  <div className="grid grid-cols-[140px_1fr] gap-2">
+                    <span className="text-gray-600 text-sm font-semibold">Valor por Parcela:</span>
+                    <span className="font-medium text-gray-900 text-sm text-right">
                       {dadosTransacao.valorParcela.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </span>
                   </div>
                 )}
                 
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Data Emissão:</span>
-                  <span className="font-medium text-gray-900">{new Date(dadosTransacao.timestamp).toLocaleDateString('pt-BR')}</span>
+                <div className="grid grid-cols-[140px_1fr] gap-2">
+                  <span className="text-gray-600 text-sm font-semibold">Data Emissão:</span>
+                  <span className="font-medium text-gray-900 text-sm text-right">{new Date(dadosTransacao.timestamp).toLocaleDateString('pt-BR')}</span>
                 </div>
                 
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Hora:</span>
-                  <span className="font-medium text-gray-900">{new Date(dadosTransacao.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+                <div className="grid grid-cols-[140px_1fr] gap-2">
+                  <span className="text-gray-600 text-sm font-semibold">Hora:</span>
+                  <span className="font-medium text-gray-900 text-sm text-right">{new Date(dadosTransacao.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
                 </div>
                 
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Descrição:</span>
-                  <span className="font-medium text-gray-900">{obterDescricaoDispositivo()}</span>
+                <div className="grid grid-cols-[140px_1fr] gap-2">
+                  <span className="text-gray-600 text-sm font-semibold">Descrição:</span>
+                  <span className="font-medium text-gray-900 text-sm text-right">{obterDescricaoDispositivo()}</span>
                 </div>
               </div>
 
@@ -434,18 +434,17 @@ export default function SucessoPage() {
 
       dados.forEach((item) => {
         const [label, value, isSmall] = item as [string, string, boolean?];
-        const fontSize = isSmall ? '10px' : '11px';
-        const boldSize = isSmall ? '10px' : '11px';
+        const fontSize = '10px'; // Fonte uniforme para todos
         
         ctx.fillStyle = '#666666';
-        ctx.font = fontSize + ' Arial';
+        ctx.font = 'bold ' + fontSize + ' Arial';
         ctx.fillText(label, 30, yPosition);
         ctx.fillStyle = '#000000';
-        ctx.font = 'bold ' + boldSize + ' Arial';
+        ctx.font = fontSize + ' Arial';
         
         // Para endereço, quebrar texto se for muito longo
         if (label === 'Endereço:' && String(value).length > 30) {
-          const maxWidth = canvas.width - 160;
+          const maxWidth = canvas.width - 180;
           const words = String(value).split(' ');
           let line = '';
           let testLine = '';
@@ -455,21 +454,24 @@ export default function SucessoPage() {
             testLine = line + words[n] + ' ';
             const metrics = ctx.measureText(testLine);
             if (metrics.width > maxWidth && n > 0) {
-              ctx.fillText(line, 150, lineY);
+              // Alinhar à direita
+              const lineWidth = ctx.measureText(line).width;
+              ctx.fillText(line, canvas.width - lineWidth - 30, lineY);
               line = words[n] + ' ';
               lineY += 15;
             } else {
               line = testLine;
             }
           }
-          ctx.fillText(line, 150, lineY);
+          const lineWidth = ctx.measureText(line).width;
+          ctx.fillText(line, canvas.width - lineWidth - 30, lineY);
           yPosition = lineY + lineHeight;
         } else {
-          ctx.fillText(String(value), 150, yPosition);
+          // Alinhar valor à direita
+          const textWidth = ctx.measureText(String(value)).width;
+          ctx.fillText(String(value), canvas.width - textWidth - 30, yPosition);
           yPosition += lineHeight;
         }
-        
-        ctx.font = '11px Arial';
       });
 
       // Linha separadora final
@@ -629,10 +631,15 @@ export default function SucessoPage() {
             .border-dashed { border-style: dashed; }
             .border-gray-300 { border-color: #d1d5db; }
             
-            .flex-justify-between {
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
+            .grid-layout {
+              display: grid;
+              grid-template-columns: 140px 1fr;
+              gap: 8px;
+              align-items: start;
+            }
+            
+            .text-right {
+              text-align: right;
             }
             
             @media print {
@@ -671,84 +678,85 @@ export default function SucessoPage() {
             <!-- Dados da transação -->
             <div class="space-y-3 text-sm">
               ${dadosTransacao.lancamento ? `
-              <div class="flex-justify-between">
-                <span class="text-gray-600">Lançamento:</span>
-                <span class="font-medium text-gray-900">${dadosTransacao.lancamento}</span>
+              <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px;">
+                <span class="text-gray-600 text-sm font-semibold">Lançamento:</span>
+                <span class="font-medium text-gray-900 text-sm" style="text-align: right;">${dadosTransacao.lancamento}</span>
               </div>
               ` : ''}
               
               ${dadosTransacao.nomeConvenio ? `
-              <div class="flex-justify-between">
-                <span class="text-gray-600">Estabelecimento:</span>
-                <span class="font-medium text-gray-900">${dadosTransacao.nomeConvenio}</span>
+              <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px; background: #f9fafb; padding: 12px; border-radius: 6px; margin-bottom: 8px;">
+                <div style="display: grid; gap: 6px;">
+                  <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px;">
+                    <span class="text-gray-600 text-xs font-semibold">Estabelecimento:</span>
+                    <span class="font-medium text-gray-900 text-xs" style="text-align: right;">${dadosTransacao.nomeConvenio}</span>
+                  </div>
+                  ${dadosTransacao.nomeFantasia ? `
+                  <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px;">
+                    <span class="text-gray-600 text-xs font-semibold">Nome Fantasia:</span>
+                    <span class="font-medium text-gray-900 text-xs" style="text-align: right;">${dadosTransacao.nomeFantasia}</span>
+                  </div>
+                  ` : ''}
+                  ${dadosTransacao.cnpj ? `
+                  <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px;">
+                    <span class="text-gray-600 text-xs font-semibold">CNPJ:</span>
+                    <span class="font-medium text-gray-900 text-xs" style="text-align: right;">${dadosTransacao.cnpj}</span>
+                  </div>
+                  ` : ''}
+                  ${dadosTransacao.endereco ? `
+                  <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px;">
+                    <span class="text-gray-600 text-xs font-semibold">Endereço:</span>
+                    <span class="font-medium text-gray-900 text-xs" style="text-align: right; line-height: 1.3;">${dadosTransacao.endereco}</span>
+                  </div>
+                  ` : ''}
+                </div>
               </div>
               ` : ''}
               
-              ${dadosTransacao.nomeFantasia ? `
-              <div class="flex-justify-between">
-                <span class="text-gray-600 text-xs">Nome Fantasia:</span>
-                <span class="font-medium text-gray-900 text-xs">${dadosTransacao.nomeFantasia}</span>
-              </div>
-              ` : ''}
-              
-              ${dadosTransacao.cnpj ? `
-              <div class="flex-justify-between">
-                <span class="text-gray-600 text-xs">CNPJ:</span>
-                <span class="font-medium text-gray-900 text-xs">${dadosTransacao.cnpj}</span>
-              </div>
-              ` : ''}
-              
-              ${dadosTransacao.endereco ? `
-              <div class="flex-justify-between">
-                <span class="text-gray-600 text-xs">Endereço:</span>
-                <span class="font-medium text-gray-900 text-xs" style="text-align: right; margin-left: 8px;">${dadosTransacao.endereco}</span>
-              </div>
-              ` : ''}
-              
-              <div class="flex-justify-between">
-                <span class="text-gray-600">Associado:</span>
-                <span class="font-medium text-gray-900">${dadosTransacao.associado}</span>
+              <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px;">
+                <span class="text-gray-600 text-sm font-semibold">Associado:</span>
+                <span class="font-medium text-gray-900 text-sm" style="text-align: right;">${dadosTransacao.associado}</span>
               </div>
               
               ${dadosTransacao.cpf ? `
-              <div class="flex-justify-between">
-                <span class="text-gray-600">CPF:</span>
-                <span class="font-medium text-gray-900">${dadosTransacao.cpf}</span>
+              <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px;">
+                <span class="text-gray-600 text-sm font-semibold">CPF:</span>
+                <span class="font-medium text-gray-900 text-sm" style="text-align: right;">${dadosTransacao.cpf}</span>
               </div>
               ` : ''}
               
-              <div class="flex-justify-between">
-                <span class="text-gray-600">Valor Total:</span>
-                <span class="font-bold text-green-600">${dadosTransacao.valor}</span>
+              <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px;">
+                <span class="text-gray-600 text-sm font-semibold">Valor Total:</span>
+                <span class="font-bold text-green-600 text-sm" style="text-align: right;">${dadosTransacao.valor}</span>
               </div>
               
-              <div class="flex-justify-between">
-                <span class="text-gray-600">Parcelas:</span>
-                <span class="font-medium text-gray-900">${dadosTransacao.parcelas}x</span>
+              <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px;">
+                <span class="text-gray-600 text-sm font-semibold">Parcelas:</span>
+                <span class="font-medium text-gray-900 text-sm" style="text-align: right;">${dadosTransacao.parcelas}x</span>
               </div>
               
               ${dadosTransacao.valorParcela > 0 ? `
-              <div class="flex-justify-between">
-                <span class="text-gray-600">Valor por Parcela:</span>
-                <span class="font-medium text-gray-900">
+              <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px;">
+                <span class="text-gray-600 text-sm font-semibold">Valor por Parcela:</span>
+                <span class="font-medium text-gray-900 text-sm" style="text-align: right;">
                   ${dadosTransacao.valorParcela.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                 </span>
               </div>
               ` : ''}
               
-              <div class="flex-justify-between">
-                <span class="text-gray-600">Data Emissão:</span>
-                <span class="font-medium text-gray-900">${new Date(dadosTransacao.timestamp).toLocaleDateString('pt-BR')}</span>
+              <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px;">
+                <span class="text-gray-600 text-sm font-semibold">Data Emissão:</span>
+                <span class="font-medium text-gray-900 text-sm" style="text-align: right;">${new Date(dadosTransacao.timestamp).toLocaleDateString('pt-BR')}</span>
               </div>
               
-              <div class="flex-justify-between">
-                <span class="text-gray-600">Hora:</span>
-                <span class="font-medium text-gray-900">${new Date(dadosTransacao.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+              <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px;">
+                <span class="text-gray-600 text-sm font-semibold">Hora:</span>
+                <span class="font-medium text-gray-900 text-sm" style="text-align: right;">${new Date(dadosTransacao.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
               </div>
               
-              <div class="flex-justify-between">
-                <span class="text-gray-600">Descrição:</span>
-                <span class="font-medium text-gray-900">${obterDescricaoDispositivo()}</span>
+              <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px;">
+                <span class="text-gray-600 text-sm font-semibold">Descrição:</span>
+                <span class="font-medium text-gray-900 text-sm" style="text-align: right;">${obterDescricaoDispositivo()}</span>
               </div>
             </div>
 
