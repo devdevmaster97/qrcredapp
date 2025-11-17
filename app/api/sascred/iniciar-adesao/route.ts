@@ -37,6 +37,10 @@ export async function POST(request: NextRequest) {
       database: process.env.DB_NAME || 'seu_banco',
       user: process.env.DB_USER || 'seu_usuario',
       password: process.env.DB_PASSWORD || 'sua_senha',
+      // ✅ Configurações para Vercel Serverless
+      max: 1, // Máximo 1 conexão por função serverless
+      idleTimeoutMillis: 0, // Não manter conexões idle
+      connectionTimeoutMillis: 10000, // Timeout de 10 segundos
     });
 
     // Inserir ou atualizar registro de adesão pendente
