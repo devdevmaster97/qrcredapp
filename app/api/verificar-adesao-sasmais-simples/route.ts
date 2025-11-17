@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
       phpRequestBody.id_divisao = id_divisao;
     }
     
-    console.log(' DEBUG PHP REQUEST - Body que será enviado para PHP:', phpRequestBody);
+    console.log(' DEBUG PHP REQUEST -  Body que será enviado para PHP:', phpRequestBody);
     console.log(' DEBUG PHP REQUEST - JSON.stringify:', JSON.stringify(phpRequestBody));
 
     // Usar a API PHP existente, mas interpretar apenas a EXISTÊNCIA do registro
