@@ -242,7 +242,8 @@ export default function AdesaoSasapp() {
       // Registrar adesão pendente antes de redirecionar
       console.log('📝 Registrando adesão pendente com divisão correta...');
       try {
-        const iniciarAdesaoResponse = await fetch('/api/sascred/iniciar-adesao', {
+        // ✅ USANDO API PHP NO SERVIDOR (mais confiável que Vercel + PostgreSQL)
+        const iniciarAdesaoResponse = await fetch('https://sas.makecard.com.br/api_registrar_adesao_pendente.php', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -262,10 +263,24 @@ export default function AdesaoSasapp() {
           const iniciarData = await iniciarAdesaoResponse.json();
           console.log('✅ Adesão pendente registrada:', iniciarData);
         } else {
-          console.warn('⚠️ Erro ao registrar adesão pendente, mas continuando...');
+          const errorData = await iniciarAdesaoResponse.json();
+          console.error('⚠️ ERRO ao registrar adesão pendente:', errorData);
+          console.error('⚠️ Status HTTP:', iniciarAdesaoResponse.status);
+          console.error('⚠️ Dados enviados:', {
+            codigo: localizaData.matricula,
+            cpf: localizaData.cpf?.substring(0, 3) + '***',
+            email: localizaData.email,
+            id_associado: localizaData.id,
+            id_divisao: localizaData.id_divisao
+          });
+          // Mostrar alerta para debug
+          alert('⚠️ ATENÇÃO: Erro ao registrar adesão pendente. Verifique o console (F12) para detalhes.');
         }
       } catch (error) {
-        console.error('❌ Erro ao registrar adesão pendente:', error);
+        console.error('❌ EXCEÇÃO ao registrar adesão pendente:', error);
+        console.error('❌ Tipo do erro:', error instanceof Error ? error.message : error);
+        // Mostrar alerta para debug
+        alert('❌ ERRO CRÍTICO ao registrar adesão pendente. Verifique o console (F12).');
         // Não bloquear o fluxo se falhar
       }
 

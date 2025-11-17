@@ -69,20 +69,42 @@ try {
     
     // ✅ SOLUÇÃO: Buscar id_associado e id_divisao corretos na tabela adesoes_pendentes
     error_log("🔍 Buscando dados da adesão pendente...");
+    error_log("   CPF fornecido: " . ($cpf ? $cpf : '[VAZIO]'));
+    error_log("   Email fornecido: " . ($email ? $email : '[VAZIO]'));
     
+    // Construir query dinâmica baseada nos dados disponíveis
     $sqlPendente = "SELECT id, codigo, id_associado, id_divisao, nome, celular 
                     FROM sind.adesoes_pendentes 
-                    WHERE cpf = :cpf 
-                    AND email = :email
-                    AND status = 'pendente'
-                    ORDER BY data_inicio DESC 
-                    LIMIT 1";
+                    WHERE status = 'pendente'";
+    
+    $params = [];
+    
+    // ✅ BUSCA FLEXÍVEL: Aceitar CPF OU Email (ou ambos)
+    if (!empty($cpf) && !empty($email)) {
+        // Caso ideal: ambos disponíveis (busca mais precisa)
+        $sqlPendente .= " AND cpf = :cpf AND email = :email";
+        $params[':cpf'] = $cpf;
+        $params[':email'] = $email;
+        error_log("   Estratégia: Busca por CPF + Email (mais precisa)");
+    } elseif (!empty($cpf)) {
+        // Apenas CPF disponível
+        $sqlPendente .= " AND cpf = :cpf";
+        $params[':cpf'] = $cpf;
+        error_log("   Estratégia: Busca apenas por CPF");
+    } elseif (!empty($email)) {
+        // Apenas Email disponível
+        $sqlPendente .= " AND email = :email";
+        $params[':email'] = $email;
+        error_log("   Estratégia: Busca apenas por Email");
+    } else {
+        // Nenhum dos dois disponível - não é possível buscar
+        error_log("⚠️ AVISO: Nem CPF nem Email disponíveis para busca em adesoes_pendentes");
+    }
+    
+    $sqlPendente .= " ORDER BY data_inicio DESC LIMIT 1";
     
     $stmtPendente = $pdo->prepare($sqlPendente);
-    $stmtPendente->execute([
-        ':cpf' => $cpf,
-        ':email' => $email
-    ]);
+    $stmtPendente->execute($params);
     
     $adesaoPendente = $stmtPendente->fetch(PDO::FETCH_ASSOC);
     
@@ -91,20 +113,39 @@ try {
         error_log("⚠️ Tentando buscar diretamente na tabela associado...");
         
         // Fallback: Buscar na tabela associado (menos seguro)
+        error_log("   Tentando fallback na tabela associado...");
+        
         $sqlAssociado = "SELECT id, id_divisao, codigo 
                          FROM sind.associado 
-                         WHERE cpf = :cpf 
-                         AND ativo = true
-                         ORDER BY id DESC 
-                         LIMIT 1";
+                         WHERE ativo = true";
+        
+        $paramsAssociado = [];
+        
+        // ✅ FALLBACK FLEXÍVEL: Buscar por CPF OU Email
+        if (!empty($cpf)) {
+            $sqlAssociado .= " AND cpf = :cpf";
+            $paramsAssociado[':cpf'] = $cpf;
+            error_log("   Fallback: Buscando por CPF");
+        } elseif (!empty($email)) {
+            $sqlAssociado .= " AND email = :email";
+            $paramsAssociado[':email'] = $email;
+            error_log("   Fallback: Buscando por Email");
+        } else {
+            error_log("❌ ERRO: Impossível buscar associado sem CPF ou Email");
+            throw new Exception('CPF e Email não disponíveis - impossível identificar associado');
+        }
+        
+        $sqlAssociado .= " ORDER BY id DESC LIMIT 1";
         
         $stmtAssociado = $pdo->prepare($sqlAssociado);
-        $stmtAssociado->execute([':cpf' => $cpf]);
+        $stmtAssociado->execute($paramsAssociado);
         
         $associadoData = $stmtAssociado->fetch(PDO::FETCH_ASSOC);
         
         if (!$associadoData) {
-            throw new Exception('Associado não encontrado no banco de dados');
+            $criterio = !empty($cpf) ? "CPF: $cpf" : "Email: $email";
+            error_log("❌ ERRO: Associado não encontrado no banco de dados ($criterio)");
+            throw new Exception("Associado não encontrado no banco de dados ($criterio)");
         }
         
         $id_associado = $associadoData['id'];
