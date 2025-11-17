@@ -239,6 +239,36 @@ export default function AdesaoSasapp() {
         // Erro na segunda verificação, mas prosseguindo
       }
 
+      // Registrar adesão pendente antes de redirecionar
+      console.log('📝 Registrando adesão pendente com divisão correta...');
+      try {
+        const iniciarAdesaoResponse = await fetch('/api/sascred/iniciar-adesao', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            codigo: localizaData.matricula,
+            cpf: localizaData.cpf,
+            email: localizaData.email,
+            id_associado: localizaData.id,
+            id_divisao: localizaData.id_divisao,
+            nome: localizaData.nome,
+            celular: localizaData.cel || localizaData.celular
+          })
+        });
+
+        if (iniciarAdesaoResponse.ok) {
+          const iniciarData = await iniciarAdesaoResponse.json();
+          console.log('✅ Adesão pendente registrada:', iniciarData);
+        } else {
+          console.warn('⚠️ Erro ao registrar adesão pendente, mas continuando...');
+        }
+      } catch (error) {
+        console.error('❌ Erro ao registrar adesão pendente:', error);
+        // Não bloquear o fluxo se falhar
+      }
+
       // Redirecionar para página de sucesso
       router.push('/dashboard/adesao-sasapp/sucesso');
     } catch (error) {
