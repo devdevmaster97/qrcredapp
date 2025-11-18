@@ -247,8 +247,9 @@ try {
                 empregador,
                 tipo,
                 divisao,
-                id_associado
-            ) VALUES (?, ?, ?, CURRENT_DATE, CAST(CURRENT_TIME AS TIME(0)), ?, ?, ?, ?, ?, ?)
+                id_associado,
+                aprovado
+            ) VALUES (?, ?, ?, CURRENT_DATE, CAST(CURRENT_TIME AS TIME(0)), ?, ?, ?, ?, ?, ?, false)
         ");
 
         logDebug("🔄 [SQL] Executando INSERT conta", [
@@ -260,7 +261,8 @@ try {
             'empregador' => $empregador,
             'tipo' => 'ANTECIPACAO',
             'divisao' => $id_divisao,
-            'id_associado' => $id_associado
+            'id_associado' => $id_associado,
+            'aprovado' => false
         ]);
 
         $resultado_conta = $stmt_conta->execute([

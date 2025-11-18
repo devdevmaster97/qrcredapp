@@ -225,7 +225,7 @@ async function processarSolicitacao(body: any, chaveUnica: string, requestId: st
     
     debugInfo.etapas_executadas.push('dados_php_preparados');
     
-    console.log(`🌐 [${requestId}] Enviando para PHP grava_antecipacao_app_fixed.php:`, Object.fromEntries(formData));
+    console.log(`🌐 [${requestId}] Enviando para PHP grava_antecipacao_app_fixed_2.php:`, Object.fromEntries(formData));
     
     // VERIFICAÇÃO CRÍTICA: Marcar que esta requisição está prestes a chamar o PHP
     const timestampEnvio = Date.now();
@@ -250,7 +250,7 @@ async function processarSolicitacao(body: any, chaveUnica: string, requestId: st
     debugInfo.php_timestamp = timestampEnvio;
     
     const response = await axios.post(
-      'https://sas.makecard.com.br/grava_antecipacao_app_fixed.php',
+      'https://sas.makecard.com.br/grava_antecipacao_app_fixed_2.php',
       formData,
       {
         headers: {
