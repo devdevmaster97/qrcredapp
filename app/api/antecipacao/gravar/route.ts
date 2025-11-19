@@ -250,7 +250,7 @@ async function processarSolicitacao(body: any, chaveUnica: string, requestId: st
     debugInfo.php_timestamp = timestampEnvio;
     
     const response = await axios.post(
-      'https://sas.makecard.com.br/grava_antecipacao_app_fixed_2.php',
+      'https://sas.makecard.com.br/grava_antecipacao_app_fixed_3.php',
       formData,
       {
         headers: {
