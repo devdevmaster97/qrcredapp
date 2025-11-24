@@ -31,6 +31,9 @@ try {
     $valor = $_POST['valor_pedido'] ?? '';
     $pass = $_POST['pass'] ?? '';
     $request_id = $_POST['request_id'] ?? '';
+    $id_associado_post = $_POST['id'] ?? null;
+    $empregador_post = $_POST['empregador'] ?? null;
+    $id_divisao_post = $_POST['id_divisao'] ?? null;
     
     logDebug("🔍 [INÍCIO] Dados recebidos no PHP", [
         'matricula' => $matricula,
@@ -77,24 +80,51 @@ try {
     
     logDebug("Conexão com banco estabelecida");
 
-    // Buscar dados do associado
-    logDebug("Buscando dados do associado", ['matricula' => $matricula]);
+    // Buscar dados do associado COM FILTROS OBRIGATÓRIOS
+    logDebug("Buscando dados do associado", [
+        'matricula' => $matricula,
+        'id_associado' => $id_associado_post,
+        'empregador' => $empregador_post,
+        'id_divisao' => $id_divisao_post
+    ]);
+    
+    // Validar que os filtros obrigatórios foram fornecidos
+    if ($id_associado_post === null || $empregador_post === null || $id_divisao_post === null) {
+        logDebug("❌ [ERRO] Filtros obrigatórios não fornecidos", [
+            'id_fornecido' => $id_associado_post !== null,
+            'empregador_fornecido' => $empregador_post !== null,
+            'divisao_fornecida' => $id_divisao_post !== null
+        ]);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Parâmetros obrigatórios ausentes: id, empregador e id_divisao são necessários',
+            'request_id' => $request_id
+        ], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+    
+    // Query com TODOS os filtros para garantir o associado correto
     $sql_associado = "
         SELECT 
             a.nome,
-            a.codigo,
+            a.matricula,
             e.nome as empregador_nome,
             a.empregador,
             a.id,
             a.id_divisao
         FROM sind.associado a
         LEFT JOIN sind.empregador e ON a.empregador = e.id
-        WHERE a.codigo = ?
+        WHERE a.matricula = ?
+        AND a.id = ?
+        AND a.empregador = ?
+        AND a.id_divisao = ?
         LIMIT 1
     ";
     
+    $params_associado = [$matricula, $id_associado_post, $empregador_post, $id_divisao_post];
+    
     $stmt_associado = $pdo->prepare($sql_associado);
-    $stmt_associado->execute([$matricula]);
+    $stmt_associado->execute($params_associado);
     $associado = $stmt_associado->fetch(PDO::FETCH_ASSOC);
     
     if (!$associado) {
@@ -107,9 +137,9 @@ try {
         exit();
     }
 
-    logDebug("Associado encontrado", [
+    logDebug("✅ Associado encontrado COM TODOS OS FILTROS", [
         'nome' => $associado['nome'],
-        'codigo' => $associado['codigo'],
+        'matricula' => $associado['matricula'],
         'empregador' => $associado['empregador_nome'],
         'id_associado' => $associado['id'],
         'id_divisao' => $associado['id_divisao']

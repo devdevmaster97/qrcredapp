@@ -288,12 +288,21 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
   // Função para buscar os dados da conta e calcular o saldo
   const fetchConta = useCallback(async (matricula: string, empregador: string, mes: string, id?: number, divisao?: number) => {
     try {
+      console.log('🔍 fetchConta INICIADO com parâmetros:', { matricula, empregador, mes, id, divisao });
+      
       // Validar todos os parâmetros obrigatórios
       if (!matricula || !empregador || !mes || !id || !divisao) {
+        console.error('❌ PARÂMETROS FALTANDO:', {
+          matricula: !!matricula,
+          empregador: !!empregador,
+          mes: !!mes,
+          id: !!id,
+          divisao: !!divisao
+        });
         throw new Error('Todos os parâmetros são obrigatórios: matricula, empregador, mes, id, divisao');
       }
 
-      console.log('📊 Enviando parâmetros para /api/conta:', { matricula, empregador, mes, id, divisao });
+      console.log('✅ Todos os parâmetros validados, enviando para /api/conta:', { matricula, empregador, mes, id, divisao });
 
       // Buscar os dados da conta com todos os parâmetros obrigatórios
       const formDataConta = new FormData();
@@ -462,12 +471,17 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         throw new Error('ID divisão do associado não disponível');
       }
 
-      // 2. Buscar mês corrente usando id_divisao do associado
+      console.log('🔄 Buscando mês corrente para id_divisao:', associadoData.id_divisao);
       const { mesAtual, porcentagem } = await fetchMesCorrente(associadoData.id_divisao) || { mesAtual: null, porcentagem: 0 };
       
+      console.log('📅 Mês corrente retornado:', mesAtual);
+      
       if (!mesAtual) {
+        console.error('❌ MÊS CORRENTE NÃO DISPONÍVEL!');
         throw new Error('Mês corrente não disponível');
       }
+      
+      console.log('✅ Mês corrente obtido com sucesso:', mesAtual);
       
       // 3. Buscar dados da conta com os dados do associado que já temos
       const total = await fetchConta(
