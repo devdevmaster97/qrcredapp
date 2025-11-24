@@ -286,6 +286,12 @@ async function processarSolicitacao(body: any, chaveUnica: string, requestId: st
       console.log(`📊 [PHP DETALHADO] RequestID: ${requestId} - Tipo resposta:`, typeof response.data);
       console.log(`📊 [PHP DETALHADO] RequestID: ${requestId} - Conteúdo completo:`, JSON.stringify(response.data, null, 2));
       
+      // LOGS CRÍTICOS PARA DEBUG
+      console.log(`🚨 [CRÍTICO] PHP Response.data.success:`, response.data.success, `(tipo: ${typeof response.data.success})`);
+      console.log(`🚨 [CRÍTICO] PHP Response.data.message:`, response.data.message);
+      console.log(`🚨 [CRÍTICO] PHP Response.data.id:`, response.data.id);
+      console.log(`🚨 [CRÍTICO] PHP Response.data.error:`, response.data.error);
+      
       // Log específico da verificação de gravação
       if (response.data.debug_info && response.data.debug_info.verificacao_gravacao) {
         console.log(`🔍 [VERIFICAÇÃO GRAVAÇÃO] RequestID: ${requestId}:`, response.data.debug_info.verificacao_gravacao);
