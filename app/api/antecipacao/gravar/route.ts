@@ -208,9 +208,17 @@ async function processarSolicitacao(body: any, chaveUnica: string, requestId: st
     
     // Preparar dados para envio ao PHP - CAMPOS CORRETOS PARA AS TABELAS
     debugInfo.etapas_executadas.push('preparando_dados_php');
+    
+    // Log crítico: verificar valor_pedido ANTES de montar formData
+    console.log(`🔍 [${requestId}] VERIFICAÇÃO CRÍTICA - Valor recebido do frontend:`, {
+      valor_pedido: body.valor_pedido,
+      tipo: typeof body.valor_pedido,
+      vazio: !body.valor_pedido
+    });
+    
     const formData = new URLSearchParams();
     formData.append('matricula', body.matricula || '');
-    formData.append('valor_pedido', body.valor || body.valor_pedido || ''); // PHP espera 'valor_pedido'
+    formData.append('valor_pedido', body.valor_pedido || ''); // PHP espera 'valor_pedido'
     formData.append('pass', body.pass);
     formData.append('empregador', (body.empregador || 0).toString());
     formData.append('mes_corrente', body.mes_corrente || '');
@@ -225,7 +233,8 @@ async function processarSolicitacao(body: any, chaveUnica: string, requestId: st
     
     debugInfo.etapas_executadas.push('dados_php_preparados');
     
-    console.log(`🌐 [${requestId}] Enviando para PHP grava_antecipacao_app_fixed_2.php:`, Object.fromEntries(formData));
+    console.log(`🌐 [${requestId}] Enviando para PHP grava_antecipacao_app_fixed_3.php:`, Object.fromEntries(formData));
+    console.log(`💰 [${requestId}] VALOR_PEDIDO NO FORMDATA:`, formData.get('valor_pedido'));
     
     // VERIFICAÇÃO CRÍTICA: Marcar que esta requisição está prestes a chamar o PHP
     const timestampEnvio = Date.now();
