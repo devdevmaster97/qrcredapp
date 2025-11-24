@@ -107,14 +107,14 @@ try {
     $sql_associado = "
         SELECT 
             a.nome,
-            a.matricula,
+            a.codigo,
             e.nome as empregador_nome,
             a.empregador,
             a.id,
             a.id_divisao
         FROM sind.associado a
         LEFT JOIN sind.empregador e ON a.empregador = e.id
-        WHERE a.matricula = ?
+        WHERE a.codigo = ?
         AND a.id = ?
         AND a.empregador = ?
         AND a.id_divisao = ?
@@ -139,7 +139,7 @@ try {
 
     logDebug("✅ Associado encontrado COM TODOS OS FILTROS", [
         'nome' => $associado['nome'],
-        'matricula' => $associado['matricula'],
+        'codigo' => $associado['codigo'],
         'empregador' => $associado['empregador_nome'],
         'id_associado' => $associado['id'],
         'id_divisao' => $associado['id_divisao']
