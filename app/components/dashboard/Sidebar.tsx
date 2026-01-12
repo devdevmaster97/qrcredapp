@@ -64,6 +64,15 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
   // Hook para verificar adesão ao SasCred
   const { jaAderiu: jaAderiuSasCred, loading: loadingAdesao } = useAdesaoSasCred();
   
+  // Debug: Log dos estados de adesão
+  useEffect(() => {
+    console.log('🔍 [Sidebar] Estados de adesão SasCred:', {
+      jaAderiuSasCred,
+      loadingAdesao,
+      fallbackAdesao,
+      menuSeraExibido: jaAderiuSasCred || fallbackAdesao
+    });
+  }, [jaAderiuSasCred, loadingAdesao, fallbackAdesao]);
   
   // Hook para verificar se antecipação foi aprovada
   const { aprovada: antecipacaoAprovada, loading: loadingAntecipacao } = useAntecipacaoAprovada();
@@ -240,16 +249,16 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
           label: 'O que é',
           icon: <FaInfoCircle size={16} />
         },
-        // Só mostrar "Aderir" se não estiver carregando E ainda não aderiu
-        ...(!loadingAdesao && !jaAderiuSasCred ? [
+        // Só mostrar "Aderir" se não estiver carregando E ainda não aderiu (considerando fallback)
+        ...(!loadingAdesao && !jaAderiuSasCred && !fallbackAdesao ? [
           {
             href: '/dashboard/adesao-sasapp',
             label: 'Aderir',
             icon: <FaFileContract size={16} className="text-blue-500" />
           }
         ] : []),
-        // Submenus condicionais - só aparecem se o associado já aderiu
-        ...(jaAderiuSasCred ? [
+        // Submenus condicionais - só aparecem se o associado já aderiu (considerando fallback)
+        ...(jaAderiuSasCred || fallbackAdesao ? [
           {
             href: '/dashboard/saldo',
             label: 'Saldo',
