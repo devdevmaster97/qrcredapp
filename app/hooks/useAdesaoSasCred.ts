@@ -105,10 +105,14 @@ export function useAdesaoSasCred(): AdesaoStatus {
 
       if (!associadoResponse.ok) {
         console.warn('⚠️ Erro ao buscar dados do associado, usando apenas código');
+        console.log('🔍 Status da resposta:', associadoResponse.status);
+        
         // Fallback: usar apenas código se não conseguir buscar dados completos
         const requestBody = {
           codigo: userData.matricula.toString()
         };
+        
+        console.log('📤 Enviando requisição de fallback com:', requestBody);
         
         const response = await fetch('/api/verificar-adesao-sasmais-simples', {
           method: 'POST',
@@ -118,8 +122,16 @@ export function useAdesaoSasCred(): AdesaoStatus {
           body: JSON.stringify(requestBody)
         });
         
+        console.log('📥 Resposta da API verificar-adesao (fallback):', {
+          ok: response.ok,
+          status: response.status
+        });
+        
         if (response.ok) {
           const result = await response.json();
+          console.log('🔍 DEBUG FALLBACK - resultado completo:', result);
+          console.log('🔍 DEBUG FALLBACK - result.jaAderiu:', result.jaAderiu);
+          console.log('🔍 DEBUG FALLBACK - typeof result.jaAderiu:', typeof result.jaAderiu);
           
           if (isMountedRef.current) {
             setStatus(prev => ({
@@ -129,8 +141,11 @@ export function useAdesaoSasCred(): AdesaoStatus {
               dadosAdesao: result.dados || null
             }));
             lastStatusRef.current = result.jaAderiu || false;
+            console.log('✅ Estado atualizado no fallback - jaAderiu:', result.jaAderiu || false);
           }
           return result?.jaAderiu || false;
+        } else {
+          console.error('❌ Erro na API verificar-adesao (fallback):', response.status);
         }
         return false;
       }
