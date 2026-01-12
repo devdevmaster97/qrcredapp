@@ -68,9 +68,13 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
   useEffect(() => {
     console.log('🔍 [Sidebar] Estados de adesão SasCred:', {
       jaAderiuSasCred,
+      'typeof jaAderiuSasCred': typeof jaAderiuSasCred,
       loadingAdesao,
       fallbackAdesao,
-      menuSeraExibido: jaAderiuSasCred || fallbackAdesao
+      'typeof fallbackAdesao': typeof fallbackAdesao,
+      menuSeraExibido: jaAderiuSasCred || fallbackAdesao,
+      'Condição menu completo (jaAderiuSasCred || fallbackAdesao)': !!(jaAderiuSasCred || fallbackAdesao),
+      'Condição botão Aderir (!loadingAdesao && !jaAderiuSasCred && !fallbackAdesao)': !loadingAdesao && !jaAderiuSasCred && !fallbackAdesao
     });
   }, [jaAderiuSasCred, loadingAdesao, fallbackAdesao]);
   

@@ -201,10 +201,14 @@ export function useAdesaoSasCred(): AdesaoStatus {
 
       const resultado = await response.json();
       console.log('🔍 DEBUG useAdesaoSasCred - resultado da API:', resultado);
+      console.log('🔍 DEBUG useAdesaoSasCred - resultado.status:', resultado.status);
+      console.log('🔍 DEBUG useAdesaoSasCred - resultado.jaAderiu:', resultado.jaAderiu);
+      console.log('🔍 DEBUG useAdesaoSasCred - typeof resultado.jaAderiu:', typeof resultado.jaAderiu);
       
       if (resultado.status === 'sucesso') {
         const jaAderiu = resultado.jaAderiu === true;
         console.log('🔍 DEBUG useAdesaoSasCred - jaAderiu calculado:', jaAderiu);
+        console.log('🔍 DEBUG useAdesaoSasCred - Comparação: resultado.jaAderiu === true?', resultado.jaAderiu === true);
         const statusAnterior = lastStatusRef.current;
         
         setStatus(prev => ({
