@@ -3,6 +3,15 @@ import axios from 'axios';
 
 export async function POST(request: NextRequest) {
   try {
+    // Log do IP de origem para debug (Vercel)
+    const forwardedFor = request.headers.get('x-forwarded-for');
+    const realIp = request.headers.get('x-real-ip');
+    console.log('🌐 IP de origem da requisição:', {
+      'x-forwarded-for': forwardedFor,
+      'x-real-ip': realIp,
+      'IP detectado': forwardedFor?.split(',')[0] || realIp || 'desconhecido'
+    });
+
     let cartao: string;
     let senha: string;
     
