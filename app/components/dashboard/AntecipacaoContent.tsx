@@ -1047,9 +1047,17 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         debug_info: data.debug_info || 'N/A'
       });
 
-      if (data.success) {
-        addDebugLog(`✅ [${requestId}] Sucesso confirmado`);
-        console.log(`✅ [${requestId}] Sucesso confirmado`);
+      // ✅ VALIDAÇÃO RIGOROSA: Verificar se IDs foram retornados
+      const antecipacaoId = data.antecipacao_id;
+      const contaId = data.conta_id;
+      
+      addDebugLog(`🔍 [${requestId}] Validando IDs retornados:`);
+      addDebugLog(`   - antecipacao_id: ${antecipacaoId}`);
+      addDebugLog(`   - conta_id: ${contaId}`);
+      
+      if (data.success && antecipacaoId && contaId) {
+        addDebugLog(`✅ [${requestId}] Sucesso confirmado com IDs válidos`);
+        console.log(`✅ [${requestId}] Sucesso confirmado - Antecipação ID: ${antecipacaoId}, Conta ID: ${contaId}`);
         
         // Atualizar o PIX no banco de dados se foi informado
         if (chavePix && associadoData) {

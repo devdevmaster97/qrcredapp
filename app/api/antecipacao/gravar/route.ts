@@ -343,35 +343,46 @@ async function processarSolicitacao(body: any, chaveUnica: string, requestId: st
       });
     }
     
-    // Sucesso - verificar se realmente foi bem-sucedido (detecção mais flexível)
-    const isSuccess = response.status === 200 || 
-                     response.data.success === true || 
-                     response.data.success === "true" ||
-                     response.data.success === 1 ||
-                     response.data.success === "1" ||
-                     response.data.id ||
-                     response.data.situacao === 1 ||
-                     response.data.situacao === "1" ||
-                     (response.data.message && (
-                       response.data.message.toLowerCase().includes("sucesso") ||
-                       response.data.message.toLowerCase().includes("inseridos") ||
-                       response.data.message.toLowerCase().includes("processada") ||
-                       response.data.message.toLowerCase().includes("gravado") ||
-                       response.data.message.toLowerCase().includes("salvo")
-                     )) ||
-                     // Se não há erro explícito e status HTTP é 200, considerar sucesso
-                     (response.status === 200 && !temErro);
+    // ✅ VALIDAÇÃO RIGOROSA: Verificar se IDs foram retornados
+    const antecipacaoId = response.data.antecipacao_id;
+    const contaId = response.data.conta_id;
+    
+    console.log(`🔍 [VALIDAÇÃO IDS] RequestID: ${requestId}:`, {
+      antecipacao_id: antecipacaoId,
+      conta_id: contaId,
+      success: response.data.success
+    });
+    
+    // Sucesso SOMENTE se:
+    // 1. success === true
+    // 2. antecipacao_id está presente e é válido
+    // 3. conta_id está presente e é válido
+    const idsValidos = antecipacaoId && contaId && 
+                       antecipacaoId > 0 && contaId > 0;
+    
+    const isSuccess = response.data.success === true && idsValidos;
+    
+    if (!idsValidos && response.data.success === true) {
+      console.log(`⚠️ [ALERTA] RequestID: ${requestId} - PHP retornou success=true mas IDs inválidos!`);
+      console.log(`📋 [IDS RECEBIDOS]:`, {
+        antecipacao_id: antecipacaoId,
+        conta_id: contaId,
+        tipo_antecipacao: typeof antecipacaoId,
+        tipo_conta: typeof contaId
+      });
+    }
     
     if (isSuccess) {
-      console.log(`✅ [${requestId}] Antecipação gravada com sucesso`);
-      console.log(`✅ [SUCESSO FINAL] RequestID: ${requestId} - Retornando sucesso com debug_info completo`);
+      console.log(`✅ [${requestId}] Antecipação gravada com sucesso - IDs confirmados`);
+      console.log(`✅ [SUCESSO FINAL] RequestID: ${requestId} - Antecipação ID: ${antecipacaoId}, Conta ID: ${contaId}`);
       console.log(`📊 [DEBUG_INFO FINAL] RequestID: ${requestId}:`, JSON.stringify(debugInfo, null, 2));
       
       return NextResponse.json({
         success: true,
         data: response.data,
         message: response.data.message || 'Solicitação processada com sucesso',
-        id: response.data.id,
+        antecipacao_id: antecipacaoId,
+        conta_id: contaId,
         duplicate_prevented: response.data.duplicate_prevented,
         debug_info: debugInfo
       }, {
@@ -382,15 +393,27 @@ async function processarSolicitacao(body: any, chaveUnica: string, requestId: st
         }
       });
     } else {
-      // Resposta ambígua - tratar como erro
-      console.log(`❌ [${requestId}] Resposta ambígua do PHP:`, response.data);
+      // Falha na validação - IDs não retornados ou inválidos
+      const motivoFalha = !response.data.success 
+        ? 'PHP retornou success=false'
+        : 'IDs não foram retornados ou são inválidos';
+      
+      console.log(`❌ [${requestId}] Validação falhou: ${motivoFalha}`);
+      console.log(`📋 [DETALHES FALHA]:`, {
+        success: response.data.success,
+        antecipacao_id: antecipacaoId,
+        conta_id: contaId,
+        message: response.data.message,
+        error: response.data.error
+      });
       
       // Remover do rate limiting se deu erro para permitir nova tentativa
       ultimasRequisicoes.delete(chaveUnica);
       
       return NextResponse.json({
         success: false,
-        error: 'Resposta ambígua do servidor',
+        error: response.data.error || motivoFalha,
+        message: response.data.message,
         data: response.data,
         debug_info: debugInfo
       }, { 
