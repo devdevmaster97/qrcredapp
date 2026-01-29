@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    console.log('💾 Preparando dados para grava_venda_app_com_taxa_FINAL.php (VERSÃO FINAL)');
+    console.log('💾 Preparando dados para grava_venda_app_com_taxa_compativel.php (CÓDIGO FINAL ATUALIZADO)');
     
     // Preparar dados para enviar ao backend PHP
     const formData = new URLSearchParams();
@@ -39,14 +39,14 @@ export async function POST(request: NextRequest) {
       }
     });
     
-    console.log('📤 Enviando dados para grava_venda_app_com_taxa_FINAL.php:', formData.toString());
+    console.log('📤 Enviando dados para grava_venda_app_com_taxa_compativel.php:', formData.toString());
     console.log('💳 Taxa R$ 7,50 - verifica por convenio 249 (independente da descrição)');
     console.log('✅ Considera "Taxa de manutenção do cartão" e "Tarifa Cartao / Manutenção"');
-    console.log('✅ FOR UPDATE para evitar race conditions');
+    console.log('✅ FOR UPDATE para evitar race conditions + verificação robusta');
     
-    // Chamar API PHP externa (versão FINAL)
+    // Chamar API PHP externa (arquivo com código FINAL no servidor)
     const response = await axios.post(
-      'https://sas.makecard.com.br/grava_venda_app_com_taxa_FINAL.php',
+      'https://sas.makecard.com.br/grava_venda_app_com_taxa_compativel.php',
       formData,
       {
         headers: {
