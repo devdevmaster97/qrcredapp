@@ -315,19 +315,74 @@ if (isset($_POST['valor_pedido'])) {
                         $std["taxa_lancamento_id"] = $taxa_lancamento_id;
                         $std["valor_taxa"] = $valor_taxa;
                     } else {
-                        error_log("ℹ️ Taxa de cartão já foi lançada neste mês");
+                        error_log(" Taxa de cartão NÃO foi gravada - já existe no mês (independente da descrição)");
                         $std["taxa_lancada"] = false;
                         $std["taxa_lancamento_id"] = null;
                         $std["valor_taxa"] = $valor_taxa;
                     }
                     
+                    // ============================================
+                    // LIMPAR DUPLICATAS DE TAXA (SE HOUVER)
+                    // ============================================
+                    // O trigger do banco pode ter gravado uma taxa automaticamente
+                    // Vamos garantir que existe apenas 1 taxa por mês/associado/divisão
+                    error_log(" VERIFICANDO E REMOVENDO DUPLICATAS DE TAXA");
+                    
+                    // Buscar todas as taxas deste associado/mes/divisao
+                    $sql_buscar_duplicatas = "SELECT lancamento, data, hora, descricao 
+                                              FROM sind.conta 
+                                              WHERE associado = :matricula 
+                                              AND empregador = :empregador 
+                                              AND mes = :mes 
+                                              AND convenio = 249
+                                              AND divisao = :divisao
+                                              ORDER BY data, hora";
+                    
+                    $stmt_duplicatas = $pdo->prepare($sql_buscar_duplicatas);
+                    $stmt_duplicatas->bindParam(':matricula', $matricula, PDO::PARAM_STR);
+                    $stmt_duplicatas->bindParam(':empregador', $empregador, PDO::PARAM_INT);
+                    $stmt_duplicatas->bindParam(':mes', $mes_inicial, PDO::PARAM_STR);
+                    $stmt_duplicatas->bindParam(':divisao', $divisao, PDO::PARAM_INT);
+                    $stmt_duplicatas->execute();
+                    
+                    $todas_taxas = $stmt_duplicatas->fetchAll(PDO::FETCH_ASSOC);
+                    $total_taxas = count($todas_taxas);
+                    
+                    if ($total_taxas > 1) {
+                        error_log(" ENCONTRADAS {$total_taxas} TAXAS - Removendo duplicatas");
+                        
+                        // Manter apenas a PRIMEIRA taxa (mais antiga)
+                        $primeira_taxa_id = $todas_taxas[0]['lancamento'];
+                        $ids_para_deletar = array();
+                        
+                        for ($i = 1; $i < $total_taxas; $i++) {
+                            $ids_para_deletar[] = $todas_taxas[$i]['lancamento'];
+                            error_log("   Deletando taxa ID: " . $todas_taxas[$i]['lancamento'] . 
+                                     " - Descrição: '" . $todas_taxas[$i]['descricao'] . "'");
+                        }
+                        
+                        // Deletar as duplicatas
+                        if (count($ids_para_deletar) > 0) {
+                            $placeholders = implode(',', array_fill(0, count($ids_para_deletar), '?'));
+                            $sql_deletar = "DELETE FROM sind.conta WHERE lancamento IN ($placeholders)";
+                            $stmt_deletar = $pdo->prepare($sql_deletar);
+                            $stmt_deletar->execute($ids_para_deletar);
+                            
+                            $deletados = $stmt_deletar->rowCount();
+                            error_log(" {$deletados} taxa(s) duplicada(s) removida(s)");
+                            error_log(" Mantida apenas taxa ID: {$primeira_taxa_id} - Descrição: '" . $todas_taxas[0]['descricao'] . "'");
+                        }
+                    } else {
+                        error_log(" Apenas 1 taxa encontrada - Nenhuma duplicata para remover");
+                    }
+                    
                     // COMMIT DA TRANSAÇÃO
                     $pdo->commit();
-                    error_log("✅ Transação confirmada com sucesso");
+                    error_log(" Transação confirmada com sucesso");
                     
                 } catch (Exception $e) {
                     $pdo->rollback();
-                    error_log("❌ Rollback executado - Erro: " . $e->getMessage());
+                    error_log(" Rollback executado - Erro: " . $e->getMessage());
                     throw $e;
                 }
                 
