@@ -27,11 +27,11 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    console.log('💾 Preparando dados para grava_venda_app.php');
+    console.log('💾 Preparando dados para grava_venda_app_com_taxa.php (com taxa automática)');
     
     // Preparar dados para enviar ao backend PHP
     const formData = new URLSearchParams();
-    //teste 
+    
     // Adicionar todos os campos recebidos
     Object.keys(body).forEach(key => {
       if (body[key] !== undefined && body[key] !== null) {
@@ -39,11 +39,12 @@ export async function POST(request: NextRequest) {
       }
     });
     
-    console.log('📤 Enviando dados para grava_venda_app.php:', formData.toString());
+    console.log('📤 Enviando dados para grava_venda_app_com_taxa.php:', formData.toString());
+    console.log('💳 Taxa de cartão será verificada e lançada automaticamente se necessário');
     
-    // Chamar API PHP externa
+    // Chamar API PHP externa (versão com taxa automática)
     const response = await axios.post(
-      'https://sas.makecard.com.br/grava_venda_app.php',
+      'https://sas.makecard.com.br/grava_venda_app_com_taxa.php',
       formData,
       {
         headers: {
@@ -93,11 +94,24 @@ export async function POST(request: NextRequest) {
     if (response.data && response.data.situacao === 1) {
       console.log('✅ Venda gravada com sucesso');
       
+      // Log sobre a taxa de cartão
+      if (response.data.taxa_lancada) {
+        console.log('💳 Taxa de cartão lançada automaticamente:', {
+          valor: response.data.valor_taxa,
+          lancamento_id: response.data.taxa_lancamento_id
+        });
+      } else {
+        console.log('ℹ️ Taxa de cartão já havia sido lançada neste mês');
+      }
+      
       return NextResponse.json({
         success: true,
         situacao: 1,
         data: response.data,
-        registrolan: response.data.registrolan
+        registrolan: response.data.registrolan,
+        taxa_lancada: response.data.taxa_lancada,
+        taxa_lancamento_id: response.data.taxa_lancamento_id,
+        valor_taxa: response.data.valor_taxa
       });
     } else if (response.data && response.data.situacao === 2) {
       console.warn('⚠️ Senha incorreta');
