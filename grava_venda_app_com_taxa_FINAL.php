@@ -305,8 +305,8 @@ if (isset($_POST['valor_pedido'])) {
                         $uuid_taxa = UUID::v4();
                         $descricao_taxa = "Taxa de manutenção do cartão";
                         
-                        $sql_taxa_insert = "INSERT INTO sind.conta (associado,convenio,valor,data,hora,mes,empregador,uuid_conta,descricao,id_associado,divisao) ";
-                        $sql_taxa_insert .= "VALUES (:associado,:convenio,:valor,:data,:hora,:mes,:empregador,:uuid_conta,:descricao,:id_associado,:divisao) RETURNING lancamento";
+                        $sql_taxa_insert = "INSERT INTO sind.conta (associado,convenio,valor,data,hora,mes,empregador,uuid_conta,descricao,id_associado,divisao,aprovado) ";
+                        $sql_taxa_insert .= "VALUES (:associado,:convenio,:valor,:data,:hora,:mes,:empregador,:uuid_conta,:descricao,:id_associado,:divisao,:aprovado) RETURNING lancamento";
                         
                         $stmt_taxa_insert = $pdo->prepare($sql_taxa_insert);
                         $stmt_taxa_insert->bindParam(':associado', $matricula, PDO::PARAM_STR);
@@ -318,6 +318,7 @@ if (isset($_POST['valor_pedido'])) {
                         $stmt_taxa_insert->bindParam(':empregador', $empregador, PDO::PARAM_INT);
                         $stmt_taxa_insert->bindParam(':uuid_conta', $uuid_taxa, PDO::PARAM_STR);
                         $stmt_taxa_insert->bindParam(':descricao', $descricao_taxa, PDO::PARAM_STR);
+                        $stmt_taxa_insert->bindValue(':aprovado', true, PDO::PARAM_BOOL);
                         
                         if ($id_associado !== null) {
                             $stmt_taxa_insert->bindParam(':id_associado', $id_associado, PDO::PARAM_INT);
