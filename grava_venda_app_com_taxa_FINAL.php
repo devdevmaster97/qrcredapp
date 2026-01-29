@@ -351,73 +351,65 @@ if (isset($_POST['valor_pedido'])) {
                     // ============================================
                     // LIMPAR DUPLICATAS DE TAXA (SE HOUVER)
                     // ============================================
-                    // O trigger do banco pode ter gravado uma taxa automaticamente
-                    // Vamos garantir que existe apenas 1 taxa por mês/associado/divisão
-                    error_log("🧹 VERIFICANDO E REMOVENDO DUPLICATAS DE TAXA");
+                    error_log("🧹 LIMPANDO DUPLICATAS DE TAXA");
                     
-                    // Buscar todas as taxas deste associado/mes/divisao (incluindo campo aprovado)
-                    $sql_buscar_duplicatas = "SELECT lancamento, data, hora, descricao, aprovado 
-                                              FROM sind.conta 
-                                              WHERE associado = :matricula 
-                                              AND empregador = :empregador 
-                                              AND mes = :mes 
-                                              AND convenio = 249
-                                              AND divisao = :divisao
-                                              ORDER BY aprovado DESC, data, hora";
+                    // PASSO 1: Atualizar TODAS as taxas deste mês/associado/divisão para aprovado=true
+                    $sql_update_aprovado = "UPDATE sind.conta 
+                                           SET aprovado = true 
+                                           WHERE associado = :matricula 
+                                           AND empregador = :empregador 
+                                           AND mes = :mes 
+                                           AND convenio = 249
+                                           AND divisao = :divisao";
                     
-                    $stmt_duplicatas = $pdo->prepare($sql_buscar_duplicatas);
-                    $stmt_duplicatas->bindParam(':matricula', $matricula, PDO::PARAM_STR);
-                    $stmt_duplicatas->bindParam(':empregador', $empregador, PDO::PARAM_INT);
-                    $stmt_duplicatas->bindParam(':mes', $mes_inicial, PDO::PARAM_STR);
-                    $stmt_duplicatas->bindParam(':divisao', $divisao, PDO::PARAM_INT);
-                    $stmt_duplicatas->execute();
+                    $stmt_update = $pdo->prepare($sql_update_aprovado);
+                    $stmt_update->bindParam(':matricula', $matricula, PDO::PARAM_STR);
+                    $stmt_update->bindParam(':empregador', $empregador, PDO::PARAM_INT);
+                    $stmt_update->bindParam(':mes', $mes_inicial, PDO::PARAM_STR);
+                    $stmt_update->bindParam(':divisao', $divisao, PDO::PARAM_INT);
+                    $stmt_update->execute();
                     
-                    $todas_taxas = $stmt_duplicatas->fetchAll(PDO::FETCH_ASSOC);
+                    $atualizados = $stmt_update->rowCount();
+                    error_log("✅ {$atualizados} taxa(s) atualizada(s) para aprovado=true");
+                    
+                    // PASSO 2: Buscar todas as taxas e manter apenas a PRIMEIRA (mais antiga)
+                    $sql_buscar = "SELECT lancamento, data, hora, descricao 
+                                  FROM sind.conta 
+                                  WHERE associado = :matricula 
+                                  AND empregador = :empregador 
+                                  AND mes = :mes 
+                                  AND convenio = 249
+                                  AND divisao = :divisao
+                                  ORDER BY data, hora";
+                    
+                    $stmt_buscar = $pdo->prepare($sql_buscar);
+                    $stmt_buscar->bindParam(':matricula', $matricula, PDO::PARAM_STR);
+                    $stmt_buscar->bindParam(':empregador', $empregador, PDO::PARAM_INT);
+                    $stmt_buscar->bindParam(':mes', $mes_inicial, PDO::PARAM_STR);
+                    $stmt_buscar->bindParam(':divisao', $divisao, PDO::PARAM_INT);
+                    $stmt_buscar->execute();
+                    
+                    $todas_taxas = $stmt_buscar->fetchAll(PDO::FETCH_ASSOC);
                     $total_taxas = count($todas_taxas);
                     
                     if ($total_taxas > 1) {
                         error_log("⚠️ ENCONTRADAS {$total_taxas} TAXAS - Removendo duplicatas");
                         
-                        // Estratégia: Manter taxa com aprovado=true, deletar as com aprovado=false
-                        $taxa_aprovada = null;
+                        // Manter apenas a PRIMEIRA (mais antiga)
+                        $primeira_taxa = $todas_taxas[0];
                         $ids_para_deletar = array();
                         
-                        foreach ($todas_taxas as $taxa) {
-                            $aprovado_str = $taxa['aprovado'] === 't' || $taxa['aprovado'] === true || $taxa['aprovado'] === '1' ? 'true' : 'false';
-                            
-                            if ($taxa['aprovado'] === 't' || $taxa['aprovado'] === true || $taxa['aprovado'] === '1') {
-                                // Esta é a taxa aprovada - manter
-                                if ($taxa_aprovada === null) {
-                                    $taxa_aprovada = $taxa;
-                                    error_log("✅ Mantendo taxa ID: " . $taxa['lancamento'] . 
-                                             " - Descrição: '" . $taxa['descricao'] . "' - Aprovado: true");
-                                } else {
-                                    // Múltiplas taxas aprovadas - deletar as extras
-                                    $ids_para_deletar[] = $taxa['lancamento'];
-                                    error_log("   🗑️ Deletando taxa EXTRA aprovada ID: " . $taxa['lancamento'] . 
-                                             " - Descrição: '" . $taxa['descricao'] . "' - Aprovado: true");
-                                }
-                            } else {
-                                // Taxa não aprovada - deletar
-                                $ids_para_deletar[] = $taxa['lancamento'];
-                                error_log("   🗑️ Deletando taxa ID: " . $taxa['lancamento'] . 
-                                         " - Descrição: '" . $taxa['descricao'] . "' - Aprovado: false");
-                            }
+                        error_log("✅ Mantendo taxa ID: " . $primeira_taxa['lancamento'] . 
+                                 " - Descrição: '" . $primeira_taxa['descricao'] . "'");
+                        
+                        // Deletar todas as outras
+                        for ($i = 1; $i < $total_taxas; $i++) {
+                            $ids_para_deletar[] = $todas_taxas[$i]['lancamento'];
+                            error_log("   🗑️ Deletando taxa ID: " . $todas_taxas[$i]['lancamento'] . 
+                                     " - Descrição: '" . $todas_taxas[$i]['descricao'] . "'");
                         }
                         
-                        // Se não houver nenhuma taxa aprovada, manter a primeira
-                        if ($taxa_aprovada === null && count($todas_taxas) > 0) {
-                            $taxa_aprovada = $todas_taxas[0];
-                            $ids_para_deletar = array();
-                            error_log("⚠️ NENHUMA taxa aprovada encontrada - Mantendo primeira: ID " . $taxa_aprovada['lancamento']);
-                            
-                            for ($i = 1; $i < $total_taxas; $i++) {
-                                $ids_para_deletar[] = $todas_taxas[$i]['lancamento'];
-                                error_log("   🗑️ Deletando taxa ID: " . $todas_taxas[$i]['lancamento']);
-                            }
-                        }
-                        
-                        // Deletar as duplicatas
+                        // Executar deleção
                         if (count($ids_para_deletar) > 0) {
                             $placeholders = implode(',', array_fill(0, count($ids_para_deletar), '?'));
                             $sql_deletar = "DELETE FROM sind.conta WHERE lancamento IN ($placeholders)";
