@@ -329,15 +329,15 @@ if (isset($_POST['valor_pedido'])) {
                     // Vamos garantir que existe apenas 1 taxa por mês/associado/divisão
                     error_log(" VERIFICANDO E REMOVENDO DUPLICATAS DE TAXA");
                     
-                    // Buscar todas as taxas deste associado/mes/divisao
-                    $sql_buscar_duplicatas = "SELECT lancamento, data, hora, descricao 
+                    // Buscar todas as taxas deste associado/mes/divisao (incluindo campo aprovado)
+                    $sql_buscar_duplicatas = "SELECT lancamento, data, hora, descricao, aprovado 
                                               FROM sind.conta 
                                               WHERE associado = :matricula 
                                               AND empregador = :empregador 
                                               AND mes = :mes 
                                               AND convenio = 249
                                               AND divisao = :divisao
-                                              ORDER BY data, hora";
+                                              ORDER BY aprovado DESC, data, hora";
                     
                     $stmt_duplicatas = $pdo->prepare($sql_buscar_duplicatas);
                     $stmt_duplicatas->bindParam(':matricula', $matricula, PDO::PARAM_STR);
@@ -352,14 +352,43 @@ if (isset($_POST['valor_pedido'])) {
                     if ($total_taxas > 1) {
                         error_log(" ENCONTRADAS {$total_taxas} TAXAS - Removendo duplicatas");
                         
-                        // Manter apenas a PRIMEIRA taxa (mais antiga)
-                        $primeira_taxa_id = $todas_taxas[0]['lancamento'];
+                        // Estratégia: Manter taxa com aprovado=true, deletar as com aprovado=false
+                        $taxa_aprovada = null;
                         $ids_para_deletar = array();
                         
-                        for ($i = 1; $i < $total_taxas; $i++) {
-                            $ids_para_deletar[] = $todas_taxas[$i]['lancamento'];
-                            error_log("   Deletando taxa ID: " . $todas_taxas[$i]['lancamento'] . 
-                                     " - Descrição: '" . $todas_taxas[$i]['descricao'] . "'");
+                        foreach ($todas_taxas as $taxa) {
+                            $aprovado_str = $taxa['aprovado'] === 't' || $taxa['aprovado'] === true || $taxa['aprovado'] === '1' ? 'true' : 'false';
+                            
+                            if ($taxa['aprovado'] === 't' || $taxa['aprovado'] === true || $taxa['aprovado'] === '1') {
+                                // Esta é a taxa aprovada - manter
+                                if ($taxa_aprovada === null) {
+                                    $taxa_aprovada = $taxa;
+                                    error_log(" Mantendo taxa ID: " . $taxa['lancamento'] . 
+                                             " - Descrição: '" . $taxa['descricao'] . "' - Aprovado: true");
+                                } else {
+                                    // Múltiplas taxas aprovadas - deletar as extras
+                                    $ids_para_deletar[] = $taxa['lancamento'];
+                                    error_log("   Deletando taxa EXTRA aprovada ID: " . $taxa['lancamento'] . 
+                                             " - Descrição: '" . $taxa['descricao'] . "' - Aprovado: true");
+                                }
+                            } else {
+                                // Taxa não aprovada - deletar
+                                $ids_para_deletar[] = $taxa['lancamento'];
+                                error_log("   Deletando taxa ID: " . $taxa['lancamento'] . 
+                                         " - Descrição: '" . $taxa['descricao'] . "' - Aprovado: false");
+                            }
+                        }
+                        
+                        // Se não houver nenhuma taxa aprovada, manter a primeira
+                        if ($taxa_aprovada === null && count($todas_taxas) > 0) {
+                            $taxa_aprovada = $todas_taxas[0];
+                            $ids_para_deletar = array();
+                            error_log(" NENHUMA taxa aprovada encontrada - Mantendo primeira: ID " . $taxa_aprovada['lancamento']);
+                            
+                            for ($i = 1; $i < $total_taxas; $i++) {
+                                $ids_para_deletar[] = $todas_taxas[$i]['lancamento'];
+                                error_log("   Deletando taxa ID: " . $todas_taxas[$i]['lancamento']);
+                            }
                         }
                         
                         // Deletar as duplicatas
@@ -371,7 +400,6 @@ if (isset($_POST['valor_pedido'])) {
                             
                             $deletados = $stmt_deletar->rowCount();
                             error_log(" {$deletados} taxa(s) duplicada(s) removida(s)");
-                            error_log(" Mantida apenas taxa ID: {$primeira_taxa_id} - Descrição: '" . $todas_taxas[0]['descricao'] . "'");
                         }
                     } else {
                         error_log(" Apenas 1 taxa encontrada - Nenhuma duplicata para remover");
