@@ -12,7 +12,7 @@ function logDebug($message, $data = null) {
         $logMessage .= " - " . json_encode($data, JSON_UNESCAPED_UNICODE);
     }
     error_log($logMessage);
-    echo "<!-- DEBUG: $logMessage -->\n";
+    // REMOVIDO echo para não contaminar resposta JSON
 }
 
 try {
