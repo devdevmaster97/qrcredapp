@@ -39,17 +39,38 @@ export async function POST(request: NextRequest) {
     console.log(`🔒 [API] Controle execução única:`, Array.from(execucaoUnica.entries()));
     console.log(`⏰ [API] Timestamp execução:`, Array.from(timestampExecucao.entries()));
     
-    // LIMPEZA AUTOMÁTICA: Limpar cache antigo para permitir novas requisições
+    // LIMPEZA GLOBAL: Limpar TODAS as entradas antigas de TODOS os Maps
+    const TEMPO_EXPIRACAO = 10000; // 10 segundos
+    let entradasLimpas = 0;
+    
+    for (const [chave, timestamp] of Array.from(timestampExecucao.entries())) {
+      const tempoDecorrido = agora - timestamp;
+      if (tempoDecorrido > TEMPO_EXPIRACAO) {
+        timestampExecucao.delete(chave);
+        execucaoUnica.delete(chave);
+        ultimasRequisicoes.delete(chave);
+        requestsEmAndamento.delete(chave);
+        promisesEmAndamento.delete(chave);
+        contadorChamadasPHP.delete(chave);
+        entradasLimpas++;
+      }
+    }
+    
+    if (entradasLimpas > 0) {
+      console.log(`🧹 [LIMPEZA GLOBAL] ${entradasLimpas} entrada(s) antiga(s) removida(s) de todos os Maps`);
+    }
+    
+    // LIMPEZA ESPECÍFICA: Limpar cache desta chave se existir e for antiga
     if (timestampExecucao.has(chaveUnica)) {
       const tempoDecorrido = agora - timestampExecucao.get(chaveUnica)!;
-      if (tempoDecorrido > 30000) { // Limpar entradas antigas (30s)
+      if (tempoDecorrido > TEMPO_EXPIRACAO) {
         timestampExecucao.delete(chaveUnica);
         execucaoUnica.delete(chaveUnica);
         ultimasRequisicoes.delete(chaveUnica);
         requestsEmAndamento.delete(chaveUnica);
         promisesEmAndamento.delete(chaveUnica);
         contadorChamadasPHP.delete(chaveUnica);
-        console.log(`🧹 [LIMPEZA AUTOMÁTICA] Cache antigo removido para ${chaveUnica}`);
+        console.log(`🧹 [LIMPEZA ESPECÍFICA] Cache antigo removido para ${chaveUnica} (${tempoDecorrido}ms)`);
       }
     }
     
