@@ -305,6 +305,21 @@ async function processarSolicitacao(body: any, chaveUnica: string, requestId: st
     debugInfo.tempo_processamento_php = tempoProcessamento;
     debugInfo.php_response_type = typeof response.data;
     
+    // LOG CRÍTICO: Mostrar TODA a resposta do PHP
+    console.log(`🔍 [ANÁLISE COMPLETA] RequestID: ${requestId} - Resposta PHP COMPLETA:`, {
+      status: response.status,
+      data: response.data,
+      data_type: typeof response.data,
+      data_keys: response.data ? Object.keys(response.data) : [],
+      success_value: response.data?.success,
+      success_type: typeof response.data?.success,
+      message: response.data?.message,
+      error: response.data?.error,
+      antecipacao_id: response.data?.antecipacao_id,
+      conta_id: response.data?.conta_id,
+      raw_response: JSON.stringify(response.data)
+    });
+    
     // Verificar se houve erro (incluindo erros de duplicata da trigger)
     const temErro = response.status >= 400 ||
                    response.data.success === false || 
@@ -320,6 +335,13 @@ async function processarSolicitacao(body: any, chaveUnica: string, requestId: st
                      response.data.message.toLowerCase().includes("duplicidade") ||
                      response.data.message.toLowerCase().includes("duplicate")
                    ));
+    
+    console.log(`🔍 [VALIDAÇÃO ERRO] RequestID: ${requestId} - temErro: ${temErro}`, {
+      status_maior_400: response.status >= 400,
+      success_false: response.data.success === false,
+      success_string_false: response.data.success === "false",
+      message_contem_erro: response.data.message ? 'verificando...' : 'sem message'
+    });
     
     if (temErro) {
       const mensagem = response.data.message || 'Erro ao processar solicitação';
