@@ -492,11 +492,40 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         associadoData.id_divisao
       );
       
-      // 4. Calcular saldo
+      // 4. Calcular total de solicitações pendentes do mês corrente
+      const solicitacoesPendentes = ultimasSolicitacoes.filter(solicitacao => {
+        // Considerar apenas solicitações do mês corrente que estão pendentes
+        const isPendente = solicitacao.status === false || 
+                          solicitacao.status === 'false' || 
+                          solicitacao.status === null ||
+                          solicitacao.status === 'Pendente' ||
+                          solicitacao.status === 'pendente';
+        const isMesCorrente = solicitacao.mes_corrente === mesAtual;
+        return isPendente && isMesCorrente;
+      });
+
+      const totalSolicitacoesPendentes = solicitacoesPendentes.reduce((acc, solicitacao) => {
+        // Usar valor_descontar ou valor_a_descontar (ambos podem vir da API)
+        const valorDescontar = parseFloat(solicitacao.valor_descontar || solicitacao.valor_a_descontar || '0');
+        return acc + valorDescontar;
+      }, 0);
+
+      console.log('💰 Solicitações pendentes encontradas:', {
+        quantidade: solicitacoesPendentes.length,
+        totalPendente: totalSolicitacoesPendentes,
+        solicitacoes: solicitacoesPendentes.map(s => ({
+          id: s.id,
+          valor: s.valor_descontar || s.valor_a_descontar,
+          status: s.status,
+          mes: s.mes_corrente
+        }))
+      });
+
+      // 5. Calcular saldo deduzindo gastos E solicitações pendentes
       const limite = parseFloat(associadoData.limite || '0');
-      const saldo = limite - total;
-      
-      // 5. Atualizar o estado
+      const saldo = limite - total - totalSolicitacoesPendentes;
+
+      // 6. Atualizar o estado
       setSaldoData({
         saldo,
         limite,
@@ -509,6 +538,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         mesCorrente: mesAtual,
         limite: limite,
         totalGastoNoMes: total,
+        totalSolicitacoesPendentes: totalSolicitacoesPendentes,
         saldoDisponivel: saldo,
         porcentagem: porcentagem,
         idDivisao: associadoData.id_divisao
