@@ -493,6 +493,19 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       );
       
       // 4. Calcular total de solicitações pendentes do mês corrente
+      console.log('🔍 DEBUG - Estado ANTES do filtro:', {
+        totalSolicitacoes: ultimasSolicitacoes.length,
+        mesAtual: mesAtual,
+        todasSolicitacoes: ultimasSolicitacoes.map(s => ({
+          id: s.id,
+          status: s.status,
+          statusType: typeof s.status,
+          mes_corrente: s.mes_corrente,
+          valor_descontar: s.valor_descontar,
+          valor_a_descontar: s.valor_a_descontar
+        }))
+      });
+      
       const solicitacoesPendentes = ultimasSolicitacoes.filter(solicitacao => {
         // Considerar apenas solicitações do mês corrente que estão pendentes
         const isPendente = solicitacao.status === false || 
@@ -501,6 +514,20 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
                           solicitacao.status === 'Pendente' ||
                           solicitacao.status === 'pendente';
         const isMesCorrente = solicitacao.mes_corrente === mesAtual;
+        
+        // Log detalhado para cada solicitação
+        if (solicitacao.id) {
+          console.log(`🔍 Solicitação ${solicitacao.id}:`, {
+            status: solicitacao.status,
+            statusType: typeof solicitacao.status,
+            mes_corrente: solicitacao.mes_corrente,
+            mesAtual: mesAtual,
+            isPendente: isPendente,
+            isMesCorrente: isMesCorrente,
+            incluir: isPendente && isMesCorrente
+          });
+        }
+        
         return isPendente && isMesCorrente;
       });
 
