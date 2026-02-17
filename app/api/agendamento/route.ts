@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('📥 BODY RECEBIDO NA API:', JSON.stringify(body, null, 2));
     
-    const { cod_associado, id_empregador, cod_convenio, profissional, especialidade, convenio_nome } = body;
+    const { cod_associado, id_empregador, cod_convenio, profissional, especialidade, convenio_nome, data_pretendida } = body;
     
     console.log('📥 CAMPOS EXTRAÍDOS:', {
       cod_associado, 
@@ -14,7 +14,8 @@ export async function POST(request: NextRequest) {
       cod_convenio, 
       profissional, 
       especialidade, 
-      convenio_nome
+      convenio_nome,
+      data_pretendida
     });
 
     // Log detalhado para rastrear chamadas à API
@@ -78,6 +79,12 @@ export async function POST(request: NextRequest) {
     params.append('especialidade', especialidadeLimpa);
     params.append('convenio_nome', convenioNomeLimpo);
 
+    // Adicionar data_pretendida se foi informada
+    if (data_pretendida) {
+      params.append('data_pretendida', data_pretendida);
+      console.log(`📅 [${requestId}] Data pretendida informada:`, data_pretendida);
+    }
+
     // Log completo dos parâmetros que serão enviados
     console.log(`📤 [${requestId}] PARÂMETROS PARA BACKEND PHP:`, {
       cod_associado: params.get('cod_associado'),
@@ -87,7 +94,8 @@ export async function POST(request: NextRequest) {
       status: params.get('status'),
       profissional: params.get('profissional'),
       especialidade: params.get('especialidade'),
-      convenio_nome: params.get('convenio_nome')
+      convenio_nome: params.get('convenio_nome'),
+      data_pretendida: params.get('data_pretendida')
     });
     
     console.log(`📤 [${requestId}] STRING COMPLETA ENVIADA:`, params.toString());
