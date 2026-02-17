@@ -163,7 +163,7 @@ export default function NotificationManager() {
     try {
       const registration = await getServiceWorkerRegistration();
 
-      // CHAVE VAPID CORRIGIDA - Gerada com biblioteca web-push
+      // CHAVE VAPID CORRIGIDA - Gerada com biblioteca web-push atualizado
       const vapidPublicKey = 'BBkhuawdLxFdinzSuGIlZme8m6fwELiHR6g7xA601KN3NQ9EgAqNUglRFM3vysv_Nc0gwkPqG4aYdPnKK2eY5Yc';
       
       const subscription = await registration.pushManager.subscribe({
