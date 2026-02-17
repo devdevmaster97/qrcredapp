@@ -20,17 +20,38 @@ interface AdesaoStatus {
 }
 
 export function useAdesaoSasCred(): AdesaoStatus {
+  // 🚀 CARREGAR CACHE DO LOCALSTORAGE IMEDIATAMENTE
+  const getCachedStatus = (): { jaAderiu: boolean; dadosAdesao: any | null } => {
+    try {
+      const cached = localStorage.getItem('sascred_adesao_cache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        const cacheAge = Date.now() - (parsed.timestamp || 0);
+        // Cache válido por 5 minutos
+        if (cacheAge < 5 * 60 * 1000) {
+          console.log('✅ SasCred: Cache encontrado e válido', parsed);
+          return { jaAderiu: parsed.jaAderiu || false, dadosAdesao: parsed.dadosAdesao || null };
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Erro ao ler cache:', error);
+    }
+    return { jaAderiu: false, dadosAdesao: null };
+  };
+
+  const cachedData = getCachedStatus();
+  
   const [status, setStatus] = useState<AdesaoStatus>({
-    jaAderiu: false,
+    jaAderiu: cachedData.jaAderiu,
     loading: true,
     error: null,
-    dadosAdesao: null,
+    dadosAdesao: cachedData.dadosAdesao,
     refresh: () => {}
   });
 
   // Ref para controlar se o componente ainda está montado
   const isMountedRef = useRef(true);
-  const lastStatusRef = useRef<boolean>(false);
+  const lastStatusRef = useRef<boolean>(cachedData.jaAderiu);
   
   // 🎯 PROTEÇÃO CONTRA MÚLTIPLAS CHAMADAS SIMULTÂNEAS
   const isCheckingRef = useRef(false);
@@ -133,17 +154,31 @@ export function useAdesaoSasCred(): AdesaoStatus {
           console.log('🔍 DEBUG FALLBACK - result.jaAderiu:', result.jaAderiu);
           console.log('🔍 DEBUG FALLBACK - typeof result.jaAderiu:', typeof result.jaAderiu);
           
+          const jaAderiu = result.jaAderiu || false;
+          
+          // 💾 SALVAR NO CACHE (FALLBACK 1)
+          try {
+            localStorage.setItem('sascred_adesao_cache', JSON.stringify({
+              jaAderiu,
+              dadosAdesao: result.dados || null,
+              timestamp: Date.now()
+            }));
+            console.log('💾 SasCred: Status salvo no cache (fallback 1)');
+          } catch (error) {
+            console.warn('⚠️ Erro ao salvar cache:', error);
+          }
+          
           if (isMountedRef.current) {
             setStatus(prev => ({
               ...prev,
-              jaAderiu: result.jaAderiu || false,
+              jaAderiu,
               loading: false,
               dadosAdesao: result.dados || null
             }));
-            lastStatusRef.current = result.jaAderiu || false;
-            console.log('✅ Estado atualizado no fallback - jaAderiu:', result.jaAderiu || false);
+            lastStatusRef.current = jaAderiu;
+            console.log('✅ Estado atualizado no fallback - jaAderiu:', jaAderiu);
           }
-          return result?.jaAderiu || false;
+          return jaAderiu;
         } else {
           console.error('❌ Erro na API verificar-adesao (fallback):', response.status);
         }
@@ -170,16 +205,30 @@ export function useAdesaoSasCred(): AdesaoStatus {
         if (response.ok) {
           const result = await response.json();
           
+          const jaAderiu = result.jaAderiu || false;
+          
+          // 💾 SALVAR NO CACHE (FALLBACK 2)
+          try {
+            localStorage.setItem('sascred_adesao_cache', JSON.stringify({
+              jaAderiu,
+              dadosAdesao: result.dados || null,
+              timestamp: Date.now()
+            }));
+            console.log('💾 SasCred: Status salvo no cache (fallback 2)');
+          } catch (error) {
+            console.warn('⚠️ Erro ao salvar cache:', error);
+          }
+          
           if (isMountedRef.current) {
             setStatus(prev => ({
               ...prev,
-              jaAderiu: result.jaAderiu || false,
+              jaAderiu,
               loading: false,
               dadosAdesao: result.dados || null
             }));
-            lastStatusRef.current = result.jaAderiu || false;
+            lastStatusRef.current = jaAderiu;
           }
-          return result?.jaAderiu || false;
+          return jaAderiu;
         }
         return false;
       }
@@ -225,6 +274,18 @@ export function useAdesaoSasCred(): AdesaoStatus {
         console.log('🔍 DEBUG useAdesaoSasCred - jaAderiu calculado:', jaAderiu);
         console.log('🔍 DEBUG useAdesaoSasCred - Comparação: resultado.jaAderiu === true?', resultado.jaAderiu === true);
         const statusAnterior = lastStatusRef.current;
+        
+        // 💾 SALVAR NO CACHE DO LOCALSTORAGE
+        try {
+          localStorage.setItem('sascred_adesao_cache', JSON.stringify({
+            jaAderiu,
+            dadosAdesao: resultado.dados || null,
+            timestamp: Date.now()
+          }));
+          console.log('💾 SasCred: Status salvo no cache');
+        } catch (error) {
+          console.warn('⚠️ Erro ao salvar cache:', error);
+        }
         
         setStatus(prev => ({
           ...prev,
