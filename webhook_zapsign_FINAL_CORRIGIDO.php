@@ -1,10 +1,15 @@
 <?php
 /**
  * Webhook ZapSign para Adesão SasCred
- * Versão ATUALIZADA - Busca divisão correta na tabela adesoes_pendentes
+ * Versão FINAL CORRIGIDA - Com UPSERT para evitar race condition
  * 
- * Resolve problema: Associado pode ter múltiplos registros com divisões diferentes
- * Solução: Busca id_associado e id_divisao corretos da sessão ativa do usuário
+ * Resolve problemas:
+ * 1. Associado pode ter múltiplos registros com divisões diferentes
+ * 2. Race condition em webhooks simultâneos (erro duplicate key)
+ * 
+ * Soluções:
+ * 1. Busca id_associado e id_divisao corretos da tabela adesoes_pendentes
+ * 2. Usa UPSERT (INSERT ... ON CONFLICT) para operação atômica
  */
 
 header('Content-Type: application/json; charset=utf-8');
@@ -37,10 +42,13 @@ try {
     // Dados básicos do signatário
     $nome = $signer['name'] ?? '';
     $email = $signer['email'] ?? '';
-    $cpf = $signer['cpf'] ?? '';
+    $cpf_original = $signer['cpf'] ?? '';
     $celular = $signer['phone_number'] ?? '';
     $has_signed = $signer['has_signed'] ?? false;
     $signed_at = $signer['signed_at'] ?? null;
+    
+    // ✅ LIMPAR CPF: Remover pontos, traços e espaços
+    $cpf = preg_replace('/[^0-9]/', '', $cpf_original);
     
     // Dados do documento
     $doc_token = $data['token'] ?? '';
@@ -50,7 +58,8 @@ try {
     error_log("📋 Dados extraídos:");
     error_log("   Nome: $nome");
     error_log("   Email: $email");
-    error_log("   CPF: $cpf");
+    error_log("   CPF Original: $cpf_original");
+    error_log("   CPF Limpo: $cpf");
     error_log("   Celular: $celular");
     error_log("   Has Signed: " . ($has_signed ? 'true' : 'false'));
     error_log("   Event: $event");
@@ -117,19 +126,27 @@ try {
         
         $sqlAssociado = "SELECT id, id_divisao, codigo 
                          FROM sind.associado 
-                         WHERE ativo = true";
+                         WHERE 1=1";
         
         $paramsAssociado = [];
         
-        // ✅ FALLBACK FLEXÍVEL: Buscar por CPF OU Email
-        if (!empty($cpf)) {
+        // ✅ FALLBACK INTELIGENTE: Priorizar CPF + Email juntos
+        if (!empty($cpf) && !empty($email)) {
+            // MELHOR CENÁRIO: Buscar por CPF E Email (mais preciso)
+            $sqlAssociado .= " AND cpf = :cpf AND email = :email";
+            $paramsAssociado[':cpf'] = $cpf;
+            $paramsAssociado[':email'] = $email;
+            error_log("   Fallback: Buscando por CPF + Email (mais preciso)");
+        } elseif (!empty($cpf)) {
+            // Apenas CPF disponível
             $sqlAssociado .= " AND cpf = :cpf";
             $paramsAssociado[':cpf'] = $cpf;
-            error_log("   Fallback: Buscando por CPF");
+            error_log("   Fallback: Buscando apenas por CPF");
         } elseif (!empty($email)) {
+            // Apenas Email disponível
             $sqlAssociado .= " AND email = :email";
             $paramsAssociado[':email'] = $email;
-            error_log("   Fallback: Buscando por Email");
+            error_log("   Fallback: Buscando apenas por Email");
         } else {
             error_log("❌ ERRO: Impossível buscar associado sem CPF ou Email");
             throw new Exception('CPF e Email não disponíveis - impossível identificar associado');
@@ -181,30 +198,65 @@ try {
         error_log("✅ Status da adesão pendente atualizado para 'assinado'");
     }
     
+    // ✅ BUSCAR DADOS ADICIONAIS DO ASSOCIADO (limite, salário, etc)
+    error_log("🔍 Buscando dados adicionais do associado...");
+    
+    $sqlDadosAssociado = "SELECT limite, salario FROM sind.associado WHERE id = :id_associado LIMIT 1";
+    $stmtDadosAssociado = $pdo->prepare($sqlDadosAssociado);
+    $stmtDadosAssociado->execute([':id_associado' => $id_associado]);
+    $dadosAssociado = $stmtDadosAssociado->fetch(PDO::FETCH_ASSOC);
+    
+    $limite = $dadosAssociado['limite'] ?? '2000.00';
+    $salario = $dadosAssociado['salario'] ?? '0.00';
+    
+    error_log("   Limite: $limite");
+    error_log("   Salário: $salario");
+    
+    // ✅ DETERMINAR TIPO DO DOCUMENTO (1=adesão, 2=antecipação)
+    $tipo = 1; // Padrão: adesão
+    if (stripos($doc_name, 'antecipação') !== false || stripos($doc_name, 'antecipacao') !== false) {
+        $tipo = 2;
+    }
+    error_log("   Tipo documento: $tipo (" . ($tipo == 1 ? 'Adesão' : 'Antecipação') . ")");
+    
+    // ✅ VALORES DE APROVAÇÃO AUTOMÁTICA
+    $valor_aprovado = '550.00'; // Valor fixo de aprovação
+    $data_pgto = date('Y-m-d H:i:s'); // Data/hora atual
+    
     // ✅ USAR UPSERT (INSERT ... ON CONFLICT) para evitar race condition
-    error_log("� Executando UPSERT em associados_sasmais...");
+    error_log("📝 Executando UPSERT em associados_sasmais...");
     error_log("   ID Associado: $id_associado");
     error_log("   ID Divisão: $id_divisao");
+    error_log("   Tipo: $tipo");
     
-    // UPSERT: Inserir ou atualizar se já existir (baseado em id_associado + id_divisao)
+    // UPSERT: Inserir ou atualizar se já existir (baseado em id_associado + id_divisao + tipo)
     $sqlUpsert = "INSERT INTO sind.associados_sasmais 
                   (codigo, nome, email, cpf, celular, id_associado, id_divisao, 
-                   has_signed, signed_at, doc_token, doc_name, event, 
+                   has_signed, signed_at, doc_token, doc_name, event, name, cel_informado,
+                   limite, valor_aprovado, data_pgto, tipo, reprovado, chave_pix,
                    aceitou_termo, data_hora, autorizado)
                   VALUES 
                   (:codigo, :nome, :email, :cpf, :celular, :id_associado, :id_divisao,
-                   :has_signed, :signed_at, :doc_token, :doc_name, :event,
-                   't', NOW(), 'f')
-                  ON CONFLICT (id_associado, id_divisao) 
+                   't', :signed_at, :doc_token, :doc_name, 'doc_signed', :name, :cel_informado,
+                   :limite, :valor_aprovado, :data_pgto, :tipo, 'f', '',
+                   't', NOW(), 't')
+                  ON CONFLICT (id_associado, id_divisao, tipo) 
                   DO UPDATE SET
                       nome = EXCLUDED.nome,
                       email = EXCLUDED.email,
                       celular = EXCLUDED.celular,
-                      has_signed = EXCLUDED.has_signed,
+                      has_signed = 't',
                       signed_at = EXCLUDED.signed_at,
                       doc_token = EXCLUDED.doc_token,
                       doc_name = EXCLUDED.doc_name,
-                      event = EXCLUDED.event,
+                      event = 'doc_signed',
+                      name = EXCLUDED.name,
+                      cel_informado = EXCLUDED.cel_informado,
+                      limite = EXCLUDED.limite,
+                      valor_aprovado = EXCLUDED.valor_aprovado,
+                      data_pgto = EXCLUDED.data_pgto,
+                      tipo = EXCLUDED.tipo,
+                      autorizado = 't',
                       data_hora = NOW()
                   RETURNING id, (xmax = 0) AS inserted";
     
@@ -217,11 +269,15 @@ try {
         ':celular' => $celular,
         ':id_associado' => $id_associado,
         ':id_divisao' => $id_divisao,
-        ':has_signed' => $has_signed ? 't' : 'f',
         ':signed_at' => $signed_at,
         ':doc_token' => $doc_token,
         ':doc_name' => $doc_name,
-        ':event' => $event
+        ':name' => $nome,
+        ':cel_informado' => $celular,
+        ':limite' => $limite,
+        ':valor_aprovado' => $valor_aprovado,
+        ':data_pgto' => $data_pgto,
+        ':tipo' => $tipo
     ]);
     
     $resultado = $stmtUpsert->fetch(PDO::FETCH_ASSOC);
@@ -233,7 +289,15 @@ try {
         error_log("   ID: $registroId");
         error_log("   Código: $codigo");
         error_log("   ID Associado: $id_associado");
-        error_log("   ID Divisão: $id_divisao");
+        error_log("   ID Divisão: $id_divisao (✅ DIVISÃO CORRETA)");
+        error_log("   Has Signed: true (PADRÃO)");
+        error_log("   Event: doc_signed (PADRÃO)");
+        error_log("   Autorizado: true (PADRÃO)");
+        error_log("   Limite: $limite");
+        error_log("   Valor Aprovado: $valor_aprovado");
+        error_log("   Data Pgto: $data_pgto");
+        error_log("   Tipo: $tipo");
+        error_log("   Celular Informado: $celular");
         
         echo json_encode([
             'status' => 'sucesso',
@@ -248,6 +312,7 @@ try {
         error_log("   ID: $registroId");
         error_log("   ID Associado: $id_associado");
         error_log("   ID Divisão: $id_divisao");
+        error_log("   Tipo: $tipo");
         
         echo json_encode([
             'status' => 'sucesso',

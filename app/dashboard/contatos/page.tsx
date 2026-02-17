@@ -42,14 +42,14 @@ export default function ContatosPage() {
             </p>
             <div className="space-y-2">
               <p className="text-gray-700">
-                <strong>Número:</strong> (11) 99999-9999
+                <strong>Número:</strong> (65) 9.9801-8241
               </p>
               <p className="text-gray-700">
-                <strong>Horário:</strong> Segunda à Sexta, 8h às 18h
+                <strong>Horário:</strong> segunda-feira a sexta-feira: 9h às 12h – 13h às 17h
               </p>
             </div>
             <a 
-              href="https://wa.me/5511999999999" 
+              href="https://wa.me/556598018241" 
               target="_blank" 
               rel="noopener noreferrer"
               className="inline-flex items-center mt-4 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
@@ -72,17 +72,14 @@ export default function ContatosPage() {
             </p>
             <div className="space-y-2">
               <p className="text-gray-700">
-                <strong>Fixo:</strong> (11) 3333-4444
+                <strong>Número:</strong> (65) 3057-0350
               </p>
               <p className="text-gray-700">
-                <strong>0800:</strong> 0800 123 4567
-              </p>
-              <p className="text-gray-700">
-                <strong>Horário:</strong> Segunda à Sexta, 8h às 18h
+                <strong>Horário:</strong> segunda-feira a sexta-feira: 9h às 12h – 13h às 17h
               </p>
             </div>
             <a 
-              href="tel:08001234567"
+              href="tel:6530570350"
               className="inline-flex items-center mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
             >
               <FaPhone className="mr-2" />
@@ -99,21 +96,21 @@ export default function ContatosPage() {
               <h2 className="text-xl font-bold text-gray-900">E-mail</h2>
             </div>
             <p className="text-gray-600 mb-4">
-              Envie sua mensagem e receberá resposta em até 24 horas
+              Envie sua mensagem e responderemos em até 24 horas
             </p>
             <div className="space-y-2">
               <p className="text-gray-700">
-                <strong>Geral:</strong> contato@sasapp.com.br
+                <strong>Geral:</strong> atendimento@sasconvenios.com.br
               </p>
               <p className="text-gray-700">
-                <strong>Suporte:</strong> suporte@sasapp.com.br
+                <strong>Suporte:</strong> suporte.ti@sasconvenios.com.br
               </p>
               <p className="text-gray-700">
-                <strong>Financeiro:</strong> financeiro@sasapp.com.br
+                <strong>Financeiro:</strong> cred@sasconvenios.com.br
               </p>
             </div>
             <a 
-              href="mailto:contato@sasapp.com.br"
+              href="mailto:atendimento@sasconvenios.com.br"
               className="inline-flex items-center mt-4 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
             >
               <FaEnvelope className="mr-2" />
@@ -130,21 +127,29 @@ export default function ContatosPage() {
               <h2 className="text-xl font-bold text-gray-900">Endereço</h2>
             </div>
             <p className="text-gray-600 mb-4">
-              Venha nos visitar em nosso escritório
+              Venha nos visitar em nossos escritórios
             </p>
-            <div className="space-y-2">
-              <p className="text-gray-700">
-                <strong>Endereço:</strong><br />
-                Rua das Flores, 123<br />
-                Centro - São Paulo/SP<br />
-                CEP: 01234-567
-              </p>
-              <p className="text-gray-700">
-                <strong>Horário:</strong> Segunda à Sexta, 8h às 17h
-              </p>
+            <div className="space-y-3">
+              <div>
+                <p className="text-gray-700">
+                  <strong>Sede:</strong><br />
+                  Alameda Rio Negro 503, Sala 2020<br />
+                  Alphaville, Barueri/SP<br />
+                  CEP 06454-000
+                </p>
+              </div>
+              <div>
+                <p className="text-gray-700">
+                  <strong>Filial:</strong><br />
+                  Rua Jose de Lacerda Cintra, Nº15<br />
+                  Quadra: 23; Lote: 05 – 06<br />
+                  Bosque da Saúde, Cuiabá/MT<br />
+                  CEP 78050-192
+                </p>
+              </div>
             </div>
             <a 
-              href="https://maps.google.com/maps?q=Rua+das+Flores+123+São+Paulo"
+              href="https://maps.google.com/maps?q=Alameda+Rio+Negro+503+Alphaville+Barueri+SP"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center mt-4 bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors"
@@ -168,16 +173,16 @@ export default function ContatosPage() {
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">Atendimento Online</h3>
               <ul className="space-y-1 text-gray-700">
-                <li>Segunda à Sexta: 8h às 18h</li>
-                <li>Sábado: 8h às 12h</li>
-                <li>Domingo: Emergências apenas</li>
+                <li>Segunda a Sexta: 9h às 12h – 13h às 17h</li>
+                <li>Sábado: Fechado</li>
+                <li>Domingo: Fechado</li>
               </ul>
             </div>
             
             <div>
               <h3 className="font-semibold text-gray-900 mb-2">Atendimento Presencial</h3>
               <ul className="space-y-1 text-gray-700">
-                <li>Segunda à Sexta: 8h às 17h</li>
+                <li>Segunda a Sexta: 9h às 12h – 13h às 17h</li>
                 <li>Sábado: Fechado</li>
                 <li>Domingo: Fechado</li>
               </ul>

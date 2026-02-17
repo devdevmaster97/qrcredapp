@@ -1,13 +1,120 @@
 'use client';
 
 import Link from 'next/link';
-import { FaMoneyBillWave, FaStore, FaQrcode, FaClipboardList, FaWallet, FaUser, FaPhone, FaHistory, FaClock, FaStar, FaShieldAlt, FaMobileAlt, FaArrowRight, FaChartLine } from 'react-icons/fa';
+import { FaMoneyBillWave, FaStore, FaQrcode, FaClipboardList, FaWallet, FaUser, FaPhone, FaHistory, FaClock, FaStar, FaShieldAlt, FaMobileAlt, FaArrowRight, FaChartLine, FaInfoCircle, FaHeadset } from 'react-icons/fa';
 import { useAdesaoSasCred } from '@/app/hooks/useAdesaoSasCred';
 import NotificationManager from '@/app/components/NotificationManager';
 
 export default function DashboardPage() {
-  const { jaAderiu } = useAdesaoSasCred();
+  const { jaAderiu, loading } = useAdesaoSasCred();
 
+  // Layout simplificado para associados que já aderiram ao SasCred
+  if (jaAderiu) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100 py-6">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header Simplificado */}
+          <div className="text-center mb-10">
+            <h1 className="text-4xl font-bold text-gray-900 mb-3">
+              SasCred
+            </h1>
+            <p className="text-lg text-gray-600">
+              Seu crédito consignado digital
+            </p>
+          </div>
+
+          {/* Gerenciador de Notificações */}
+          <div className="mb-8">
+            <NotificationManager />
+          </div>
+
+          {/* Menu Principal - 3 Opções Grandes */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {/* 1. QR Code */}
+            <Link href="/dashboard/qrcode" className="group">
+              <div className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden h-full">
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-8 text-center">
+                  <FaQrcode className="text-white text-6xl mx-auto mb-4" />
+                  <h3 className="text-2xl font-bold text-white mb-2">QR Code</h3>
+                  <p className="text-blue-100 text-sm">Pague com QR Code</p>
+                </div>
+                <div className="p-6 text-center">
+                  <p className="text-gray-700 font-medium mb-3">
+                    Clique aqui e pague com QR Code
+                  </p>
+                  <div className="flex items-center justify-center text-blue-600 font-semibold group-hover:text-blue-700">
+                    <span>Acessar</span>
+                    <FaArrowRight className="ml-2 transition-transform group-hover:translate-x-1" />
+                  </div>
+                </div>
+              </div>
+            </Link>
+
+            {/* 2. Saldo */}
+            <Link href="/dashboard/saldo" className="group">
+              <div className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden h-full">
+                <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-8 text-center">
+                  <FaWallet className="text-white text-6xl mx-auto mb-4" />
+                  <h3 className="text-2xl font-bold text-white mb-2">Saldo</h3>
+                  <p className="text-green-100 text-sm">Consulte seu saldo</p>
+                </div>
+                <div className="p-6 text-center">
+                  <p className="text-gray-700 font-medium mb-3">
+                    Clique aqui e veja seu saldo
+                  </p>
+                  <div className="flex items-center justify-center text-green-600 font-semibold group-hover:text-green-700">
+                    <span>Acessar</span>
+                    <FaArrowRight className="ml-2 transition-transform group-hover:translate-x-1" />
+                  </div>
+                </div>
+              </div>
+            </Link>
+
+            {/* 3. Extrato */}
+            <Link href="/dashboard/extrato" className="group">
+              <div className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden h-full">
+                <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-8 text-center">
+                  <FaClipboardList className="text-white text-6xl mx-auto mb-4" />
+                  <h3 className="text-2xl font-bold text-white mb-2">Extrato</h3>
+                  <p className="text-purple-100 text-sm">Suas compras</p>
+                </div>
+                <div className="p-6 text-center">
+                  <p className="text-gray-700 font-medium mb-3">
+                    Clique aqui e veja suas compras
+                  </p>
+                  <div className="flex items-center justify-center text-purple-600 font-semibold group-hover:text-purple-700">
+                    <span>Acessar</span>
+                    <FaArrowRight className="ml-2 transition-transform group-hover:translate-x-1" />
+                  </div>
+                </div>
+              </div>
+            </Link>
+          </div>
+
+          {/* Links Discretos no Final */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mt-12 pt-8 border-t border-gray-300">
+            <Link 
+              href="/dashboard/sascred/o-que-e" 
+              className="flex items-center text-gray-600 hover:text-blue-600 transition-colors text-sm"
+            >
+              <FaInfoCircle className="mr-2" />
+              O que é?
+            </Link>
+            <span className="hidden sm:block text-gray-300">|</span>
+            <Link 
+              href="/dashboard/contatos" 
+              className="flex items-center text-gray-600 hover:text-blue-600 transition-colors text-sm"
+            >
+              <FaHeadset className="mr-2" />
+              Suporte
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Layout completo para associados que ainda NÃO aderiram ao SasCred
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
