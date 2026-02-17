@@ -34,6 +34,7 @@ export default function ConveniosContent() {
   const [profissionalSelecionado, setProfissionalSelecionado] = useState<ConvenioProfissional | null>(null);
   const [dataAgendamento, setDataAgendamento] = useState('');
   const [horaAgendamento, setHoraAgendamento] = useState('');
+  const [confirmandoAgendamento, setConfirmandoAgendamento] = useState(false);
 
   // Função para limpar estados órfãos após timeout
   const clearProcessingState = (profissionalId: string) => {
@@ -153,6 +154,12 @@ export default function ConveniosContent() {
   const confirmarAgendamento = async () => {
     if (!profissionalSelecionado) return;
 
+    // 🚫 PROTEÇÃO CONTRA DUPLO CLIQUE
+    if (confirmandoAgendamento) {
+      console.log('🚫 DUPLO CLIQUE BLOQUEADO - Agendamento já está sendo confirmado');
+      return;
+    }
+
     // Validar data e hora
     if (!dataAgendamento || !horaAgendamento) {
       toast.error('Por favor, informe a data e hora desejadas para o agendamento.');
@@ -168,9 +175,21 @@ export default function ConveniosContent() {
       return;
     }
 
-    // Fechar modal e processar agendamento
-    fecharModal();
-    await handleAgendar(profissionalSelecionado, dataHoraAgendamento);
+    // Marcar como confirmando para bloquear cliques adicionais
+    setConfirmandoAgendamento(true);
+    console.log('🔒 Confirmação bloqueada - processando agendamento');
+
+    try {
+      // Fechar modal e processar agendamento
+      fecharModal();
+      await handleAgendar(profissionalSelecionado, dataHoraAgendamento);
+    } finally {
+      // Liberar após 3 segundos (tempo suficiente para a proteção do handleAgendar entrar em ação)
+      setTimeout(() => {
+        setConfirmandoAgendamento(false);
+        console.log('🔓 Confirmação liberada');
+      }, 3000);
+    }
   };
 
   // Função para lidar com agendamento
@@ -604,9 +623,21 @@ export default function ConveniosContent() {
               </button>
               <button
                 onClick={confirmarAgendamento}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                disabled={confirmandoAgendamento}
+                className={`flex-1 px-4 py-2 rounded-lg transition-colors flex items-center justify-center ${
+                  confirmandoAgendamento
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                }`}
               >
-                Confirmar
+                {confirmandoAgendamento ? (
+                  <>
+                    <FaSpinner className="animate-spin mr-2" />
+                    Processando...
+                  </>
+                ) : (
+                  'Confirmar'
+                )}
               </button>
             </div>
           </div>
