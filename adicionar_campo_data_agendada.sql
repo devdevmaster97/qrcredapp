@@ -1,30 +1,29 @@
 -- =====================================================
--- Script SQL: Adicionar campo data_agendada na tabela de agendamentos
+-- Script SQL: Adicionar campo data_pretendida na tabela de agendamento
 -- Database: PostgreSQL
--- Descrição: Adiciona campo para armazenar a data/hora desejada do agendamento
+-- Descrição: Adiciona campo para armazenar a data/hora pretendida pelo usuário
 -- Data: 2026-02-17
 -- =====================================================
 
--- Verificar se a tabela de agendamentos existe
--- (Assumindo que a tabela está no schema 'sind' e se chama 'agendamentos')
--- Ajuste o nome da tabela conforme necessário
+-- Verificar se a tabela de agendamento existe
+-- (Tabela: sind.agendamento)
 
--- Passo 1: Adicionar coluna data_agendada (TIMESTAMP WITH TIME ZONE)
--- Este campo armazenará a data e hora que o usuário deseja para o agendamento
-ALTER TABLE sind.agendamentos 
-ADD COLUMN IF NOT EXISTS data_agendada TIMESTAMP WITH TIME ZONE;
+-- Passo 1: Adicionar coluna data_pretendida (TIMESTAMP WITH TIME ZONE)
+-- Este campo armazenará a data e hora pretendida pelo usuário para o agendamento
+ALTER TABLE sind.agendamento 
+ADD COLUMN IF NOT EXISTS data_pretendida TIMESTAMP WITH TIME ZONE;
 
 -- Passo 2: Adicionar comentário na coluna para documentação
-COMMENT ON COLUMN sind.agendamentos.data_agendada IS 
-'Data e hora desejada pelo usuário para o agendamento. Formato ISO 8601 com timezone.';
+COMMENT ON COLUMN sind.agendamento.data_pretendida IS 
+'Data e hora pretendida pelo usuário para o agendamento. Formato ISO 8601 com timezone.';
 
 -- Passo 3: Criar índice para melhorar performance de consultas por data
-CREATE INDEX IF NOT EXISTS idx_agendamentos_data_agendada 
-ON sind.agendamentos(data_agendada);
+CREATE INDEX IF NOT EXISTS idx_agendamento_data_pretendida 
+ON sind.agendamento(data_pretendida);
 
 -- Passo 4: Adicionar índice composto para consultas por associado e data
-CREATE INDEX IF NOT EXISTS idx_agendamentos_associado_data 
-ON sind.agendamentos(cod_associado, data_agendada);
+CREATE INDEX IF NOT EXISTS idx_agendamento_associado_data_pretendida 
+ON sind.agendamento(cod_associado, data_pretendida);
 
 -- =====================================================
 -- VERIFICAÇÕES E CONSULTAS ÚTEIS
@@ -38,8 +37,8 @@ SELECT
     column_default
 FROM information_schema.columns
 WHERE table_schema = 'sind' 
-  AND table_name = 'agendamentos' 
-  AND column_name = 'data_agendada';
+  AND table_name = 'agendamento' 
+  AND column_name = 'data_pretendida';
 
 -- Verificar índices criados
 SELECT 
@@ -47,8 +46,8 @@ SELECT
     indexdef
 FROM pg_indexes
 WHERE schemaname = 'sind' 
-  AND tablename = 'agendamentos'
-  AND indexname LIKE '%data_agendada%';
+  AND tablename = 'agendamento'
+  AND indexname LIKE '%data_pretendida%';
 
 -- Exemplo de consulta: Agendamentos futuros
 SELECT 
@@ -57,12 +56,12 @@ SELECT
     profissional,
     especialidade,
     data_solicitacao,
-    data_agendada,
+    data_pretendida,
     status
-FROM sind.agendamentos
-WHERE data_agendada IS NOT NULL
-  AND data_agendada > NOW()
-ORDER BY data_agendada ASC;
+FROM sind.agendamento
+WHERE data_pretendida IS NOT NULL
+  AND data_pretendida > NOW()
+ORDER BY data_pretendida ASC;
 
 -- Exemplo de consulta: Agendamentos de hoje
 SELECT 
@@ -70,11 +69,11 @@ SELECT
     cod_associado,
     profissional,
     especialidade,
-    data_agendada,
+    data_pretendida,
     status
-FROM sind.agendamentos
-WHERE data_agendada::DATE = CURRENT_DATE
-ORDER BY data_agendada ASC;
+FROM sind.agendamento
+WHERE data_pretendida::DATE = CURRENT_DATE
+ORDER BY data_pretendida ASC;
 
 -- =====================================================
 -- ROLLBACK (caso necessário desfazer as alterações)
@@ -83,9 +82,9 @@ ORDER BY data_agendada ASC;
 -- ATENÇÃO: Execute apenas se precisar reverter as alterações!
 -- Descomentar as linhas abaixo para executar o rollback:
 
--- DROP INDEX IF EXISTS sind.idx_agendamentos_data_agendada;
--- DROP INDEX IF EXISTS sind.idx_agendamentos_associado_data;
--- ALTER TABLE sind.agendamentos DROP COLUMN IF EXISTS data_agendada;
+-- DROP INDEX IF EXISTS sind.idx_agendamento_data_pretendida;
+-- DROP INDEX IF EXISTS sind.idx_agendamento_associado_data_pretendida;
+-- ALTER TABLE sind.agendamento DROP COLUMN IF EXISTS data_pretendida;
 
 -- =====================================================
 -- NOTAS IMPORTANTES
@@ -99,12 +98,12 @@ ORDER BY data_agendada ASC;
 
 2. NULLABLE:
    - Campo é NULLABLE (permite NULL)
-   - Agendamentos antigos não terão data_agendada preenchida
-   - Novos agendamentos podem ou não ter data_agendada (opcional)
+   - Agendamentos antigos não terão data_pretendida preenchida
+   - Novos agendamentos podem ou não ter data_pretendida (opcional)
 
 3. ÍNDICES:
-   - idx_agendamentos_data_agendada: Para consultas por data
-   - idx_agendamentos_associado_data: Para consultas de agendamentos de um associado específico por data
+   - idx_agendamento_data_pretendida: Para consultas por data
+   - idx_agendamento_associado_data_pretendida: Para consultas de agendamentos de um associado específico por data
 
 4. PERFORMANCE:
    - Os índices melhoram significativamente a performance de consultas
@@ -121,9 +120,9 @@ ORDER BY data_agendada ASC;
 6. VALIDAÇÃO NO BACKEND:
    - O frontend já valida que a data não pode ser no passado
    - Considere adicionar uma CHECK CONSTRAINT no banco se desejar:
-     ALTER TABLE sind.agendamentos 
-     ADD CONSTRAINT chk_data_agendada_futura 
-     CHECK (data_agendada IS NULL OR data_agendada >= data_solicitacao);
+     ALTER TABLE sind.agendamento 
+     ADD CONSTRAINT chk_data_pretendida_futura 
+     CHECK (data_pretendida IS NULL OR data_pretendida >= data_solicitacao);
 
 7. TIMEZONE:
    - PostgreSQL armazena TIMESTAMP WITH TIME ZONE em UTC

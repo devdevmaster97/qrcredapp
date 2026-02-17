@@ -276,10 +276,10 @@ export default function ConveniosContent() {
         especialidade: especialidade,
         convenio_nome: convenio
       };
-
-      // Adicionar data agendada se foi informada
+      
+      // Adicionar data pretendida se foi informada
       if (dataHoraAgendamento) {
-        agendamentoData.data_agendada = dataHoraAgendamento.toISOString();
+        agendamentoData.data_pretendida = dataHoraAgendamento.toISOString();
       }
 
       console.log('📤 DADOS FINAIS PARA ENVIO:', JSON.stringify(agendamentoData, null, 2));
