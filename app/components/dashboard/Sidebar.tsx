@@ -60,6 +60,7 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
   const [assinaturaCompleta, setAssinaturaCompleta] = useState(false);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [fallbackAdesao, setFallbackAdesao] = useState<boolean | null>(null);
+  const [isIOS, setIsIOS] = useState(false);
   
   // Hook para verificar adesão ao SasCred
   const { jaAderiu: jaAderiuSasCred, loading: loadingAdesao } = useAdesaoSasCred();
@@ -151,6 +152,11 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
       
       // Verificar se a assinatura digital foi completa
       setAssinaturaCompleta(isAssinaturaCompleta());
+      
+      // Detectar iOS (iPhone, iPad, iPod)
+      const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      setIsIOS(isIOSDevice);
     }
   }, []);
 
@@ -485,8 +491,10 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
     <>
       {/* Botão de Menu para Mobile */}
       <button 
-        className={`lg:hidden fixed top-4 z-50 bg-blue-600 p-2 rounded-md text-white transition-all duration-300 ease-in-out ${
-          isOpen ? 'left-60' : 'left-4'
+        className={`lg:hidden fixed z-50 bg-blue-600 p-3 rounded-md text-white transition-all duration-300 ease-in-out shadow-lg ${
+          isIOS 
+            ? (isOpen ? 'top-20 left-60' : 'top-20 left-6')
+            : (isOpen ? 'top-4 left-60' : 'top-4 left-4')
         }`}
         onClick={toggleSidebar}
         onTouchEnd={(e) => {
@@ -499,10 +507,12 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
           WebkitTapHighlightColor: 'transparent',
           touchAction: 'manipulation',
           userSelect: 'none',
-          WebkitUserSelect: 'none'
+          WebkitUserSelect: 'none',
+          minWidth: '44px',
+          minHeight: '44px'
         }}
       >
-        {isOpen ? <FaTimes /> : <FaBars />}
+        {isOpen ? <FaTimes size={20} /> : <FaBars size={20} />}
       </button>
 
       {/* Overlay para fechar o menu em mobile */}
@@ -515,8 +525,12 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
 
       {/* Sidebar */}
       <aside 
-        className={`fixed top-0 left-0 h-full bg-gray-800 text-white transition-all duration-300 ease-in-out z-40 
-                  ${isOpen ? 'w-64 translate-x-0' : 'w-64 -translate-x-full lg:translate-x-0'}`}
+        className={`fixed left-0 h-full bg-gray-800 text-white transition-all duration-300 ease-in-out z-40 ${
+          isIOS ? 'top-0 pt-16' : 'top-0'
+        } ${isOpen ? 'w-64 translate-x-0' : 'w-64 -translate-x-full lg:translate-x-0'}`}
+        style={{
+          paddingTop: isIOS ? 'env(safe-area-inset-top, 64px)' : undefined
+        }}
       >
         <div className="flex flex-col h-full">
           {/* Cabeçalho do Sidebar */}
