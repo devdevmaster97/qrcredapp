@@ -17,6 +17,7 @@ export default function DashboardLayout({
 }) {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
     // Verificar se o usuário está logado
@@ -43,6 +44,13 @@ export default function DashboardLayout({
     };
 
     checkAuth();
+    
+    // Detectar iOS (iPhone, iPad, iPod)
+    if (typeof window !== 'undefined') {
+      const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      setIsIOS(isIOSDevice);
+    }
   }, []);
 
   if (isLoading) {
@@ -63,7 +71,14 @@ export default function DashboardLayout({
         />
       )}
       
-      <main className="lg:pl-64 pt-16 pb-20">
+      <main 
+        className={`lg:pl-64 pb-20 ${
+          isIOS ? 'pt-24' : 'pt-16'
+        }`}
+        style={{
+          paddingTop: isIOS ? 'calc(env(safe-area-inset-top, 0px) + 5rem)' : undefined
+        }}
+      >
         <div className="p-4 sm:p-6 md:p-8">
           {children}
         </div>

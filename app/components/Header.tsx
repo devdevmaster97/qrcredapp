@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { FaArrowLeft } from 'react-icons/fa';
 
 interface HeaderProps {
@@ -11,6 +12,16 @@ interface HeaderProps {
 
 export default function Header({ title, showBackButton = false, onBackClick }: HeaderProps) {
   const router = useRouter();
+  const [isIOS, setIsIOS] = useState(false);
+
+  useEffect(() => {
+    // Detectar iOS (iPhone, iPad, iPod)
+    if (typeof window !== 'undefined') {
+      const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      setIsIOS(isIOSDevice);
+    }
+  }, []);
 
   const handleBackClick = () => {
     if (onBackClick) {
@@ -21,7 +32,12 @@ export default function Header({ title, showBackButton = false, onBackClick }: H
   };
 
   return (
-    <header className="bg-blue-600 text-white p-4 shadow-md">
+    <header 
+      className="bg-blue-600 text-white p-4 shadow-md"
+      style={{
+        paddingTop: isIOS ? 'calc(env(safe-area-inset-top, 0px) + 1rem)' : undefined
+      }}
+    >
       <div className="container mx-auto flex items-center">
         {showBackButton && (
           <button
@@ -36,4 +52,4 @@ export default function Header({ title, showBackButton = false, onBackClick }: H
       </div>
     </header>
   );
-} 
+}
