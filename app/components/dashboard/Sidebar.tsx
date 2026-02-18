@@ -489,7 +489,18 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
           isOpen ? 'left-60' : 'left-4'
         }`}
         onClick={toggleSidebar}
+        onTouchEnd={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleSidebar();
+        }}
         aria-label={isOpen ? "Fechar Menu" : "Abrir Menu"}
+        style={{
+          WebkitTapHighlightColor: 'transparent',
+          touchAction: 'manipulation',
+          userSelect: 'none',
+          WebkitUserSelect: 'none'
+        }}
       >
         {isOpen ? <FaTimes /> : <FaBars />}
       </button>
