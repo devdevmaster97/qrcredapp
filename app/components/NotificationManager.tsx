@@ -18,6 +18,7 @@ export default function NotificationManager() {
   const [showSettings, setShowSettings] = useState(false);
   const [loading, setLoading] = useState(false);
   const [autoActivating, setAutoActivating] = useState(false);
+  const [isSubscribing, setIsSubscribing] = useState(false); // Proteção contra duplicação
   const [settings, setSettings] = useState<NotificationSettings>({
     enabled: false,
     agendamentoConfirmado: true,
@@ -28,11 +29,11 @@ export default function NotificationManager() {
   useEffect(() => {
     checkNotificationStatus();
     loadSettings();
-    // 🎯 AUTO-ATIVAÇÃO: Verificar e ativar automaticamente se já tem permissão
+    // AUTO-ATIVAÇÃO: Verificar e ativar automaticamente se já tem permissão
     autoActivateIfGranted();
   }, []);
 
-  // 🚀 NOVA FUNÇÃO: Auto-ativação inteligente
+  // NOVA FUNÇÃO: Auto-ativação inteligente
   const autoActivateIfGranted = async () => {
     if ('Notification' in window && Notification.permission === 'granted') {
       try {
@@ -41,26 +42,55 @@ export default function NotificationManager() {
           const registration = await getServiceWorkerRegistration();
           const subscription = await registration.pushManager.getSubscription();
           
-          if (!subscription && !isSubscribed) {
-            console.log('🎯 Permissão já concedida - ativando automaticamente...');
+          // Se já tem subscription no navegador, registrar no servidor
+          if (subscription) {
+            console.log('Subscription existente - registrando no servidor...');
+            setAutoActivating(true);
+            
+            try {
+              // Buscar dados do usuário
+              const storedUser = localStorage.getItem('qrcred_user');
+              if (storedUser) {
+                const userData = JSON.parse(storedUser);
+                
+                // Enviar subscription existente para o servidor
+                const response = await axios.post('/api/push-subscription', {
+                  subscription,
+                  userCard: userData.cartao,
+                  settings
+                });
+                
+                if (response.data.success) {
+                  setIsSubscribed(true);
+                  console.log('Subscription registrada no servidor');
+                }
+              }
+            } catch (error) {
+              console.log('Erro ao registrar subscription existente:', error);
+            } finally {
+              setAutoActivating(false);
+            }
+          } else if (!isSubscribed) {
+            // Não tem subscription - criar nova
+            console.log('Permissão já concedida - ativando automaticamente...');
             setAutoActivating(true);
             
             try {
               await subscribeToPush();
-              toast.success('✅ Notificações ativadas automaticamente!', {
+              toast.success('Notificações ativadas automaticamente!', {
                 duration: 4000,
-                icon: '🔔'
+                icon: ''
               });
             } catch (error) {
-              console.log('⚠️ Erro ao ativar automaticamente:', error);
-              toast.error('❌ Erro ao ativar notificações automaticamente');
+              console.log('Erro ao ativar automaticamente:', error);
+              toast.error('Erro ao ativar notificações automaticamente');
             } finally {
               setAutoActivating(false);
             }
           }
         }, 1500); // Delay de 1.5s para garantir que tudo foi carregado
       } catch (error) {
-        console.log('⚠️ Erro na auto-ativação:', error);
+        console.log('Erro na auto-ativação:', error);
         setAutoActivating(false);
       }
     }
@@ -160,6 +190,14 @@ export default function NotificationManager() {
       throw new Error('Push notifications não suportadas');
     }
 
+    // Proteção contra duplicação - verificar se já está em processo
+    if (isSubscribing) {
+      console.log('⚠️ Subscription já em processo, ignorando chamada duplicada');
+      return;
+    }
+
+    setIsSubscribing(true);
+
     try {
       const registration = await getServiceWorkerRegistration();
 
@@ -196,6 +234,8 @@ export default function NotificationManager() {
     } catch (error) {
       console.error('Erro ao registrar push subscription:', error);
       throw error;
+    } finally {
+      setIsSubscribing(false);
     }
   };
 
