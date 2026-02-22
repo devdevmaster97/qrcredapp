@@ -28,9 +28,12 @@ try {
 
     // Capturar dados
     $matricula = $_POST['matricula'] ?? '';
-    $valor = $_POST['valor_pedido'] ?? '';  // Corrigido: API envia 'valor_pedido', não 'valor'
+    $valor = $_POST['valor_pedido'] ?? '';
     $pass = $_POST['pass'] ?? '';
     $request_id = $_POST['request_id'] ?? '';
+    $id_associado_post = $_POST['id'] ?? null;
+    $empregador_post = $_POST['empregador'] ?? null;
+    $id_divisao_post = $_POST['id_divisao'] ?? null;
     
     logDebug("🔍 [INÍCIO] Dados recebidos no PHP", [
         'matricula' => $matricula,
@@ -62,15 +65,13 @@ try {
         throw new Exception('Matrícula e valor são obrigatórios');
     }
 
-    // Incluir arquivo de conexão com banco (estrutura do servidor)
+    // Incluir arquivo de conexão com banco
     include "Adm/php/banco.php";
     
-    // Verificar se classe existe
     if (!class_exists('Banco')) {
         throw new Exception('Classe Banco não encontrada');
     }
     
-    // Conectar usando a estrutura do servidor
     $pdo = Banco::conectar_postgres();
     
     if (!$pdo) {
@@ -79,19 +80,7 @@ try {
     
     logDebug("Conexão com banco estabelecida");
 
-    // PROTEÇÃO ANTI-DUPLICAÇÃO 1: Removida verificação por request_id (coluna não existe)
-    // Mantendo apenas proteção temporal abaixo
-
-    // PROTEÇÃO ANTI-DUPLICAÇÃO REMOVIDA: Permitir registros iguais com data/hora diferentes
-    // Regra de negócio: Apenas data/hora devem ser diferentes, outros campos podem ser iguais
-    logDebug("✅ [DUPLICAÇÃO] Proteção temporal removida - permitindo registros com mesmos dados mas data/hora diferentes");
-
-    // Buscar dados do associado - CORRIGIDO: usar ID em vez de matrícula
-    // Capturar parâmetros obrigatórios do POST
-    $id_associado_post = isset($_POST['id']) ? (int)$_POST['id'] : null;
-    $empregador_post = isset($_POST['empregador']) ? (int)$_POST['empregador'] : null;
-    $id_divisao_post = isset($_POST['id_divisao']) ? (int)$_POST['id_divisao'] : null;
-    
+    // Buscar dados do associado COM FILTROS OBRIGATÓRIOS
     logDebug("Buscando dados do associado", [
         'matricula' => $matricula,
         'id_associado' => $id_associado_post,
@@ -99,7 +88,23 @@ try {
         'id_divisao' => $id_divisao_post
     ]);
     
-    // Query simplificada: buscar apenas por ID, empregador e divisão (mais confiável)
+    // Validar que os filtros obrigatórios foram fornecidos
+    if ($id_associado_post === null || $empregador_post === null || $id_divisao_post === null) {
+        logDebug("❌ [ERRO] Filtros obrigatórios não fornecidos", [
+            'id_fornecido' => $id_associado_post !== null,
+            'empregador_fornecido' => $empregador_post !== null,
+            'divisao_fornecida' => $id_divisao_post !== null
+        ]);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Parâmetros obrigatórios ausentes: id, empregador e id_divisao são necessários',
+            'request_id' => $request_id
+        ], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+    
+    // ✅ CORREÇÃO APLICADA: Query simplificada sem validação por matrícula
+    // Busca apenas por ID, empregador e divisão (mais confiável)
     $sql_associado = "
         SELECT 
             a.nome,
@@ -116,12 +121,24 @@ try {
         LIMIT 1
     ";
     
+    $params_associado = [$id_associado_post, $empregador_post, $id_divisao_post];
+    
+    logDebug("🔍 [SQL] Query do associado simplificada (sem matrícula)", [
+        'id' => $id_associado_post,
+        'empregador' => $empregador_post,
+        'id_divisao' => $id_divisao_post
+    ]);
+    
     $stmt_associado = $pdo->prepare($sql_associado);
-    $stmt_associado->execute([$id_associado_post, $empregador_post, $id_divisao_post]);
+    $stmt_associado->execute($params_associado);
     $associado = $stmt_associado->fetch(PDO::FETCH_ASSOC);
     
     if (!$associado) {
-        logDebug("❌ [ERRO] Associado não encontrado", ['matricula' => $matricula]);
+        logDebug("❌ [ERRO] Associado não encontrado", [
+            'id' => $id_associado_post,
+            'empregador' => $empregador_post,
+            'id_divisao' => $id_divisao_post
+        ]);
         echo json_encode([
             'success' => false,
             'error' => 'Associado não encontrado',
@@ -130,7 +147,7 @@ try {
         exit();
     }
 
-    logDebug("Associado encontrado", [
+    logDebug("✅ Associado encontrado (query simplificada)", [
         'nome' => $associado['nome'],
         'codigo' => $associado['codigo'],
         'empregador' => $associado['empregador_nome'],
@@ -166,7 +183,7 @@ try {
     $taxa = $_POST['taxa'] ?? '0';
     $valor_descontar = $_POST['valor_descontar'] ?? '0';
     $chave_pix = $_POST['chave_pix'] ?? '';
-    $convenio = $_POST['convenio'] ?? '1';
+    $convenio = $_POST['convenio'] ?? '221';  // Corrigido: convenio padrão 221
     $id_associado = $_POST['id'] ?? $associado['id'];
     $id_divisao = $_POST['id_divisao'] ?? $associado['id_divisao'];
 
@@ -190,7 +207,7 @@ try {
     logDebug("🔄 [TRANSAÇÃO] Iniciada - Request ID: $request_id");
 
     try {
-        // INSERÇÃO ÚNICA NA TABELA ANTECIPACAO - CAMPOS OFICIAIS CORRETOS
+        // INSERT antecipacao com RETURNING - USA id_divisao
         $stmt = $pdo->prepare("
             INSERT INTO sind.antecipacao (
                 matricula,
@@ -207,6 +224,7 @@ try {
                 id_associado,
                 hora
             ) VALUES (?, ?, ?, CURRENT_DATE, ?, null, ?, ?, ?, ?, ?, ?, CAST(CURRENT_TIME AS TIME(0)))
+            RETURNING id
         ");
 
         logDebug("🔄 [SQL] Executando INSERT antecipacao", [
@@ -223,32 +241,29 @@ try {
         ]);
 
         $resultado_antecipacao = $stmt->execute([
-            $matricula,           // matricula
-            $empregador,          // empregador
-            $mes_corrente,        // mes
-            $valor,               // valor
-            $celular,             // celular
-            $taxa,                // valor_taxa
-            $valor_descontar,     // valor_a_descontar
-            $chave_pix,           // chave_pix
-            $id_divisao,          // id_divisao
-            $id_associado         // id_associado
-        ]);
-
-        logDebug("🔍 [SQL] Resultado execute antecipacao", [
-            'resultado' => $resultado_antecipacao,
-            'error_info' => $stmt->errorInfo(),
-            'row_count' => $stmt->rowCount()
+            $matricula,
+            $empregador,
+            $mes_corrente,
+            $valor,
+            $celular,
+            $taxa,
+            $valor_descontar,
+            $chave_pix,
+            $id_divisao,  // id_divisao (CORRIGIDO)
+            $id_associado
         ]);
 
         if (!$resultado_antecipacao) {
             throw new Exception('Erro ao inserir na tabela antecipacao: ' . implode(', ', $stmt->errorInfo()));
         }
 
-        $antecipacao_id = $pdo->lastInsertId();
+        // Pegar ID do RETURNING
+        $antecipacao_result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $antecipacao_id = $antecipacao_result['id'];
+        
         logDebug("✅ [SUCESSO] Inserção na tabela antecipacao - ID: $antecipacao_id - Request ID: $request_id");
 
-        // INSERÇÃO ÚNICA NA TABELA CONTA - CAMPOS OFICIAIS CORRETOS
+        // INSERT conta com RETURNING - USA divisao (NÃO RENOMEADA)
         $stmt_conta = $pdo->prepare("
             INSERT INTO sind.conta (
                 associado,
@@ -260,55 +275,52 @@ try {
                 mes,
                 empregador,
                 tipo,
-                id_divisao,
+                divisao,
                 id_associado,
                 aprovado
             ) VALUES (?, ?, ?, CURRENT_DATE, CAST(CURRENT_TIME AS TIME(0)), ?, ?, ?, ?, ?, ?, false)
+            RETURNING lancamento
         ");
 
         logDebug("🔄 [SQL] Executando INSERT conta", [
             'associado' => $matricula,
             'convenio' => $convenio,
-            'valor' => $valor_descontar,  // Corrigido: mostra o valor real que será inserido
+            'valor' => $valor_descontar,
             'descricao' => 'Antecipação salarial',
             'mes' => $mes_corrente,
             'empregador' => $empregador,
             'tipo' => 'ANTECIPACAO',
             'divisao' => $id_divisao,
-            'id_associado' => $id_associado,
-            'aprovado' => false
+            'id_associado' => $id_associado
         ]);
 
         $resultado_conta = $stmt_conta->execute([
-            $matricula,                    // associado
-            $convenio,                     // convenio
-            $valor_descontar,              // valor
-            'Antecipação salarial',        // descricao
-            $mes_corrente,                 // mes
-            $empregador,                   // empregador
-            'ANTECIPACAO',                 // tipo
-            $id_divisao,                   // divisao
-            $id_associado                  // id_associado
-        ]);
-
-        logDebug("🔍 [SQL] Resultado execute conta", [
-            'resultado' => $resultado_conta,
-            'error_info' => $stmt_conta->errorInfo(),
-            'row_count' => $stmt_conta->rowCount()
+            $matricula,
+            $convenio,
+            $valor_descontar,
+            'Antecipação salarial',
+            $mes_corrente,
+            $empregador,
+            'ANTECIPACAO',
+            $id_divisao,  // divisao (NÃO RENOMEADA)
+            $id_associado
         ]);
 
         if (!$resultado_conta) {
             throw new Exception('Erro ao inserir na tabela conta: ' . implode(', ', $stmt_conta->errorInfo()));
         }
 
-        $conta_id = $pdo->lastInsertId();
+        // Pegar ID do RETURNING
+        $conta_result = $stmt_conta->fetch(PDO::FETCH_ASSOC);
+        $conta_id = $conta_result['lancamento'];
+        
         logDebug("✅ [SUCESSO] Inserção na tabela conta - ID: $conta_id - Request ID: $request_id");
 
         // COMMIT DA TRANSAÇÃO
         $pdo->commit();
         logDebug("✅ [TRANSAÇÃO] Confirmada com sucesso - Request ID: $request_id");
 
-        // Verificar se realmente foi inserido
+        // Verificação com campos corretos
         $stmt_verificacao = $pdo->prepare("SELECT COUNT(*) as total FROM sind.antecipacao WHERE id = ?");
         $stmt_verificacao->execute([$antecipacao_id]);
         $verificacao_antecipacao = $stmt_verificacao->fetch(PDO::FETCH_ASSOC);
@@ -341,16 +353,11 @@ try {
                     'antecipacao_inserida' => $verificacao_antecipacao['total'] > 0,
                     'conta_inserida' => $verificacao_conta['total'] > 0
                 ],
-                'protecoes_aplicadas' => [
-                    'duplicacao_temporal' => true,
-                    'verificacao_senha' => true,
-                    'transacao_atomica' => true
-                ]
+                'correcao_aplicada' => 'Query simplificada sem validação por matrícula'
             ]
         ], JSON_UNESCAPED_UNICODE);
 
     } catch (Exception $e) {
-        // ROLLBACK DA TRANSAÇÃO EM CASO DE ERRO
         $pdo->rollback();
         logDebug("❌ [TRANSAÇÃO] Rollback executado - Request ID: $request_id - Erro: " . $e->getMessage());
         throw $e;
@@ -368,8 +375,7 @@ try {
             'timestamp' => date('Y-m-d H:i:s'),
             'error_type' => get_class($e),
             'error_line' => $e->getLine(),
-            'error_file' => basename($e->getFile()),
-            'stack_trace' => $e->getTraceAsString()
+            'error_file' => basename($e->getFile())
         ]
     ], JSON_UNESCAPED_UNICODE);
 }

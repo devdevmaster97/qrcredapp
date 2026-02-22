@@ -254,7 +254,7 @@ async function processarSolicitacao(body: any, chaveUnica: string, requestId: st
     
     debugInfo.etapas_executadas.push('dados_php_preparados');
     
-    console.log(`🌐 [${requestId}] Enviando para PHP grava_antecipacao_app_fixed_3.php:`, Object.fromEntries(formData));
+    console.log(`🌐 [${requestId}] Enviando para PHP grava_antecipacao_app_fixed_4.php:`, Object.fromEntries(formData));
     console.log(`💰 [${requestId}] VALOR_PEDIDO NO FORMDATA:`, formData.get('valor_pedido'));
     
     // VERIFICAÇÃO CRÍTICA: Marcar que esta requisição está prestes a chamar o PHP

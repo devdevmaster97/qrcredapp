@@ -99,7 +99,23 @@ try {
         'id_divisao' => $id_divisao_post
     ]);
     
-    // Query simplificada: buscar apenas por ID, empregador e divisão (mais confiável)
+    // Validar se todos os parâmetros obrigatórios estão presentes
+    if ($id_associado_post === null || $id_divisao_post === null || $empregador_post === null) {
+        logDebug("❌ [ERRO] Parâmetros obrigatórios ausentes", [
+            'id_associado' => $id_associado_post,
+            'id_divisao' => $id_divisao_post,
+            'empregador' => $empregador_post
+        ]);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Parâmetros obrigatórios ausentes: id, id_divisao, empregador',
+            'request_id' => $request_id
+        ], JSON_UNESCAPED_UNICODE);
+        exit();
+    }
+    
+    // ✅ CORREÇÃO APLICADA: Query simplificada sem validação por matrícula
+    // Busca apenas por ID, empregador e divisão (mais confiável)
     $sql_associado = "
         SELECT 
             a.nome,
@@ -116,12 +132,24 @@ try {
         LIMIT 1
     ";
     
+    $params = [$id_associado_post, $empregador_post, $id_divisao_post];
+    
+    logDebug("🔍 [SQL] Query do associado simplificada (sem matrícula)", [
+        'id' => $id_associado_post,
+        'empregador' => $empregador_post,
+        'id_divisao' => $id_divisao_post
+    ]);
+    
     $stmt_associado = $pdo->prepare($sql_associado);
-    $stmt_associado->execute([$id_associado_post, $empregador_post, $id_divisao_post]);
+    $stmt_associado->execute($params);
     $associado = $stmt_associado->fetch(PDO::FETCH_ASSOC);
     
     if (!$associado) {
-        logDebug("❌ [ERRO] Associado não encontrado", ['matricula' => $matricula]);
+        logDebug("❌ [ERRO] Associado não encontrado", [
+            'id' => $id_associado_post,
+            'empregador' => $empregador_post,
+            'id_divisao' => $id_divisao_post
+        ]);
         echo json_encode([
             'success' => false,
             'error' => 'Associado não encontrado',
@@ -166,7 +194,7 @@ try {
     $taxa = $_POST['taxa'] ?? '0';
     $valor_descontar = $_POST['valor_descontar'] ?? '0';
     $chave_pix = $_POST['chave_pix'] ?? '';
-    $convenio = $_POST['convenio'] ?? '1';
+    $convenio = $_POST['convenio'] ?? '221';  // Corrigido: convenio padrão 221
     $id_associado = $_POST['id'] ?? $associado['id'];
     $id_divisao = $_POST['id_divisao'] ?? $associado['id_divisao'];
 
@@ -190,7 +218,7 @@ try {
     logDebug("🔄 [TRANSAÇÃO] Iniciada - Request ID: $request_id");
 
     try {
-        // INSERÇÃO ÚNICA NA TABELA ANTECIPACAO - CAMPOS OFICIAIS CORRETOS
+        // INSERÇÃO ÚNICA NA TABELA ANTECIPACAO - USA id_divisao
         $stmt = $pdo->prepare("
             INSERT INTO sind.antecipacao (
                 matricula,
@@ -207,6 +235,7 @@ try {
                 id_associado,
                 hora
             ) VALUES (?, ?, ?, CURRENT_DATE, ?, null, ?, ?, ?, ?, ?, ?, CAST(CURRENT_TIME AS TIME(0)))
+            RETURNING id
         ");
 
         logDebug("🔄 [SQL] Executando INSERT antecipacao", [
@@ -231,7 +260,7 @@ try {
             $taxa,                // valor_taxa
             $valor_descontar,     // valor_a_descontar
             $chave_pix,           // chave_pix
-            $id_divisao,          // id_divisao
+            $id_divisao,          // id_divisao (CORRIGIDO)
             $id_associado         // id_associado
         ]);
 
@@ -245,10 +274,11 @@ try {
             throw new Exception('Erro ao inserir na tabela antecipacao: ' . implode(', ', $stmt->errorInfo()));
         }
 
-        $antecipacao_id = $pdo->lastInsertId();
+        $antecipacao_result = $stmt->fetch(PDO::FETCH_ASSOC);
+        $antecipacao_id = $antecipacao_result['id'];
         logDebug("✅ [SUCESSO] Inserção na tabela antecipacao - ID: $antecipacao_id - Request ID: $request_id");
 
-        // INSERÇÃO ÚNICA NA TABELA CONTA - CAMPOS OFICIAIS CORRETOS
+        // INSERÇÃO ÚNICA NA TABELA CONTA - USA divisao (NÃO RENOMEADA)
         $stmt_conta = $pdo->prepare("
             INSERT INTO sind.conta (
                 associado,
@@ -260,23 +290,22 @@ try {
                 mes,
                 empregador,
                 tipo,
-                id_divisao,
-                id_associado,
-                aprovado
-            ) VALUES (?, ?, ?, CURRENT_DATE, CAST(CURRENT_TIME AS TIME(0)), ?, ?, ?, ?, ?, ?, false)
+                divisao,
+                id_associado
+            ) VALUES (?, ?, ?, CURRENT_DATE, CAST(CURRENT_TIME AS TIME(0)), ?, ?, ?, ?, ?, ?)
+            RETURNING lancamento
         ");
 
         logDebug("🔄 [SQL] Executando INSERT conta", [
             'associado' => $matricula,
             'convenio' => $convenio,
-            'valor' => $valor_descontar,  // Corrigido: mostra o valor real que será inserido
+            'valor' => $valor_descontar,
             'descricao' => 'Antecipação salarial',
             'mes' => $mes_corrente,
             'empregador' => $empregador,
             'tipo' => 'ANTECIPACAO',
             'divisao' => $id_divisao,
-            'id_associado' => $id_associado,
-            'aprovado' => false
+            'id_associado' => $id_associado
         ]);
 
         $resultado_conta = $stmt_conta->execute([
@@ -287,7 +316,7 @@ try {
             $mes_corrente,                 // mes
             $empregador,                   // empregador
             'ANTECIPACAO',                 // tipo
-            $id_divisao,                   // divisao
+            $id_divisao,                   // divisao (NÃO RENOMEADA)
             $id_associado                  // id_associado
         ]);
 
@@ -301,7 +330,8 @@ try {
             throw new Exception('Erro ao inserir na tabela conta: ' . implode(', ', $stmt_conta->errorInfo()));
         }
 
-        $conta_id = $pdo->lastInsertId();
+        $conta_result = $stmt_conta->fetch(PDO::FETCH_ASSOC);
+        $conta_id = $conta_result['lancamento'];
         logDebug("✅ [SUCESSO] Inserção na tabela conta - ID: $conta_id - Request ID: $request_id");
 
         // COMMIT DA TRANSAÇÃO
@@ -345,7 +375,8 @@ try {
                     'duplicacao_temporal' => true,
                     'verificacao_senha' => true,
                     'transacao_atomica' => true
-                ]
+                ],
+                'correcao_aplicada' => 'Query simplificada sem validação por matrícula'
             ]
         ], JSON_UNESCAPED_UNICODE);
 

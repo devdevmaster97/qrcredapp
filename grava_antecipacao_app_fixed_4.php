@@ -103,7 +103,8 @@ try {
         exit();
     }
     
-    // Query com TODOS os filtros para garantir o associado correto
+    // Query simplificada: buscar apenas por ID, empregador e divisão (mais confiável)
+    // Removida validação por matrícula que pode causar erro se houver inconsistência
     $sql_associado = "
         SELECT 
             a.nome,
@@ -114,14 +115,19 @@ try {
             a.id_divisao
         FROM sind.associado a
         LEFT JOIN sind.empregador e ON a.empregador = e.id
-        WHERE a.codigo = ?
-        AND a.id = ?
+        WHERE a.id = ?
         AND a.empregador = ?
         AND a.id_divisao = ?
         LIMIT 1
     ";
     
-    $params_associado = [$matricula, $id_associado_post, $empregador_post, $id_divisao_post];
+    $params_associado = [$id_associado_post, $empregador_post, $id_divisao_post];
+    
+    logDebug("🔍 [SQL] Query do associado simplificada (sem matrícula)", [
+        'id' => $id_associado_post,
+        'empregador' => $empregador_post,
+        'id_divisao' => $id_divisao_post
+    ]);
     
     $stmt_associado = $pdo->prepare($sql_associado);
     $stmt_associado->execute($params_associado);
