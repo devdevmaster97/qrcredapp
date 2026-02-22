@@ -189,7 +189,7 @@ try {
                 valor_taxa,
                 valor_a_descontar,
                 chave_pix,
-                divisao,
+                id_divisao,
                 id_associado,
                 hora
             ) VALUES (?, ?, ?, CURRENT_DATE, ?, null, ?, ?, ?, ?, ?, ?, CAST(CURRENT_TIME AS TIME(0)))
@@ -217,7 +217,7 @@ try {
             $taxa,                // valor_taxa
             $valor_descontar,     // valor_a_descontar
             $chave_pix,           // chave_pix
-            $id_divisao,          // divisao
+            $id_divisao,          // id_divisao
             $id_associado         // id_associado
         ]);
 
@@ -246,7 +246,7 @@ try {
                 mes,
                 empregador,
                 tipo,
-                divisao,
+                id_divisao,
                 id_associado,
                 aprovado
             ) VALUES (?, ?, ?, CURRENT_DATE, CAST(CURRENT_TIME AS TIME(0)), ?, ?, ?, ?, ?, ?, false)

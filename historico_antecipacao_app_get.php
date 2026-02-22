@@ -40,23 +40,23 @@ foreach ($_POST as $key => $value) {
 $matricula = '';
 $empregador = '';
 $id_associado = '';
-$divisao = '';
+$id_divisao = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $matricula = $_GET['matricula'] ?? '';
     $empregador = $_GET['empregador'] ?? '';
     $id_associado = $_GET['id_associado'] ?? '';
-    $divisao = $_GET['divisao'] ?? '';
-    error_log("Dados extraídos do GET: matricula=$matricula, empregador=$empregador, id_associado=$id_associado, divisao=$divisao");
+    $id_divisao = $_GET['id_divisao'] ?? '';
+    error_log("Dados extraídos do GET: matricula=$matricula, empregador=$empregador, id_associado=$id_associado, id_divisao=$id_divisao");
 } else if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $matricula = $_POST['matricula'] ?? '';
     $empregador = $_POST['empregador'] ?? '';
     $id_associado = $_POST['id_associado'] ?? '';
-    $divisao = $_POST['divisao'] ?? '';
-    error_log("Dados extraídos do POST: matricula=$matricula, empregador=$empregador, id_associado=$id_associado, divisao=$divisao");
+    $id_divisao = $_POST['id_divisao'] ?? '';
+    error_log("Dados extraídos do POST: matricula=$matricula, empregador=$empregador, id_associado=$id_associado, id_divisao=$id_divisao");
 }
 
-if($matricula && $empregador && $id_associado && $divisao) {
+if($matricula && $empregador && $id_associado && $id_divisao) {
     error_log("✅ Todos os parâmetros obrigatórios presentes, iniciando consulta ao banco");
     
     // Conectando ao banco de dados utilizando o PDO
@@ -69,11 +69,11 @@ if($matricula && $empregador && $id_associado && $divisao) {
                 data_solicitacao, valor as valor_solicitado, aprovado as status, 
                 data_aprovacao, celular, valor_taxa as taxa, valor_a_descontar, chave_pix
                 FROM sind.antecipacao 
-                WHERE matricula = ? AND empregador = ? AND id_associado = ? AND divisao = ? 
+                WHERE matricula = ? AND empregador = ? AND id_associado = ? AND id_divisao = ? 
                 ORDER BY data_solicitacao DESC";
         
         error_log("SQL Query: " . $sql);
-        error_log("Parâmetros: matricula=$matricula, empregador=$empregador, id_associado=$id_associado, divisao=$divisao");
+        error_log("Parâmetros: matricula=$matricula, empregador=$empregador, id_associado=$id_associado, id_divisao=$id_divisao");
         
         $stmt = $pdo->prepare($sql);
         
@@ -81,7 +81,7 @@ if($matricula && $empregador && $id_associado && $divisao) {
         $stmt->bindParam(1, $matricula, PDO::PARAM_STR);
         $stmt->bindParam(2, $empregador, PDO::PARAM_INT);
         $stmt->bindParam(3, $id_associado, PDO::PARAM_INT);
-        $stmt->bindParam(4, $divisao, PDO::PARAM_INT);
+        $stmt->bindParam(4, $id_divisao, PDO::PARAM_INT);
         
         // Executando a consulta preparada
         $stmt->execute();
@@ -138,9 +138,9 @@ if($matricula && $empregador && $id_associado && $divisao) {
     error_log("   - matricula: " . ($matricula ?: 'AUSENTE'));
     error_log("   - empregador: " . ($empregador ?: 'AUSENTE'));
     error_log("   - id_associado: " . ($id_associado ?: 'AUSENTE'));
-    error_log("   - divisao: " . ($divisao ?: 'AUSENTE'));
+    error_log("   - id_divisao: " . ($id_divisao ?: 'AUSENTE'));
     
-    $response = array("error" => "Matrícula, empregador, id_associado e divisão são obrigatórios");
+    $response = array("error" => "Matrícula, empregador, id_associado e id_divisao são obrigatórios");
     $response = array_map(function($value) {
         return is_string($value) ? mb_convert_encoding($value, 'UTF-8', 'ISO-8859-1') : $value;
     }, $response);

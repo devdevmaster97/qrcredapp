@@ -601,7 +601,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         matricula: associadoData.matricula,
         empregador: associadoData.empregador.toString(),
         id_associado: associadoData.id.toString(),
-        divisao: associadoData.id_divisao.toString()
+        id_divisao: associadoData.id_divisao.toString()
       });
       
       const apiUrl = `https://sas.makecard.com.br/historico_antecipacao_app_get.php?${params.toString()}`;
