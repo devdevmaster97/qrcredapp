@@ -1233,11 +1233,11 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         setChavePix("");
         setSenha("");
         
-        // Atualizar histórico
-        fetchHistoricoSolicitacoes();
+        // Atualizar histórico ANTES de recalcular saldo
+        await fetchHistoricoSolicitacoes();
         
-        // Atualizar saldo
-        loadSaldoData();
+        // Atualizar saldo (agora com histórico atualizado)
+        await loadSaldoData();
       } else {
         addDebugLog(`❌ [${requestId}] Erro na API: ${data.error || 'Erro desconhecido'}`);
         addDebugLog(`🔴 [${requestId}] API RETORNOU ERRO - Status: ${response.status}`);
