@@ -496,7 +496,11 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       );
       
       // 4. Calcular total de solicitações pendentes do mês corrente
-      console.log('🔍 DEBUG - Estado ANTES do filtro:', {
+      console.log('� DIAGNÓSTICO CRÍTICO - ultimasSolicitacoes.length:', ultimasSolicitacoes.length);
+      console.log('🚨 DIAGNÓSTICO CRÍTICO - historicoParaUsar.length:', historicoParaUsar.length);
+      console.log('🚨 DIAGNÓSTICO CRÍTICO - historicoFornecido?', historicoFresco !== undefined);
+      
+      console.log('�🔍 DEBUG - Estado ANTES do filtro:', {
         totalSolicitacoes: historicoParaUsar.length,
         mesAtual: mesAtual,
         historicoFornecido: historicoFresco !== undefined,
