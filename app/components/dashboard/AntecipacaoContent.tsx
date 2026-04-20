@@ -605,7 +605,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       });
       
       const apiUrl = `https://sas.makecard.com.br/historico_antecipacao_app_get.php?${params.toString()}`;
-      console.log('🔍 FRONTEND - Chamando API diretamente com GET:', apiUrl);
+      console.log(' FRONTEND - Chamando API diretamente com GET:', apiUrl);
       
       const response = await axios.get(apiUrl, {
         timeout: 30000
@@ -621,8 +621,8 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       console.error('Erro ao buscar histórico de solicitações:', error);
       // Se for erro 403, marcar API como indisponível
       if (axios.isAxiosError(error) && error.response?.status === 403) {
-        console.log('🚫 API de histórico retornou 403 - marcando como indisponível');
-        console.log('📋 Detalhes do erro 403:', error.response.data);
+        console.log(' API de histórico retornou 403 - marcando como indisponível');
+        console.log(' Detalhes do erro 403:', error.response.data);
         setHistoricoApiDisponivel(false);
         setUltimasSolicitacoes([]);
         return;
@@ -681,25 +681,23 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     }
   }, [cartao, fetchAssociado, associadoData]);
 
-  // Carregar dados de saldo e histórico quando o associado estiver disponível
+  // Carregar histórico quando o associado estiver disponível
   useEffect(() => {
     if (associadoData) {
-      // Função assíncrona para garantir ordem correta de carregamento
-      const carregarDados = async () => {
-        // 1. Primeiro carregar o histórico de solicitações
-        await fetchHistoricoSolicitacoes();
-        
-        // 2. Depois calcular o saldo (que agora terá as solicitações pendentes)
-        await loadSaldoData();
-      };
-      
-      carregarDados();
+      fetchHistoricoSolicitacoes();
     }
-  }, [associadoData, loadSaldoData, fetchHistoricoSolicitacoes]);
+  }, [associadoData, fetchHistoricoSolicitacoes]);
+
+  // Recalcular saldo quando histórico mudar
+  useEffect(() => {
+    if (associadoData && ultimasSolicitacoes.length >= 0) {
+      loadSaldoData();
+    }
+  }, [ultimasSolicitacoes, associadoData, loadSaldoData]);
 
   // Função para forçar atualização do saldo (útil quando mês corrente muda)
   const atualizarSaldo = useCallback(async () => {
-    console.log('🔄 Forçando atualização do saldo para verificar mudança de mês...');
+    console.log(' Forçando atualização do saldo para verificar mudança de mês...');
     await loadSaldoData();
   }, [loadSaldoData]);
 
