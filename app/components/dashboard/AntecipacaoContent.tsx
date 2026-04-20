@@ -457,10 +457,13 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
   }, []);
 
   // Função principal para carregar todos os dados
-  const loadSaldoData = useCallback(async () => {
+  const loadSaldoData = useCallback(async (historicoFresco?: any[]) => {
     if (!cartao || !associadoData) {
       return;
     }
+    
+    // Usar histórico fornecido ou do estado
+    const historicoParaUsar = historicoFresco !== undefined ? historicoFresco : ultimasSolicitacoes;
     
     try {
       // NÃO alterar loading aqui para evitar conflito com submissão de antecipação
@@ -494,9 +497,10 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       
       // 4. Calcular total de solicitações pendentes do mês corrente
       console.log('🔍 DEBUG - Estado ANTES do filtro:', {
-        totalSolicitacoes: ultimasSolicitacoes.length,
+        totalSolicitacoes: historicoParaUsar.length,
         mesAtual: mesAtual,
-        todasSolicitacoes: ultimasSolicitacoes.map(s => ({
+        historicoFornecido: historicoFresco !== undefined,
+        todasSolicitacoes: historicoParaUsar.map(s => ({
           id: s.id,
           status: s.status,
           statusType: typeof s.status,
@@ -506,7 +510,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         }))
       });
       
-      const solicitacoesPendentes = ultimasSolicitacoes.filter(solicitacao => {
+      const solicitacoesPendentes = historicoParaUsar.filter(solicitacao => {
         // Considerar apenas solicitações do mês corrente que estão pendentes
         const isPendente = solicitacao.status === false || 
                           solicitacao.status === 'false' || 
@@ -686,8 +690,13 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     if (associadoData) {
       const carregarDadosSequencial = async () => {
         // IMPORTANTE: Aguardar histórico carregar ANTES de calcular saldo
-        // Isso evita race conditions em dispositivos móveis
+        // Buscar histórico e capturar resultado
         await fetchHistoricoSolicitacoes();
+        
+        // Pequeno delay para garantir que estado foi atualizado
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Calcular saldo (agora com histórico atualizado no estado)
         await loadSaldoData();
       };
       
