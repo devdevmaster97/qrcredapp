@@ -690,14 +690,12 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         await fetchHistoricoSolicitacoes();
         
         // 2. Depois calcular o saldo (que agora terá as solicitações pendentes)
-        if (isInitialLoading) {
-          await loadSaldoData();
-        }
+        await loadSaldoData();
       };
       
       carregarDados();
     }
-  }, [associadoData, loadSaldoData, isInitialLoading, fetchHistoricoSolicitacoes]);
+  }, [associadoData, loadSaldoData, fetchHistoricoSolicitacoes]);
 
   // Função para forçar atualização do saldo (útil quando mês corrente muda)
   const atualizarSaldo = useCallback(async () => {
