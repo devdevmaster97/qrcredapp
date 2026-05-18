@@ -10,6 +10,7 @@ const pool = new Pool({
   max: 1,
   idleTimeoutMillis: 0,
   connectionTimeoutMillis: 10000,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
 export async function GET(request: NextRequest) {
