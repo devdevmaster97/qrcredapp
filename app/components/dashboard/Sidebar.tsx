@@ -222,6 +222,12 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
       icon: <FaUser size={20} />
     },
     {
+      type: 'link',
+      href: '/dashboard/seguro-indicacoes',
+      label: 'Seguro Indicações',
+      icon: <FaShieldAlt size={20} className="text-purple-500" />
+    },
+    {
       type: 'submenu',
       label: 'Proteção Familiar',
       icon: <FaShieldAlt size={20} className="text-blue-500" />,
