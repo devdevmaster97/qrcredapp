@@ -13,9 +13,12 @@ const pool = new Pool({
 });
 
 export async function POST(request: NextRequest) {
+  console.log('📝 API CRIAR - Iniciando...');
   try {
     const body = await request.json();
     const { id_associado, id_divisao, quantidade } = body;
+
+    console.log('📝 Parâmetros recebidos:', { id_associado, id_divisao, quantidade });
 
     if (!id_associado || !id_divisao || !quantidade) {
       return NextResponse.json(
@@ -31,10 +34,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('🔌 Tentando conectar ao banco...');
     const client = await pool.connect();
+    console.log('✅ Conectado ao banco com sucesso');
 
     try {
       await client.query('BEGIN');
+      console.log('🔄 Transação iniciada');
 
       // Verificar quantos beneficiários já existem
       const checkQuery = `
@@ -42,8 +48,10 @@ export async function POST(request: NextRequest) {
         FROM sind.seguro_beneficiarios
         WHERE id_associado = $1 AND id_divisao = $2
       `;
+      console.log('🔍 Executando query de verificação...');
       const checkResult = await client.query(checkQuery, [id_associado, id_divisao]);
       const totalExistente = parseInt(checkResult.rows[0].total);
+      console.log('📊 Total existente:', totalExistente);
 
       if (totalExistente >= 4) {
         await client.query('ROLLBACK');
@@ -95,12 +103,31 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Erro ao criar beneficiários:', error);
+    console.error('❌ ERRO COMPLETO ao criar beneficiários:', error);
+    console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'N/A');
+    
+    // Capturar detalhes específicos do erro PostgreSQL
+    const errorDetails: any = {
+      message: error instanceof Error ? error.message : 'Erro desconhecido',
+      name: error instanceof Error ? error.name : 'Unknown',
+    };
+    
+    // Se for erro do PostgreSQL, capturar detalhes adicionais
+    if (error && typeof error === 'object') {
+      const pgError = error as any;
+      if (pgError.code) errorDetails.code = pgError.code;
+      if (pgError.detail) errorDetails.detail = pgError.detail;
+      if (pgError.table) errorDetails.table = pgError.table;
+      if (pgError.schema) errorDetails.schema = pgError.schema;
+    }
+    
+    console.error('❌ Detalhes do erro:', errorDetails);
+    
     return NextResponse.json(
       { 
         success: false, 
         error: 'Erro ao criar beneficiários',
-        details: error instanceof Error ? error.message : 'Erro desconhecido'
+        details: errorDetails
       },
       { status: 500 }
     );

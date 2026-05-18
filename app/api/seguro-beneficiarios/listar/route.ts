@@ -13,19 +13,24 @@ const pool = new Pool({
 });
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const id_associado = searchParams.get('id_associado');
-  const id_divisao = searchParams.get('id_divisao');
-
-  if (!id_associado || !id_divisao) {
-    return NextResponse.json(
-      { success: false, error: 'id_associado e id_divisao são obrigatórios' },
-      { status: 400 }
-    );
-  }
-
+  console.log('📋 API LISTAR - Iniciando...');
   try {
+    const { searchParams } = new URL(request.url);
+    const id_associado = searchParams.get('id_associado');
+    const id_divisao = searchParams.get('id_divisao');
+
+    console.log('📋 Parâmetros recebidos:', { id_associado, id_divisao });
+
+    if (!id_associado || !id_divisao) {
+      return NextResponse.json(
+        { success: false, error: 'id_associado e id_divisao são obrigatórios' },
+        { status: 400 }
+      );
+    }
+
+    console.log('🔌 Tentando conectar ao banco...');
     const client = await pool.connect();
+    console.log('✅ Conectado ao banco com sucesso');
 
     try {
       const query = `
@@ -48,7 +53,9 @@ export async function GET(request: NextRequest) {
         ORDER BY id_beneficiario ASC
       `;
 
+      console.log('🔍 Executando query de listagem...');
       const result = await client.query(query, [id_associado, id_divisao]);
+      console.log('📊 Beneficiários encontrados:', result.rows.length);
 
       return NextResponse.json({
         success: true,
@@ -60,12 +67,31 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Erro ao listar beneficiários:', error);
+    console.error('❌ ERRO COMPLETO ao listar beneficiários:', error);
+    console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'N/A');
+    
+    // Capturar detalhes específicos do erro PostgreSQL
+    const errorDetails: any = {
+      message: error instanceof Error ? error.message : 'Erro desconhecido',
+      name: error instanceof Error ? error.name : 'Unknown',
+    };
+    
+    // Se for erro do PostgreSQL, capturar detalhes adicionais
+    if (error && typeof error === 'object') {
+      const pgError = error as any;
+      if (pgError.code) errorDetails.code = pgError.code;
+      if (pgError.detail) errorDetails.detail = pgError.detail;
+      if (pgError.table) errorDetails.table = pgError.table;
+      if (pgError.schema) errorDetails.schema = pgError.schema;
+    }
+    
+    console.error('❌ Detalhes do erro:', errorDetails);
+    
     return NextResponse.json(
       { 
         success: false, 
-        error: 'Erro ao listar beneficiários',
-        details: error instanceof Error ? error.message : 'Erro desconhecido'
+        error: 'Erro ao buscar beneficiários',
+        details: errorDetails
       },
       { status: 500 }
     );
