@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-const PHP_BASE_URL = process.env.PHP_BASE_URL || 'https://sasapp.tec.br';
+const PHP_BASE_URL = process.env.PHP_BASE_URL || 'https://sas.makecard.com.br/api/seguro-beneficiarios';
 
 export async function GET(request: NextRequest) {
   console.log('📋 API LISTAR - Iniciando (via PHP)...');
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Chamar endpoint PHP no servidor
-    const phpUrl = `${PHP_BASE_URL}/seguro_beneficiarios_listar.php?id_associado=${id_associado}&id_divisao=${id_divisao}`;
+    const phpUrl = `${PHP_BASE_URL}/listar.php?id_associado=${id_associado}&id_divisao=${id_divisao}`;
     console.log('🔌 Chamando PHP:', phpUrl);
 
     const response = await fetch(phpUrl, {
