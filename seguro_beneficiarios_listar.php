@@ -9,7 +9,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-require_once 'conexao.php';
+require 'Adm/php/banco.php';
+include "Adm/php/funcoes.php";
+$pdo = Banco::conectar_postgres();
+$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 try {
     $id_associado = $_GET['id_associado'] ?? null;
@@ -28,24 +31,15 @@ try {
                      data_nascimento, status, data_cadastro, data_atualizacao,
                      documento_url, documento_assinado_url
               FROM sind.seguro_beneficiarios 
-              WHERE id_associado = $1 AND id_divisao = $2
+              WHERE id_associado = :id_associado AND id_divisao = :id_divisao
               ORDER BY data_cadastro ASC";
 
-    $result = pg_query_params($conn, $query, [$id_associado, $id_divisao]);
+    $stmt = $pdo->prepare($query);
+    $stmt->bindParam(':id_associado', $id_associado, PDO::PARAM_INT);
+    $stmt->bindParam(':id_divisao', $id_divisao, PDO::PARAM_INT);
+    $stmt->execute();
 
-    if (!$result) {
-        http_response_code(500);
-        echo json_encode([
-            'success' => false,
-            'error' => 'Erro ao buscar beneficiários: ' . pg_last_error($conn)
-        ]);
-        exit;
-    }
-
-    $beneficiarios = [];
-    while ($row = pg_fetch_assoc($result)) {
-        $beneficiarios[] = $row;
-    }
+    $beneficiarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     echo json_encode([
         'success' => true,
