@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Chamar endpoint PHP no servidor
-    const phpUrl = `${PHP_BASE_URL}/criar.php`;
+    const phpUrl = `${PHP_BASE_URL}/seguro_beneficiarios_criar.php`;
     console.log('� Chamando PHP:', phpUrl);
 
     const response = await fetch(phpUrl, {

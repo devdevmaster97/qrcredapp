@@ -20,7 +20,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Chamar endpoint PHP no servidor
-    const phpUrl = `${PHP_BASE_URL}/excluir.php`;
+    const phpUrl = `${PHP_BASE_URL}/seguro_beneficiarios_excluir.php`;
     console.log('🔌 Chamando PHP:', phpUrl);
 
     const response = await fetch(phpUrl, {
