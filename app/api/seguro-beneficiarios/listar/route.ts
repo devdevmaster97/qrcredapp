@@ -31,8 +31,31 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    const data = await response.json();
-    console.log('� Resposta do PHP:', data);
+    console.log('📊 Status da resposta PHP:', response.status);
+    console.log('📊 Headers da resposta:', Object.fromEntries(response.headers.entries()));
+
+    // Capturar texto bruto primeiro para debug
+    const responseText = await response.text();
+    console.log('📄 Resposta PHP (texto bruto):', responseText.substring(0, 500));
+
+    // Tentar fazer parse do JSON
+    let data;
+    try {
+      data = JSON.parse(responseText);
+      console.log('✅ JSON parseado com sucesso:', data);
+    } catch (parseError: any) {
+      console.error('❌ ERRO ao fazer parse do JSON:', parseError.message);
+      console.error('📄 Texto completo recebido:', responseText);
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Resposta inválida do servidor PHP',
+          details: `Parse error: ${parseError.message}`,
+          rawResponse: responseText.substring(0, 1000)
+        },
+        { status: 500 }
+      );
+    }
 
     if (!response.ok) {
       return NextResponse.json(data, { status: response.status });
