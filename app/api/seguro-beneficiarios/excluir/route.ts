@@ -1,25 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Pool } from 'pg';
 
 export const dynamic = 'force-dynamic';
 
-const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME || 'seu_banco',
-  user: process.env.DB_USER || 'seu_usuario',
-  password: process.env.DB_PASSWORD || 'sua_senha',
-  max: 1,
-  idleTimeoutMillis: 0,
-  connectionTimeoutMillis: 10000,
-});
+const PHP_BASE_URL = process.env.PHP_BASE_URL || 'https://sasapp.tec.br';
 
 export async function DELETE(request: NextRequest) {
+  console.log('🗑️ API EXCLUIR - Iniciando (via PHP)...');
   try {
     const body = await request.json();
     const { id_beneficiario, id_associado } = body;
 
-    console.log('🗑️ DELETE - Parâmetros recebidos:', { id_beneficiario, id_associado });
+    console.log('🗑️ Parâmetros recebidos:', { id_beneficiario, id_associado });
 
     if (!id_beneficiario || !id_associado) {
       return NextResponse.json(
@@ -28,66 +19,39 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const client = await pool.connect();
+    // Chamar endpoint PHP no servidor
+    const phpUrl = `${PHP_BASE_URL}/seguro_beneficiarios_excluir.php`;
+    console.log('🔌 Chamando PHP:', phpUrl);
 
-    try {
-      // Primeiro, verificar todos os beneficiários do associado
-      const allQuery = `
-        SELECT id_beneficiario, nome_beneficiario, status
-        FROM sind.seguro_beneficiarios
-        WHERE id_associado = $1
-      `;
-      const allResult = await client.query(allQuery, [id_associado]);
-      console.log('📋 Todos os beneficiários do associado:', allResult.rows);
+    const response = await fetch(phpUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ id_beneficiario, id_associado }),
+    });
 
-      // Verificar se o beneficiário existe e pertence ao associado
-      const checkQuery = `
-        SELECT status
-        FROM sind.seguro_beneficiarios
-        WHERE id_beneficiario = $1 AND id_associado = $2
-      `;
-      const checkResult = await client.query(checkQuery, [id_beneficiario, id_associado]);
-      console.log('🔍 Resultado da verificação:', checkResult.rows);
+    const data = await response.json();
+    console.log('� Resposta do PHP:', data);
 
-      if (checkResult.rows.length === 0) {
-        return NextResponse.json(
-          { success: false, error: 'Beneficiário não encontrado' },
-          { status: 404 }
-        );
-      }
-
-      const status = checkResult.rows[0].status;
-
-      if (status === 'assinado') {
-        return NextResponse.json(
-          { success: false, error: 'Não é possível excluir beneficiário já assinado' },
-          { status: 400 }
-        );
-      }
-
-      // Excluir beneficiário
-      const deleteQuery = `
-        DELETE FROM sind.seguro_beneficiarios
-        WHERE id_beneficiario = $1 AND id_associado = $2
-      `;
-      await client.query(deleteQuery, [id_beneficiario, id_associado]);
-
-      return NextResponse.json({
-        success: true,
-        message: 'Beneficiário excluído com sucesso'
-      });
-
-    } finally {
-      client.release();
+    if (!response.ok) {
+      return NextResponse.json(data, { status: response.status });
     }
 
-  } catch (error) {
-    console.error('Erro ao excluir beneficiário:', error);
+    return NextResponse.json(data);
+
+  } catch (error: any) {
+    console.error('❌ ERRO ao chamar PHP:', error);
+    console.error('❌ Detalhes do erro:', {
+      message: error.message,
+      name: error.name,
+    });
+    
     return NextResponse.json(
       { 
         success: false, 
         error: 'Erro ao excluir beneficiário',
-        details: error instanceof Error ? error.message : 'Erro desconhecido'
+        details: error.message 
       },
       { status: 500 }
     );
