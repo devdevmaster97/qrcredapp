@@ -228,7 +228,7 @@ export default function SeguroIndicacoesContent() {
 
     try {
       const response = await fetch('/api/seguro-beneficiarios/excluir', {
-        method: 'DELETE',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
