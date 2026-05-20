@@ -9,8 +9,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-require 'Adm/php/banco.php';
-include "Adm/php/funcoes.php";
+require '../../Adm/php/banco.php';
+include "../../Adm/php/funcoes.php";
 
 try {
     $pdo = Banco::conectar_postgres();

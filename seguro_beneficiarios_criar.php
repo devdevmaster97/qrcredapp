@@ -1,4 +1,8 @@
 <?php
+error_log("========================================");
+error_log(" SEGURO BENEFICIÁRIOS CRIAR - INICIANDO");
+error_log("========================================");
+
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST, OPTIONS');
@@ -9,29 +13,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-require 'Adm/php/banco.php';
-include "Adm/php/funcoes.php";
+error_log(" Tentando incluir arquivos...");
+try {
+    require '../../Adm/php/banco.php';
+    error_log(" banco.php incluído com sucesso");
+} catch (Exception $e) {
+    error_log(" ERRO ao incluir banco.php: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['success' => false, 'error' => 'Erro ao carregar banco.php'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 
+try {
+    include "../../Adm/php/funcoes.php";
+    error_log(" funcoes.php incluído com sucesso");
+} catch (Exception $e) {
+    error_log(" AVISO ao incluir funcoes.php: " . $e->getMessage());
+}
+
+error_log(" Tentando conectar ao banco...");
 try {
     $pdo = Banco::conectar_postgres();
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    
-    $data = json_decode(file_get_contents('php://input'), true);
-    
-    $id_associado = $data['id_associado'] ?? null;
-    $id_divisao = $data['id_divisao'] ?? null;
-    $quantidade = $data['quantidade'] ?? null;
+    error_log(" Conexão com banco estabelecida");
+} catch (Exception $e) {
+    error_log(" ERRO ao conectar ao banco: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['success' => false, 'error' => 'Erro ao conectar ao banco'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+try {   
+    error_log(" Lendo input JSON...");
+    $input = json_decode(file_get_contents('php://input'), true);
+    $id_associado = $input['id_associado'] ?? null;
+    $id_divisao = $input['id_divisao'] ?? null;
+    $quantidade = $input['quantidade'] ?? null;
+
+    error_log(" Parâmetros recebidos: id_associado=$id_associado, id_divisao=$id_divisao, quantidade=$quantidade");
 
     if (!$id_associado || !$id_divisao || !$quantidade) {
+        error_log(" Parâmetros obrigatórios ausentes");
         http_response_code(400);
         echo json_encode([
             'success' => false,
             'error' => 'id_associado, id_divisao e quantidade são obrigatórios'
-        ]);
+        ], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
     if ($quantidade < 1 || $quantidade > 4) {
+        error_log(" Quantidade inválida: $quantidade");
         http_response_code(400);
         echo json_encode([
             'success' => false,
@@ -40,9 +72,11 @@ try {
         exit;
     }
 
+    error_log(" Iniciando transação...");
     $pdo->beginTransaction();
 
     // Verificar quantos beneficiários já existem
+    error_log("🔍 Verificando quantidade existente...");
     $query_count = "SELECT COUNT(*) as total FROM sind.seguro_beneficiarios 
                     WHERE id_associado = :id_associado AND id_divisao = :id_divisao";
     $stmt_count = $pdo->prepare($query_count);
@@ -53,7 +87,10 @@ try {
     $row_count = $stmt_count->fetch(PDO::FETCH_ASSOC);
     $total_existente = (int)$row_count['total'];
 
+    error_log("📊 Total existente: $total_existente, Solicitado: $quantidade");
+
     if ($total_existente + $quantidade > 4) {
+        error_log("❌ Limite excedido: $total_existente + $quantidade > 4");
         $pdo->rollBack();
         http_response_code(400);
         echo json_encode([
@@ -64,6 +101,7 @@ try {
     }
 
     // Inserir novos beneficiários
+    error_log("➕ Inserindo $quantidade beneficiário(s)...");
     $beneficiarios_criados = [];
     $query_insert = "INSERT INTO sind.seguro_beneficiarios 
                      (id_associado, id_divisao, status, data_criacao) 
@@ -71,6 +109,7 @@ try {
                      RETURNING id_beneficiario, id_associado, id_divisao, status, data_criacao";
 
     for ($i = 0; $i < $quantidade; $i++) {
+        error_log("   ➡️ Inserindo beneficiário " . ($i + 1) . "/$quantidade");
         $stmt_insert = $pdo->prepare($query_insert);
         $stmt_insert->execute([
             ':id_associado' => $id_associado,
@@ -79,15 +118,21 @@ try {
 
         $beneficiario = $stmt_insert->fetch(PDO::FETCH_ASSOC);
         $beneficiarios_criados[] = $beneficiario;
+        error_log("   ✅ Beneficiário criado: ID " . $beneficiario['id_beneficiario']);
     }
 
+    error_log("💾 Commit da transação...");
     $pdo->commit();
+    error_log("✅ Transação commitada com sucesso!");
 
     echo json_encode([
         'success' => true,
         'data' => $beneficiarios_criados,
         'message' => "$quantidade beneficiário(s) criado(s) com sucesso"
     ], JSON_UNESCAPED_UNICODE);
+    
+    error_log("✅ Resposta JSON enviada com sucesso");
+    error_log("========================================");
 
 } catch (PDOException $e) {
     if (isset($pdo) && $pdo->inTransaction()) {

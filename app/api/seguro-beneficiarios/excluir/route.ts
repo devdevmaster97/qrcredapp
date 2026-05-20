@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 const PHP_BASE_URL = process.env.PHP_BASE_URL || 'https://sas.makecard.com.br/api/seguro-beneficiarios';
 
-export async function DELETE(request: NextRequest) {
+async function handleExcluir(request: NextRequest) {
   console.log('🗑️ API EXCLUIR - Iniciando (via PHP)...');
   try {
     const body = await request.json();
@@ -32,7 +32,7 @@ export async function DELETE(request: NextRequest) {
     });
 
     const data = await response.json();
-    console.log('� Resposta do PHP:', data);
+    console.log('📊 Resposta do PHP:', data);
 
     if (!response.ok) {
       return NextResponse.json(data, { status: response.status });
@@ -56,4 +56,12 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function DELETE(request: NextRequest) {
+  return handleExcluir(request);
+}
+
+export async function POST(request: NextRequest) {
+  return handleExcluir(request);
 }

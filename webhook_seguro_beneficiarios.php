@@ -111,7 +111,7 @@ try {
     error_log("   Percentual: $percentual");
     
     // Conectar ao banco
-    include "Adm/php/banco.php";
+    include "../../Adm/php/banco.php";
     $pdo = Banco::conectar_postgres();
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
