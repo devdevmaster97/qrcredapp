@@ -119,12 +119,16 @@ export default function SeguroIndicacoesContent() {
     console.log('🔄 Buscando beneficiários...', { id_associado: associadoData.id, id_divisao: associadoData.id_divisao });
 
     try {
+      // Adicionar timestamp para forçar bypass de cache
+      const timestamp = new Date().getTime();
       const response = await fetch(
-        `/api/seguro-beneficiarios/listar?id_associado=${associadoData.id}&id_divisao=${associadoData.id_divisao}`,
+        `/api/seguro-beneficiarios/listar?id_associado=${associadoData.id}&id_divisao=${associadoData.id_divisao}&_t=${timestamp}`,
         {
           method: 'GET',
           headers: {
-            'Cache-Control': 'no-cache'
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
           }
         }
       );
