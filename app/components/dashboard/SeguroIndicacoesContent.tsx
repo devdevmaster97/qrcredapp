@@ -34,8 +34,14 @@ export default function SeguroIndicacoesContent() {
   const [loadingExcluir, setLoadingExcluir] = useState<number | null>(null);
   const [associadoData, setAssociadoData] = useState<AssociadoData | null>(null);
 
-  // Link único do ZapSign fornecido pelo usuário
-  const LINK_ZAPSIGN = 'https://app.zapsign.com.br/verificar/doc/a468e28f-77c0-4634-86da-1b84f4454593';
+  // Função para gerar link do ZapSign por beneficiário
+  const getZapSignLink = (beneficiario: Beneficiario): string => {
+    if (beneficiario.doc_token) {
+      return `https://app.zapsign.com.br/verificar/doc/${beneficiario.doc_token}`;
+    }
+    // Link padrão caso não tenha token (fallback)
+    return 'https://app.zapsign.com.br/verificar/doc/a468e28f-77c0-4634-86da-1b84f4454593';
+  };
 
   // Buscar dados do associado logado
   useEffect(() => {
@@ -96,13 +102,13 @@ export default function SeguroIndicacoesContent() {
     }
   }, [associadoData]);
 
-  // Polling: atualizar lista a cada 10 segundos
+  // Polling: atualizar lista a cada 30 segundos
   useEffect(() => {
     if (!associadoData) return;
 
     const interval = setInterval(() => {
       fetchBeneficiarios();
-    }, 10000); // 10 segundos
+    }, 30000); // 30 segundos
 
     return () => clearInterval(interval);
   }, [associadoData]);
@@ -354,7 +360,7 @@ export default function SeguroIndicacoesContent() {
                           🟡 Pendente - Aguardando assinatura
                         </p>
                         <a
-                          href={LINK_ZAPSIGN}
+                          href={getZapSignLink(beneficiario)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"

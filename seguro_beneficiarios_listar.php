@@ -27,12 +27,12 @@ try {
         exit;
     }
 
-    $query = "SELECT id, id_associado, id_divisao, nome, cpf, parentesco, 
-                     data_nascimento, status, data_cadastro, data_atualizacao,
-                     documento_url, documento_assinado_url
+    $query = "SELECT id_beneficiario, id_associado, id_divisao, cpf_zap, nome_zap,
+                     nome_beneficiario, data_nascimento, parentesco, percentual,
+                     status, doc_token, data_criacao, data_assinatura
               FROM sind.seguro_beneficiarios 
               WHERE id_associado = :id_associado AND id_divisao = :id_divisao
-              ORDER BY data_cadastro ASC";
+              ORDER BY data_criacao ASC";
 
     $stmt = $pdo->prepare($query);
     $stmt->bindParam(':id_associado', $id_associado, PDO::PARAM_INT);
@@ -43,8 +43,8 @@ try {
 
     echo json_encode([
         'success' => true,
-        'data' => $beneficiarios
-    ]);
+        'beneficiarios' => $beneficiarios
+    ], JSON_UNESCAPED_UNICODE);
 
 } catch (Exception $e) {
     http_response_code(500);

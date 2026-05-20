@@ -115,86 +115,100 @@ try {
     $pdo = Banco::conectar_postgres();
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
-    // Buscar associado pelo CPF
-    error_log("🔍 Buscando associado pelo CPF: $cpf");
+    // Iniciar transação para evitar race condition
+    $pdo->beginTransaction();
     
-    $sqlAssociado = "SELECT id, id_divisao, codigo, nome 
-                     FROM sind.associado 
-                     WHERE cpf = :cpf 
-                     ORDER BY id DESC 
-                     LIMIT 1";
-    
-    $stmtAssociado = $pdo->prepare($sqlAssociado);
-    $stmtAssociado->execute([':cpf' => $cpf]);
-    $associado = $stmtAssociado->fetch(PDO::FETCH_ASSOC);
-    
-    if (!$associado) {
-        error_log("❌ Associado não encontrado com CPF: $cpf");
-        throw new Exception("Associado não encontrado com CPF: $cpf");
+    try {
+        // Buscar associado pelo CPF
+        error_log("🔍 Buscando associado pelo CPF: $cpf");
+        
+        $sqlAssociado = "SELECT id, id_divisao, codigo, nome 
+                         FROM sind.associado 
+                         WHERE cpf = :cpf 
+                         ORDER BY id DESC 
+                         LIMIT 1";
+        
+        $stmtAssociado = $pdo->prepare($sqlAssociado);
+        $stmtAssociado->execute([':cpf' => $cpf]);
+        $associado = $stmtAssociado->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$associado) {
+            error_log("❌ Associado não encontrado com CPF: $cpf");
+            throw new Exception("Associado não encontrado");
+        }
+        
+        $id_associado = $associado['id'];
+        $id_divisao = $associado['id_divisao'];
+        
+        error_log("✅ Associado encontrado:");
+        error_log("   ID: $id_associado");
+        error_log("   Divisão: $id_divisao");
+        error_log("   Nome: " . $associado['nome']);
+        
+        // Buscar primeiro beneficiário pendente com lock para evitar race condition
+        error_log("🔍 Buscando beneficiário pendente...");
+        
+        $sqlBeneficiario = "SELECT id_beneficiario 
+                            FROM sind.seguro_beneficiarios 
+                            WHERE id_associado = :id_associado 
+                              AND status = 'pendente'
+                            ORDER BY id_beneficiario ASC 
+                            LIMIT 1
+                            FOR UPDATE";
+        
+        $stmtBeneficiario = $pdo->prepare($sqlBeneficiario);
+        $stmtBeneficiario->execute([':id_associado' => $id_associado]);
+        $beneficiario = $stmtBeneficiario->fetch(PDO::FETCH_ASSOC);
+        
+        if (!$beneficiario) {
+            error_log("⚠️ Nenhum beneficiário pendente encontrado para associado $id_associado");
+            throw new Exception("Nenhum beneficiário pendente encontrado");
+        }
+        
+        $id_beneficiario = $beneficiario['id_beneficiario'];
+        error_log("✅ Beneficiário pendente encontrado: ID $id_beneficiario");
+        
+        // Atualizar beneficiário com dados da assinatura
+        error_log("📝 Atualizando beneficiário...");
+        
+        $sqlUpdate = "UPDATE sind.seguro_beneficiarios 
+                      SET status = 'assinado',
+                          cpf_zap = :cpf_zap,
+                          nome_zap = :nome_zap,
+                          nome_beneficiario = :nome_beneficiario,
+                          data_nascimento = :data_nascimento,
+                          parentesco = :parentesco,
+                          percentual = :percentual,
+                          doc_token = :doc_token,
+                          data_assinatura = :data_assinatura
+                      WHERE id_beneficiario = :id_beneficiario";
+        
+        $stmtUpdate = $pdo->prepare($sqlUpdate);
+        $stmtUpdate->execute([
+            ':cpf_zap' => $cpf,
+            ':nome_zap' => $nome_signatario,
+            ':nome_beneficiario' => $nome_beneficiario,
+            ':data_nascimento' => $data_nascimento,
+            ':parentesco' => $parentesco,
+            ':percentual' => $percentual,
+            ':doc_token' => $doc_token,
+            ':data_assinatura' => $signed_at,
+            ':id_beneficiario' => $id_beneficiario
+        ]);
+        
+        // Commit da transação
+        $pdo->commit();
+        
+        error_log("✅ Beneficiário atualizado com sucesso!");
+        error_log("   ID Beneficiário: $id_beneficiario");
+        error_log("   Nome Beneficiário: $nome_beneficiario");
+        error_log("   Status: assinado");
+        
+    } catch (Exception $e) {
+        // Rollback em caso de erro
+        $pdo->rollBack();
+        throw $e;
     }
-    
-    $id_associado = $associado['id'];
-    $id_divisao = $associado['id_divisao'];
-    
-    error_log("✅ Associado encontrado:");
-    error_log("   ID: $id_associado");
-    error_log("   Divisão: $id_divisao");
-    error_log("   Nome: " . $associado['nome']);
-    
-    // Buscar primeiro beneficiário pendente deste associado
-    error_log("🔍 Buscando beneficiário pendente...");
-    
-    $sqlBeneficiario = "SELECT id_beneficiario 
-                        FROM sind.seguro_beneficiarios 
-                        WHERE id_associado = :id_associado 
-                          AND status = 'pendente'
-                        ORDER BY id_beneficiario ASC 
-                        LIMIT 1";
-    
-    $stmtBeneficiario = $pdo->prepare($sqlBeneficiario);
-    $stmtBeneficiario->execute([':id_associado' => $id_associado]);
-    $beneficiario = $stmtBeneficiario->fetch(PDO::FETCH_ASSOC);
-    
-    if (!$beneficiario) {
-        error_log("⚠️ Nenhum beneficiário pendente encontrado para associado $id_associado");
-        throw new Exception("Nenhum beneficiário pendente encontrado");
-    }
-    
-    $id_beneficiario = $beneficiario['id_beneficiario'];
-    error_log("✅ Beneficiário pendente encontrado: ID $id_beneficiario");
-    
-    // Atualizar beneficiário com dados da assinatura
-    error_log("📝 Atualizando beneficiário...");
-    
-    $sqlUpdate = "UPDATE sind.seguro_beneficiarios 
-                  SET status = 'assinado',
-                      cpf_zap = :cpf_zap,
-                      nome_zap = :nome_zap,
-                      nome_beneficiario = :nome_beneficiario,
-                      data_nascimento = :data_nascimento,
-                      parentesco = :parentesco,
-                      percentual = :percentual,
-                      doc_token = :doc_token,
-                      data_assinatura = :data_assinatura
-                  WHERE id_beneficiario = :id_beneficiario";
-    
-    $stmtUpdate = $pdo->prepare($sqlUpdate);
-    $stmtUpdate->execute([
-        ':cpf_zap' => $cpf,
-        ':nome_zap' => $nome_signatario,
-        ':nome_beneficiario' => $nome_beneficiario,
-        ':data_nascimento' => $data_nascimento,
-        ':parentesco' => $parentesco,
-        ':percentual' => $percentual,
-        ':doc_token' => $doc_token,
-        ':data_assinatura' => $signed_at,
-        ':id_beneficiario' => $id_beneficiario
-    ]);
-    
-    error_log("✅ Beneficiário atualizado com sucesso!");
-    error_log("   ID Beneficiário: $id_beneficiario");
-    error_log("   Nome Beneficiário: $nome_beneficiario");
-    error_log("   Status: assinado");
     
     $pdo = null;
     
@@ -217,9 +231,8 @@ try {
     http_response_code(500);
     echo json_encode([
         'status' => 'erro',
-        'mensagem' => 'Erro ao processar webhook',
-        'erro_detalhes' => $e->getMessage()
-    ]);
+        'mensagem' => 'Erro ao processar webhook. Tente novamente.'
+    ], JSON_UNESCAPED_UNICODE);
     
 } catch (Exception $e) {
     error_log("❌ ERRO GERAL: " . $e->getMessage());
@@ -228,8 +241,7 @@ try {
     http_response_code(500);
     echo json_encode([
         'status' => 'erro',
-        'mensagem' => 'Erro ao processar webhook',
-        'erro_detalhes' => $e->getMessage()
-    ]);
+        'mensagem' => 'Erro ao processar webhook. Tente novamente.'
+    ], JSON_UNESCAPED_UNICODE);
 }
 ?>
