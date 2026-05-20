@@ -6,6 +6,9 @@ const PHP_BASE_URL = process.env.PHP_BASE_URL || 'https://sas.makecard.com.br/ap
 
 export async function GET(request: NextRequest) {
   console.log('📋 API LISTAR - Iniciando (via PHP)...');
+  console.log('🔧 PHP_BASE_URL configurado:', PHP_BASE_URL);
+  console.log('🔧 process.env.PHP_BASE_URL:', process.env.PHP_BASE_URL);
+  
   try {
     const { searchParams } = new URL(request.url);
     const id_associado = searchParams.get('id_associado');
@@ -22,7 +25,7 @@ export async function GET(request: NextRequest) {
 
     // Chamar endpoint PHP no servidor
     const phpUrl = `${PHP_BASE_URL}/seguro_beneficiarios_listar.php?id_associado=${id_associado}&id_divisao=${id_divisao}`;
-    console.log('🔌 Chamando PHP:', phpUrl);
+    console.log('🔌 URL completa que será chamada:', phpUrl);
 
     const response = await fetch(phpUrl, {
       method: 'GET',
