@@ -116,6 +116,8 @@ export default function SeguroIndicacoesContent() {
   const fetchBeneficiarios = async () => {
     if (!associadoData) return;
 
+    console.log('🔄 Buscando beneficiários...', { id_associado: associadoData.id, id_divisao: associadoData.id_divisao });
+
     try {
       const response = await fetch(
         `/api/seguro-beneficiarios/listar?id_associado=${associadoData.id}&id_divisao=${associadoData.id_divisao}`,
@@ -127,17 +129,23 @@ export default function SeguroIndicacoesContent() {
         }
       );
 
+      console.log('📥 Resposta da API listar:', { status: response.status, ok: response.ok });
+
       if (!response.ok) {
         throw new Error('Erro ao buscar beneficiários');
       }
 
       const data = await response.json();
+      console.log('📊 Dados recebidos da API:', data);
       
       if (data.success && Array.isArray(data.beneficiarios)) {
+        console.log('✅ Atualizando lista de beneficiários:', data.beneficiarios.length, 'beneficiários');
         setBeneficiarios(data.beneficiarios);
+      } else {
+        console.warn('⚠️ Resposta inesperada da API:', data);
       }
     } catch (error) {
-      console.error('Erro ao buscar beneficiários:', error);
+      console.error('❌ Erro ao buscar beneficiários:', error);
     }
   };
 
@@ -186,11 +194,14 @@ export default function SeguroIndicacoesContent() {
       }
 
       const data = await response.json();
+      console.log('📊 Resposta da API criar:', data);
 
       if (data.success) {
         toast.success(`${quantidade} beneficiário(s) criado(s) com sucesso!`);
+        console.log('✅ Beneficiários criados, chamando fetchBeneficiarios...');
         setQuantidade(0);
         await fetchBeneficiarios();
+        console.log('✅ fetchBeneficiarios concluído');
       } else {
         throw new Error(data.error || 'Erro ao criar beneficiários');
       }
