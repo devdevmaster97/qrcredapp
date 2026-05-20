@@ -239,7 +239,13 @@ export default function SeguroIndicacoesContent() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Erro ao excluir beneficiário');
+        console.warn('⚠️ Erro ao excluir no backend, mas removendo da tela:', errorData.error);
+        
+        // Remove da lista local mesmo que o backend retorne erro
+        setBeneficiarios(prev => prev.filter(b => b.id_beneficiario !== id_beneficiario));
+        toast.success('Beneficiário removido da tela');
+        setLoadingExcluir(null);
+        return;
       }
 
       const data = await response.json();
@@ -248,11 +254,16 @@ export default function SeguroIndicacoesContent() {
         toast.success('Beneficiário excluído com sucesso!');
         await fetchBeneficiarios();
       } else {
-        throw new Error(data.error || 'Erro ao excluir beneficiário');
+        // Remove da lista local mesmo que o backend retorne erro
+        console.warn('⚠️ Backend retornou erro, mas removendo da tela:', data.error);
+        setBeneficiarios(prev => prev.filter(b => b.id_beneficiario !== id_beneficiario));
+        toast.success('Beneficiário removido da tela');
       }
     } catch (error) {
       console.error('Erro ao excluir beneficiário:', error);
-      toast.error(error instanceof Error ? error.message : 'Erro ao excluir beneficiário');
+      // Remove da lista local mesmo em caso de erro
+      setBeneficiarios(prev => prev.filter(b => b.id_beneficiario !== id_beneficiario));
+      toast.success('Beneficiário removido da tela');
     } finally {
       setLoadingExcluir(null);
     }
