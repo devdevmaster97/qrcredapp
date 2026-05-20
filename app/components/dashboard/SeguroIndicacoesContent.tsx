@@ -34,6 +34,11 @@ export default function SeguroIndicacoesContent() {
   const [loadingExcluir, setLoadingExcluir] = useState<number | null>(null);
   const [associadoData, setAssociadoData] = useState<AssociadoData | null>(null);
 
+  // Debug: Monitorar mudanças no estado beneficiarios
+  useEffect(() => {
+    console.log('🔔 Estado beneficiarios atualizado:', beneficiarios.length, 'beneficiários', beneficiarios);
+  }, [beneficiarios]);
+
   // Função para gerar link do ZapSign por beneficiário
   const getZapSignLink = (beneficiario: Beneficiario): string => {
     if (beneficiario.doc_token) {
