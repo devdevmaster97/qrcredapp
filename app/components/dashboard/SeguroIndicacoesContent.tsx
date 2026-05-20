@@ -33,6 +33,8 @@ export default function SeguroIndicacoesContent() {
   const [loading, setLoading] = useState(false);
   const [loadingExcluir, setLoadingExcluir] = useState<number | null>(null);
   const [associadoData, setAssociadoData] = useState<AssociadoData | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [beneficiarioToDelete, setBeneficiarioToDelete] = useState<{id: number, status: string} | null>(null);
 
   // Debug: Monitorar mudanças no estado beneficiarios
   useEffect(() => {
@@ -222,7 +224,7 @@ export default function SeguroIndicacoesContent() {
     }
   };
 
-  const handleExcluir = async (id_beneficiario: number, status: string) => {
+  const handleExcluir = (id_beneficiario: number, status: string) => {
     console.log('🗑️ handleExcluir chamado:', { id_beneficiario, status, associadoData });
 
     if (status === 'assinado') {
@@ -235,9 +237,16 @@ export default function SeguroIndicacoesContent() {
       return;
     }
 
-    const confirmacao = window.confirm('Tem certeza que deseja excluir este beneficiário?');
-    if (!confirmacao) return;
+    // Abrir modal de confirmação
+    setBeneficiarioToDelete({ id: id_beneficiario, status });
+    setShowConfirmModal(true);
+  };
 
+  const confirmarExclusao = async () => {
+    if (!beneficiarioToDelete || !associadoData) return;
+
+    const { id: id_beneficiario } = beneficiarioToDelete;
+    setShowConfirmModal(false);
     setLoadingExcluir(id_beneficiario);
 
     const payload = {
@@ -290,9 +299,47 @@ export default function SeguroIndicacoesContent() {
   };
 
   return (
-    <div className="p-6">
-      {/* Cabeçalho */}
-      <div className="mb-6">
+    <>
+      {/* Modal de Confirmação de Exclusão */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 animate-fade-in">
+            <div className="flex items-center mb-4">
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mr-4">
+                <FaTrash className="text-red-600" size={20} />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">Confirmar Exclusão</h3>
+            </div>
+            
+            <p className="text-gray-600 mb-6">
+              Tem certeza que deseja excluir este beneficiário? Esta ação não pode ser desfeita.
+            </p>
+            
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => {
+                  setShowConfirmModal(false);
+                  setBeneficiarioToDelete(null);
+                }}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors font-medium"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarExclusao}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium flex items-center"
+              >
+                <FaTrash className="mr-2" size={14} />
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="p-6">
+        {/* Cabeçalho */}
+        <div className="mb-6">
         <div className="flex items-center mb-4">
           <FaShieldAlt className="text-purple-600 mr-3" size={32} />
           <div>
@@ -435,5 +482,6 @@ export default function SeguroIndicacoesContent() {
         </div>
       )}
     </div>
+    </>
   );
 }
