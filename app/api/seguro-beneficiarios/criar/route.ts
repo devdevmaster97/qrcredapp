@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-const PHP_BASE_URL = process.env.PHP_BASE_URL || 'https://sas.makecard.com.br';
+const PHP_BASE_URL = process.env.PHP_BASE_URL || 'https://sas.makecard.com.br/api/seguro-beneficiarios';
 
 export async function POST(request: NextRequest) {
   console.log('📝 API CRIAR - Iniciando (via PHP)...');
