@@ -31,7 +31,12 @@ export async function GET(request: NextRequest) {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
       },
+      cache: 'no-store',
+      next: { revalidate: 0 }
     });
 
     console.log('📊 Status da resposta PHP:', response.status);
