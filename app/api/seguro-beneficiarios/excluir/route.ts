@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-const PHP_BASE_URL = process.env.PHP_BASE_URL || 'https://sas.makecard.com.br/api/seguro-beneficiarios';
+const PHP_BASE_URL = process.env.PHP_BASE_URL || 'https://sas.makecard.com.br';
 
 export async function DELETE(request: NextRequest) {
   console.log('🗑️ API EXCLUIR - Iniciando (via PHP)...');

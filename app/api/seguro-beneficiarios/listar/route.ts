@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-const PHP_BASE_URL = process.env.PHP_BASE_URL || 'https://sas.makecard.com.br/api/seguro-beneficiarios';
+const PHP_BASE_URL = process.env.PHP_BASE_URL || 'https://sas.makecard.com.br';
 
 export async function GET(request: NextRequest) {
   console.log('📋 API LISTAR - Iniciando (via PHP)...');
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Chamar endpoint PHP no servidor 2
+    // Chamar endpoint PHP no servidor
     const phpUrl = `${PHP_BASE_URL}/seguro_beneficiarios_listar.php?id_associado=${id_associado}&id_divisao=${id_divisao}`;
     console.log('🔌 Chamando PHP:', phpUrl);
 
@@ -36,7 +36,12 @@ export async function GET(request: NextRequest) {
 
     // Capturar texto bruto primeiro para debug
     const responseText = await response.text();
-    console.log('📄 Resposta PHP (texto bruto):', responseText.substring(0, 500));
+    console.log('📄 Resposta PHP (texto bruto - primeiros 500 chars):', responseText.substring(0, 500));
+    
+    if (!response.ok) {
+      console.error('❌ PHP retornou erro! Status:', response.status);
+      console.error('📄 Resposta completa do PHP:', responseText);
+    }
 
     // Tentar fazer parse do JSON
     let data;
@@ -51,13 +56,15 @@ export async function GET(request: NextRequest) {
           success: false, 
           error: 'Resposta inválida do servidor PHP',
           details: `Parse error: ${parseError.message}`,
-          rawResponse: responseText.substring(0, 1000)
+          rawResponse: responseText.substring(0, 1000),
+          phpUrl: phpUrl
         },
         { status: 500 }
       );
     }
 
     if (!response.ok) {
+      console.error('❌ Retornando erro do PHP para o cliente:', data);
       return NextResponse.json(data, { 
         status: response.status,
         headers: {
