@@ -411,53 +411,17 @@ export default function SeguroIndicacoesContent() {
                     : 'bg-white border-gray-300'
                 }`}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center mb-2">
-                      {beneficiario.status === 'assinado' ? (
-                        <FaCheckCircle className="text-green-600 mr-2" size={20} />
-                      ) : (
-                        <FaClock className="text-yellow-600 mr-2" size={20} />
-                      )}
-                      <h4 className="text-lg font-semibold text-gray-900">
-                        Beneficiário {index + 1}
-                      </h4>
-                    </div>
-
+                {/* Cabeçalho com título e botão excluir */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center">
                     {beneficiario.status === 'assinado' ? (
-                      <div className="space-y-1 text-sm">
-                        <p className="text-gray-700">
-                          <span className="font-medium">Nome:</span> {beneficiario.nome_beneficiario}
-                        </p>
-                        <p className="text-gray-700">
-                          <span className="font-medium">Parentesco:</span> {beneficiario.parentesco}
-                        </p>
-                        <p className="text-gray-700">
-                          <span className="font-medium">Data Nasc:</span> {beneficiario.data_nascimento}
-                        </p>
-                        <p className="text-gray-700">
-                          <span className="font-medium">Percentual:</span> {beneficiario.percentual}%
-                        </p>
-                        <p className="text-green-700 font-medium mt-2">
-                          ✅ Assinado em {new Date(beneficiario.data_assinatura!).toLocaleDateString('pt-BR')}
-                        </p>
-                      </div>
+                      <FaCheckCircle className="text-green-600 mr-2" size={20} />
                     ) : (
-                      <div className="space-y-2">
-                        <p className="text-yellow-700 font-medium">
-                          🟡 Pendente - Aguardando assinatura
-                        </p>
-                        <a
-                          href={getZapSignLink(beneficiario)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center justify-center w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
-                        >
-                          <FaExternalLinkAlt className="mr-2" size={14} />
-                          Preencher Dados no ZapSign
-                        </a>
-                      </div>
+                      <FaClock className="text-yellow-600 mr-2" size={20} />
                     )}
+                    <h4 className="text-lg font-semibold text-gray-900">
+                      Beneficiário {index + 1}
+                    </h4>
                   </div>
 
                   {/* Botão Excluir */}
@@ -465,18 +429,54 @@ export default function SeguroIndicacoesContent() {
                     <button
                       onClick={() => handleExcluir(beneficiario.id_beneficiario, beneficiario.status)}
                       disabled={loadingExcluir === beneficiario.id_beneficiario}
-                      className="ml-4 px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center text-sm"
+                      className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center text-sm"
                     >
                       <FaTrash className="mr-1" size={12} />
                       {loadingExcluir === beneficiario.id_beneficiario ? 'Excluindo...' : 'Excluir'}
                     </button>
                   )}
                   {beneficiario.status === 'assinado' && (
-                    <div className="ml-4 px-3 py-2 bg-gray-200 text-gray-500 rounded-md text-sm cursor-not-allowed">
+                    <div className="px-3 py-2 bg-gray-200 text-gray-500 rounded-md text-sm cursor-not-allowed">
                       Não pode excluir
                     </div>
                   )}
                 </div>
+
+                {/* Conteúdo do beneficiário */}
+                {beneficiario.status === 'assinado' ? (
+                  <div className="space-y-1 text-sm">
+                    <p className="text-gray-700">
+                      <span className="font-medium">Nome:</span> {beneficiario.nome_beneficiario}
+                    </p>
+                    <p className="text-gray-700">
+                      <span className="font-medium">Parentesco:</span> {beneficiario.parentesco}
+                    </p>
+                    <p className="text-gray-700">
+                      <span className="font-medium">Data Nasc:</span> {beneficiario.data_nascimento}
+                    </p>
+                    <p className="text-gray-700">
+                      <span className="font-medium">Percentual:</span> {beneficiario.percentual}%
+                    </p>
+                    <p className="text-green-700 font-medium mt-2">
+                      ✅ Assinado em {new Date(beneficiario.data_assinatura!).toLocaleDateString('pt-BR')}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-yellow-700 font-medium">
+                      🟡 Pendente - Aguardando assinatura
+                    </p>
+                    <a
+                      href={getZapSignLink(beneficiario)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center w-full px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm"
+                    >
+                      <FaExternalLinkAlt className="mr-2" size={14} />
+                      Preencher Dados no ZapSign
+                    </a>
+                  </div>
+                )}
               </div>
             ))}
           </div>
