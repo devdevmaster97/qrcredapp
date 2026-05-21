@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic';
 const PHP_BASE_URL = process.env.PHP_BASE_URL || 'https://sas.makecard.com.br/api/seguro-beneficiarios';
 
 let callCounter = 0;
+const activeRequests = new Map<string, Promise<any>>();
 
 export async function POST(request: NextRequest) {
   const callId = ++callCounter;
@@ -15,6 +16,16 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { id_associado, id_divisao, quantidade } = body;
+    
+    // Criar chave única para esta requisição
+    const requestKey = `${id_associado}-${id_divisao}-${quantidade}`;
+    
+    // Verificar se já existe uma requisição idêntica em andamento
+    if (activeRequests.has(requestKey)) {
+      console.log(`⚠️ [CALL #${callId}] REQUISIÇÃO DUPLICADA DETECTADA! Aguardando requisição anterior...`);
+      const existingRequest = activeRequests.get(requestKey);
+      return await existingRequest;
+    }
 
     console.log(`📝 [CALL #${callId}] Parâmetros recebidos:`, { id_associado, id_divisao, quantidade });
 
@@ -36,23 +47,37 @@ export async function POST(request: NextRequest) {
     const phpUrl = `${PHP_BASE_URL}/seguro_beneficiarios_criar.php`;
     console.log(`🔌 [CALL #${callId}] Chamando PHP:`, phpUrl);
 
-    const response = await fetch(phpUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ id_associado, id_divisao, quantidade }),
-    });
+    // Criar Promise para esta requisição e armazená-la
+    const requestPromise = (async () => {
+      try {
+        const response = await fetch(phpUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ id_associado, id_divisao, quantidade }),
+        });
 
-    const data = await response.json();
-    console.log(`📥 [CALL #${callId}] Resposta do PHP:`, data);
-    console.log(`✅ [CALL #${callId}] Finalizando com sucesso`);
+        const data = await response.json();
+        console.log(`📥 [CALL #${callId}] Resposta do PHP:`, data);
+        console.log(`✅ [CALL #${callId}] Finalizando com sucesso`);
 
-    if (!response.ok) {
-      return NextResponse.json(data, { status: response.status });
-    }
+        if (!response.ok) {
+          return NextResponse.json(data, { status: response.status });
+        }
 
-    return NextResponse.json(data);
+        return NextResponse.json(data);
+      } finally {
+        // Remover da lista de requisições ativas após conclusão
+        activeRequests.delete(requestKey);
+        console.log(`🧹 [CALL #${callId}] Requisição removida do cache`);
+      }
+    })();
+
+    // Armazenar a Promise no Map
+    activeRequests.set(requestKey, requestPromise);
+    
+    return await requestPromise;
 
   } catch (error: any) {
     console.error(`❌ [CALL #${callId}] ERRO ao chamar PHP:`, error);
@@ -60,6 +85,11 @@ export async function POST(request: NextRequest) {
       message: error.message,
       name: error.name,
     });
+    
+    // Limpar requisição do Map em caso de erro
+    const body = await request.clone().json().catch(() => ({}));
+    const requestKey = `${body.id_associado}-${body.id_divisao}-${body.quantidade}`;
+    activeRequests.delete(requestKey);
     
     return NextResponse.json(
       { 
