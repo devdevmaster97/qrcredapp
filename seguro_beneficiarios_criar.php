@@ -53,6 +53,34 @@ try {
     $request_id = uniqid('REQ-', true);
     error_log("🔑 [$request_id] Parâmetros recebidos: id_associado=$id_associado, id_divisao=$id_divisao, quantidade=$quantidade");
 
+    // Criar lock para evitar execução duplicada simultânea
+    $lock_key = "criar_beneficiario_{$id_associado}_{$id_divisao}_{$quantidade}";
+    $lock_file = sys_get_temp_dir() . "/{$lock_key}.lock";
+    $lock_handle = fopen($lock_file, 'w');
+    
+    error_log("🔒 [$request_id] Tentando adquirir lock: $lock_file");
+    
+    // Tentar adquirir lock exclusivo (não bloqueante)
+    if (!flock($lock_handle, LOCK_EX | LOCK_NB)) {
+        error_log("⚠️ [$request_id] LOCK JÁ EXISTE! Requisição duplicada detectada. Aguardando...");
+        // Aguardar até 5 segundos pelo lock
+        $acquired = flock($lock_handle, LOCK_EX);
+        if ($acquired) {
+            error_log("✅ [$request_id] Lock adquirido após espera");
+        } else {
+            error_log("❌ [$request_id] Timeout ao aguardar lock");
+            fclose($lock_handle);
+            http_response_code(409);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Requisição duplicada detectada'
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+    } else {
+        error_log("✅ [$request_id] Lock adquirido imediatamente");
+    }
+
     if (!$id_associado || !$id_divisao || !$quantidade) {
         error_log(" Parâmetros obrigatórios ausentes");
         http_response_code(400);
@@ -126,6 +154,12 @@ try {
     $pdo->commit();
     error_log("✅ [$request_id] Transação commitada com sucesso! Total criado: " . count($beneficiarios_criados));
 
+    // Liberar lock
+    flock($lock_handle, LOCK_UN);
+    fclose($lock_handle);
+    @unlink($lock_file);
+    error_log("🔓 [$request_id] Lock liberado");
+
     echo json_encode([
         'success' => true,
         'data' => $beneficiarios_criados,
@@ -139,6 +173,12 @@ try {
     if (isset($pdo) && $pdo->inTransaction()) {
         $pdo->rollBack();
     }
+    // Liberar lock em caso de erro
+    if (isset($lock_handle)) {
+        flock($lock_handle, LOCK_UN);
+        fclose($lock_handle);
+        if (isset($lock_file)) @unlink($lock_file);
+    }
     error_log("Erro ao criar beneficiários: " . $e->getMessage());
     http_response_code(500);
     echo json_encode([
@@ -148,6 +188,12 @@ try {
 } catch (Exception $e) {
     if (isset($pdo) && $pdo->inTransaction()) {
         $pdo->rollBack();
+    }
+    // Liberar lock em caso de erro
+    if (isset($lock_handle)) {
+        flock($lock_handle, LOCK_UN);
+        fclose($lock_handle);
+        if (isset($lock_file)) @unlink($lock_file);
     }
     error_log("Erro geral ao criar beneficiários: " . $e->getMessage());
     http_response_code(500);
