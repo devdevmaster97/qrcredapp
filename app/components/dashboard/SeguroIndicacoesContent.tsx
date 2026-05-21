@@ -441,7 +441,7 @@ export default function SeguroIndicacoesContent() {
                           href={getZapSignLink(beneficiario)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+                          className="flex items-center justify-center w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
                         >
                           <FaExternalLinkAlt className="mr-2" size={14} />
                           Preencher Dados no ZapSign
