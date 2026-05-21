@@ -161,6 +161,12 @@ export default function SeguroIndicacoesContent() {
   };
 
   const handleConfirmarQuantidade = async () => {
+    // Proteção contra cliques duplicados
+    if (loading) {
+      console.log('⚠️ Já está processando, ignorando clique duplicado');
+      return;
+    }
+
     if (quantidade < 1 || quantidade > 4) {
       toast.error('Selecione uma quantidade entre 1 e 4');
       return;
@@ -184,6 +190,7 @@ export default function SeguroIndicacoesContent() {
       return;
     }
 
+    console.log('🚀 Iniciando criação de beneficiários:', { quantidade, id_associado: associadoData.id, id_divisao: associadoData.id_divisao });
     setLoading(true);
 
     try {
