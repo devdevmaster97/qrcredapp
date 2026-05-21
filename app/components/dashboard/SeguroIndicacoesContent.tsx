@@ -190,10 +190,12 @@ export default function SeguroIndicacoesContent() {
       return;
     }
 
-    console.log('🚀 Iniciando criação de beneficiários:', { quantidade, id_associado: associadoData.id, id_divisao: associadoData.id_divisao });
+    const requestId = `REQ-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    console.log(`🚀 [${requestId}] Iniciando criação de beneficiários:`, { quantidade, id_associado: associadoData.id, id_divisao: associadoData.id_divisao });
     setLoading(true);
 
     try {
+      console.log(`📤 [${requestId}] Enviando requisição para API...`);
       const response = await fetch('/api/seguro-beneficiarios/criar', {
         method: 'POST',
         headers: {
@@ -205,6 +207,7 @@ export default function SeguroIndicacoesContent() {
           quantidade
         })
       });
+      console.log(`📥 [${requestId}] Resposta recebida:`, response.status);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -212,19 +215,19 @@ export default function SeguroIndicacoesContent() {
       }
 
       const data = await response.json();
-      console.log('📊 Resposta da API criar:', data);
+      console.log(`📊 [${requestId}] Resposta da API criar:`, data);
 
       if (data.success) {
         toast.success(`${quantidade} beneficiário(s) criado(s) com sucesso!`);
-        console.log('✅ Beneficiários criados, chamando fetchBeneficiarios...');
+        console.log(`✅ [${requestId}] Beneficiários criados, chamando fetchBeneficiarios...`);
         setQuantidade(0);
         await fetchBeneficiarios();
-        console.log('✅ fetchBeneficiarios concluído');
+        console.log(`✅ [${requestId}] fetchBeneficiarios concluído`);
       } else {
         throw new Error(data.error || 'Erro ao criar beneficiários');
       }
     } catch (error) {
-      console.error('Erro ao criar beneficiários:', error);
+      console.error(`❌ [${requestId}] Erro ao criar beneficiários:`, error);
       toast.error(error instanceof Error ? error.message : 'Erro ao criar beneficiários');
     } finally {
       setLoading(false);
