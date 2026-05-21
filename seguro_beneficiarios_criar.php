@@ -50,7 +50,8 @@ try {
     $id_divisao = $input['id_divisao'] ?? null;
     $quantidade = $input['quantidade'] ?? null;
 
-    error_log(" Parâmetros recebidos: id_associado=$id_associado, id_divisao=$id_divisao, quantidade=$quantidade");
+    $request_id = uniqid('REQ-', true);
+    error_log("🔑 [$request_id] Parâmetros recebidos: id_associado=$id_associado, id_divisao=$id_divisao, quantidade=$quantidade");
 
     if (!$id_associado || !$id_divisao || !$quantidade) {
         error_log(" Parâmetros obrigatórios ausentes");
@@ -72,11 +73,11 @@ try {
         exit;
     }
 
-    error_log(" Iniciando transação...");
+    error_log("🔄 [$request_id] Iniciando transação...");
     $pdo->beginTransaction();
 
     // Verificar quantos beneficiários já existem
-    error_log("🔍 Verificando quantidade existente...");
+    error_log("🔍 [$request_id] Verificando quantidade existente...");
     $query_count = "SELECT COUNT(*) as total FROM sind.seguro_beneficiarios 
                     WHERE id_associado = :id_associado AND id_divisao = :id_divisao";
     $stmt_count = $pdo->prepare($query_count);
@@ -87,7 +88,7 @@ try {
     $row_count = $stmt_count->fetch(PDO::FETCH_ASSOC);
     $total_existente = (int)$row_count['total'];
 
-    error_log("📊 Total existente: $total_existente, Solicitado: $quantidade");
+    error_log("📊 [$request_id] Total existente: $total_existente, Solicitado: $quantidade");
 
     if ($total_existente + $quantidade > 4) {
         error_log("❌ Limite excedido: $total_existente + $quantidade > 4");
@@ -101,7 +102,7 @@ try {
     }
 
     // Inserir novos beneficiários
-    error_log("➕ Inserindo $quantidade beneficiário(s)...");
+    error_log("➕ [$request_id] Inserindo $quantidade beneficiário(s)...");
     $beneficiarios_criados = [];
     $query_insert = "INSERT INTO sind.seguro_beneficiarios 
                      (id_associado, id_divisao, status, data_criacao) 
@@ -109,7 +110,7 @@ try {
                      RETURNING id_beneficiario, id_associado, id_divisao, status, data_criacao";
 
     for ($i = 0; $i < $quantidade; $i++) {
-        error_log("   ➡️ Inserindo beneficiário " . ($i + 1) . "/$quantidade");
+        error_log("   ➡️ [$request_id] Inserindo beneficiário " . ($i + 1) . "/$quantidade");
         $stmt_insert = $pdo->prepare($query_insert);
         $stmt_insert->execute([
             ':id_associado' => $id_associado,
@@ -118,12 +119,12 @@ try {
 
         $beneficiario = $stmt_insert->fetch(PDO::FETCH_ASSOC);
         $beneficiarios_criados[] = $beneficiario;
-        error_log("   ✅ Beneficiário criado: ID " . $beneficiario['id_beneficiario']);
+        error_log("   ✅ [$request_id] Beneficiário criado: ID " . $beneficiario['id_beneficiario']);
     }
 
-    error_log("💾 Commit da transação...");
+    error_log("💾 [$request_id] Commit da transação...");
     $pdo->commit();
-    error_log("✅ Transação commitada com sucesso!");
+    error_log("✅ [$request_id] Transação commitada com sucesso! Total criado: " . count($beneficiarios_criados));
 
     echo json_encode([
         'success' => true,
@@ -131,7 +132,7 @@ try {
         'message' => "$quantidade beneficiário(s) criado(s) com sucesso"
     ], JSON_UNESCAPED_UNICODE);
     
-    error_log("✅ Resposta JSON enviada com sucesso");
+    error_log("✅ [$request_id] Resposta JSON enviada com sucesso");
     error_log("========================================");
 
 } catch (PDOException $e) {
