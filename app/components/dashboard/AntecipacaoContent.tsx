@@ -543,27 +543,9 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         return isMesCorrente;
       });
 
-      // CORREÇÃO CRÍTICA: Separar solicitações PENDENTES das APROVADAS
-      // Aprovadas já estão em 'total' (tabela conta), então só contamos pendentes
-      const solicitacoesPendentes = solicitacoesDoMes.filter(solicitacao => {
-        const isPendente = solicitacao.status === false || 
-                          solicitacao.status === 'false' || 
-                          solicitacao.status === null ||
-                          solicitacao.status === 'Pendente' ||
-                          solicitacao.status === 'pendente';
-        return isPendente;
-      });
-
-      const totalSolicitacoesPendentes = solicitacoesPendentes.reduce((acc, solicitacao) => {
-        const valorDescontar = parseFloat(solicitacao.valor_descontar || solicitacao.valor_a_descontar || '0');
-        return acc + valorDescontar;
-      }, 0);
-
       console.log('💰 Solicitações do mês corrente encontradas:', {
         quantidadeTotal: solicitacoesDoMes.length,
-        quantidadePendentes: solicitacoesPendentes.length,
-        totalPendentes: totalSolicitacoesPendentes,
-        solicitacoesPendentes: solicitacoesPendentes.map(s => ({
+        solicitacoes: solicitacoesDoMes.map(s => ({
           id: s.id,
           valor: s.valor_descontar || s.valor_a_descontar,
           status: s.status,
@@ -571,11 +553,12 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         }))
       });
 
-      // 5. Calcular saldo: limite - gastos aprovados (total) - solicitações pendentes
-      // IMPORTANTE: 'total' já inclui antecipações aprovadas da tabela conta
-      // Só subtraímos solicitações PENDENTES para evitar subtração dupla
+      // 5. Calcular saldo: limite - total da tabela conta
+      // CORREÇÃO CRÍTICA: O 'total' da tabela conta JÁ INCLUI TODAS as antecipações aprovadas
+      // O histórico é apenas para EXIBIÇÃO, NÃO para cálculo de saldo
+      // Não devemos subtrair nada do histórico para evitar subtração dupla
       const limite = parseFloat(associadoData.limite || '0');
-      const saldo = limite - total - totalSolicitacoesPendentes;
+      const saldo = limite - total;
 
       // 6. Atualizar o estado
       setSaldoData({
@@ -590,9 +573,9 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         mesCorrente: mesAtual,
         limite: limite,
         totalGastoNoMes: total,
-        totalSolicitacoesPendentes: totalSolicitacoesPendentes,
         saldoDisponivel: saldo,
-        calculo: `${limite} - ${total} - ${totalSolicitacoesPendentes} = ${saldo}`,
+        calculo: `${limite} - ${total} = ${saldo}`,
+        observacao: 'Total já inclui todas as antecipações aprovadas da tabela conta',
         porcentagem: porcentagem,
         idDivisao: associadoData.id_divisao
       });
