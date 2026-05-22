@@ -739,9 +739,18 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
 
   // Função para forçar atualização do saldo (útil quando mês corrente muda)
   const atualizarSaldo = useCallback(async () => {
-    console.log(' Forçando atualização do saldo para verificar mudança de mês...');
-    await loadSaldoData();
-  }, [loadSaldoData]);
+    console.log('🔄 Forçando atualização do saldo e histórico...');
+    
+    // Buscar histórico atualizado
+    const historicoAtualizado = await fetchHistoricoSolicitacoes();
+    
+    console.log('✅ Histórico atualizado obtido, recalculando saldo:', {
+      totalSolicitacoes: historicoAtualizado.length
+    });
+    
+    // Recalcular saldo com histórico atualizado
+    await loadSaldoData(historicoAtualizado);
+  }, [fetchHistoricoSolicitacoes, loadSaldoData]);
 
   // Função para buscar meses da API
   const fetchMesesApi = useCallback(async () => {
