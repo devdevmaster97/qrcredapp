@@ -161,37 +161,48 @@ export default function SeguroIndicacoesContent() {
   };
 
   const handleConfirmarQuantidade = async () => {
+    const callTimestamp = Date.now();
+    console.log(`🔔 [${callTimestamp}] handleConfirmarQuantidade CHAMADO - quantidade: ${quantidade}`);
+    console.trace('Stack trace da chamada:');
+    
     // Proteção contra cliques duplicados
     if (loading) {
-      console.log('⚠️ Já está processando, ignorando clique duplicado');
+      console.log(`⚠️ [${callTimestamp}] Já está processando, ignorando clique duplicado`);
       return;
     }
 
     if (quantidade < 1 || quantidade > 4) {
+      console.log(`❌ [${callTimestamp}] Quantidade inválida: ${quantidade}`);
       toast.error('Selecione uma quantidade entre 1 e 4');
       return;
     }
 
     if (!associadoData) {
+      console.log(`❌ [${callTimestamp}] Dados do associado não disponíveis`);
       toast.error('Dados do associado não disponíveis');
       return;
     }
 
     // Verificar se já tem 4 beneficiários ativos
     const beneficiariosAtivos = beneficiarios.length;
+    console.log(`📊 [${callTimestamp}] Beneficiários ativos: ${beneficiariosAtivos}`);
+    
     if (beneficiariosAtivos >= 4) {
+      console.log(`❌ [${callTimestamp}] Limite de 4 beneficiários atingido`);
       toast.error('Você já possui 4 beneficiários cadastrados. Exclua algum para adicionar novos.');
       return;
     }
 
     // Verificar se a quantidade solicitada + ativos ultrapassa 4
     if (beneficiariosAtivos + quantidade > 4) {
+      console.log(`❌ [${callTimestamp}] Quantidade excede limite: ${beneficiariosAtivos} + ${quantidade} > 4`);
       toast.error(`Você só pode ter até 4 beneficiários. Você já tem ${beneficiariosAtivos}.`);
       return;
     }
 
     const requestId = `REQ-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     console.log(`🚀 [${requestId}] Iniciando criação de beneficiários:`, { quantidade, id_associado: associadoData.id, id_divisao: associadoData.id_divisao });
+    console.log(`🔒 [${requestId}] Setando loading=true`);
     setLoading(true);
 
     try {
