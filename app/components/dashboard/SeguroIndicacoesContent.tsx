@@ -35,6 +35,10 @@ export default function SeguroIndicacoesContent() {
   const [associadoData, setAssociadoData] = useState<AssociadoData | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [beneficiarioToDelete, setBeneficiarioToDelete] = useState<{id: number, status: string} | null>(null);
+  
+  // Proteção contra eventos touch duplicados no mobile
+  const [ultimoClickTimestamp, setUltimoClickTimestamp] = useState<number>(0);
+  const INTERVALO_MINIMO_CLIQUES = 2000; // 2 segundos entre cliques
 
   // Debug: Monitorar mudanças no estado beneficiarios
   useEffect(() => {
@@ -160,10 +164,30 @@ export default function SeguroIndicacoesContent() {
     }
   };
 
-  const handleConfirmarQuantidade = async () => {
+  const handleConfirmarQuantidade = async (e?: React.MouseEvent | React.TouchEvent) => {
     const callTimestamp = Date.now();
     console.log(`🔔 [${callTimestamp}] handleConfirmarQuantidade CHAMADO - quantidade: ${quantidade}`);
+    console.log(`📱 [${callTimestamp}] Tipo de evento: ${e?.type || 'desconhecido'}`);
     console.trace('Stack trace da chamada:');
+    
+    // PROTEÇÃO CRÍTICA 1: Prevenir eventos duplicados touch + click no mobile
+    const tempoDesdeUltimoClick = callTimestamp - ultimoClickTimestamp;
+    if (tempoDesdeUltimoClick < INTERVALO_MINIMO_CLIQUES) {
+      console.log(`🚫 [${callTimestamp}] BLOQUEADO - Clique muito rápido! ${tempoDesdeUltimoClick}ms desde último clique (mínimo: ${INTERVALO_MINIMO_CLIQUES}ms)`);
+      e?.preventDefault();
+      e?.stopPropagation();
+      return;
+    }
+    
+    // Atualizar timestamp do último clique
+    setUltimoClickTimestamp(callTimestamp);
+    console.log(`✅ [${callTimestamp}] Timestamp atualizado - permitindo execução`);
+    
+    // PROTEÇÃO CRÍTICA 2: Prevenir propagação de eventos
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     
     // Proteção contra cliques duplicados
     if (loading) {
@@ -389,7 +413,17 @@ export default function SeguroIndicacoesContent() {
             <option value={4}>4</option>
           </select>
           <button
-            onClick={handleConfirmarQuantidade}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleConfirmarQuantidade(e);
+            }}
+            onClick={(e) => {
+              // onClick só será usado em desktop (onde não há touch)
+              if (!('ontouchstart' in window)) {
+                handleConfirmarQuantidade(e);
+              }
+            }}
             disabled={loading || quantidade === 0 || beneficiarios.length >= 4}
             className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
           >
