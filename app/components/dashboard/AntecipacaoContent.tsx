@@ -154,6 +154,9 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
   // Estado para controlar se o valor digitado excede o saldo disponível
   const [valorExcedeSaldo, setValorExcedeSaldo] = useState(false);
   
+  // Estado para controlar modal de valor mínimo
+  const [mostrarModalValorMinimo, setMostrarModalValorMinimo] = useState(false);
+  
   // Sistema de logs visível no celular
   const [debugLogs, setDebugLogs] = useState<string[]>([]);
   const [mostrarDebug, setMostrarDebug] = useState(true); // Sempre mostrar no mobile
@@ -1045,7 +1048,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     }
     
     if (valorNumericoValidacao < VALOR_MINIMO) {
-      setErro(`Valor mínimo para antecipação é ${formatarValor(VALOR_MINIMO)}`);
+      setMostrarModalValorMinimo(true); // Abrir modal de alerta
       setLoading(false);
       isSubmittingRef.current = false;
       lastSubmissionRef.current = 0;
