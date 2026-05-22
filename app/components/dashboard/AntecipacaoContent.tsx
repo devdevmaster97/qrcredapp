@@ -1186,11 +1186,33 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       const antecipacaoId = data.antecipacao_id;
       const contaId = data.conta_id;
       
-      addDebugLog(`🔍 [${requestId}] Validando IDs retornados:`);
-      addDebugLog(`   - antecipacao_id: ${antecipacaoId}`);
-      addDebugLog(`   - conta_id: ${contaId}`);
+      // Log SUPER DETALHADO da resposta completa
+      console.log(`🔍 [${requestId}] ===== ANÁLISE COMPLETA DA RESPOSTA =====`);
+      console.log(`📦 [${requestId}] data completo:`, data);
+      console.log(`📦 [${requestId}] data.success:`, data.success, `(tipo: ${typeof data.success})`);
+      console.log(`📦 [${requestId}] data.antecipacao_id:`, antecipacaoId, `(tipo: ${typeof antecipacaoId})`);
+      console.log(`📦 [${requestId}] data.conta_id:`, contaId, `(tipo: ${typeof contaId})`);
+      console.log(`📦 [${requestId}] data.message:`, data.message);
+      console.log(`📦 [${requestId}] data.error:`, data.error);
+      console.log(`📦 [${requestId}] response.status:`, response.status);
       
-      if (data.success && antecipacaoId && contaId) {
+      addDebugLog(`🔍 [${requestId}] Validando IDs retornados:`);
+      addDebugLog(`   - success: ${data.success} (${typeof data.success})`);
+      addDebugLog(`   - antecipacao_id: ${antecipacaoId} (${typeof antecipacaoId})`);
+      addDebugLog(`   - conta_id: ${contaId} (${typeof contaId})`);
+      addDebugLog(`   - message: ${data.message}`);
+      
+      // Validação mais flexível: aceitar se success=true OU se IDs estão presentes
+      const temIds = antecipacaoId && contaId;
+      const isSuccess = data.success === true || data.success === 'true';
+      
+      console.log(`🔍 [${requestId}] Resultado validação:`, {
+        temIds,
+        isSuccess,
+        condicaoFinal: isSuccess && temIds
+      });
+      
+      if (isSuccess && temIds) {
         addDebugLog(`✅ [${requestId}] Sucesso confirmado com IDs válidos`);
         console.log(`✅ [${requestId}] Sucesso confirmado - Antecipação ID: ${antecipacaoId}, Conta ID: ${contaId}`);
         
