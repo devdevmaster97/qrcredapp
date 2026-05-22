@@ -128,7 +128,8 @@ export default function SeguroIndicacoesContent() {
   const fetchBeneficiarios = async () => {
     if (!associadoData) return;
 
-    console.log('🔄 Buscando beneficiários...', { id_associado: associadoData.id, id_divisao: associadoData.id_divisao });
+    const fetchId = `FETCH-${Date.now()}`;
+    console.log(`🔄 [${fetchId}] Buscando beneficiários...`, { id_associado: associadoData.id, id_divisao: associadoData.id_divisao });
 
     try {
       // Adicionar timestamp para forçar bypass de cache
@@ -152,10 +153,12 @@ export default function SeguroIndicacoesContent() {
       }
 
       const data = await response.json();
-      console.log('📊 Dados recebidos da API:', data);
+      console.log(`📊 [${fetchId}] Dados recebidos da API:`, data);
+      console.log(`📊 [${fetchId}] Quantidade de beneficiários retornados:`, data.beneficiarios?.length || 0);
       
       if (data.success && Array.isArray(data.beneficiarios)) {
-        console.log('✅ Atualizando lista de beneficiários:', data.beneficiarios.length, 'beneficiários');
+        console.log(`✅ [${fetchId}] Atualizando lista de beneficiários:`, data.beneficiarios.length, 'beneficiários');
+        console.log(`📋 [${fetchId}] IDs dos beneficiários:`, data.beneficiarios.map(b => b.id_beneficiario));
         setBeneficiarios(data.beneficiarios);
       } else {
         console.warn('⚠️ Resposta inesperada da API:', data);
@@ -265,13 +268,19 @@ export default function SeguroIndicacoesContent() {
 
       const data = await response.json();
       console.log(`📊 [${requestId}] Resposta da API criar:`, data);
+      console.log(`📊 [${requestId}] Beneficiários criados pela API:`, data.data?.length || 0);
+      if (data.data) {
+        console.log(`🆔 [${requestId}] IDs criados:`, data.data.map((b: any) => b.id_beneficiario));
+      }
 
       if (data.success) {
         toast.success(`${quantidade} beneficiário(s) criado(s) com sucesso!`);
         console.log(`✅ [${requestId}] Beneficiários criados, chamando fetchBeneficiarios...`);
+        console.log(`📋 [${requestId}] Estado ANTES de fetchBeneficiarios:`, beneficiarios.length, 'beneficiários');
         setQuantidade(0);
         await fetchBeneficiarios();
         console.log(`✅ [${requestId}] fetchBeneficiarios concluído`);
+        console.log(`📋 [${requestId}] Estado DEPOIS de fetchBeneficiarios:`, beneficiarios.length, 'beneficiários');
       } else {
         throw new Error(data.error || 'Erro ao criar beneficiários');
       }

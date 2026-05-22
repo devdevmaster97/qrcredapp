@@ -52,6 +52,8 @@ try {
 
     $request_id = uniqid('REQ-', true);
     error_log("🔑 [$request_id] Parâmetros recebidos: id_associado=$id_associado, id_divisao=$id_divisao, quantidade=$quantidade");
+    error_log("🔍 [$request_id] TIPO de quantidade: " . gettype($quantidade));
+    error_log("🔍 [$request_id] VALOR EXATO de quantidade: '" . var_export($quantidade, true) . "'");
 
     // Criar lock para evitar execução duplicada simultânea
     $lock_key = "criar_beneficiario_{$id_associado}_{$id_divisao}_{$quantidade}";
@@ -137,8 +139,9 @@ try {
                      VALUES (:id_associado, :id_divisao, 'pendente', NOW()) 
                      RETURNING id_beneficiario, id_associado, id_divisao, status, data_criacao";
 
+    error_log("🔁 [$request_id] INICIANDO LOOP - quantidade=$quantidade, tipo=" . gettype($quantidade));
     for ($i = 0; $i < $quantidade; $i++) {
-        error_log("   ➡️ [$request_id] Inserindo beneficiário " . ($i + 1) . "/$quantidade");
+        error_log("   ➡️ [$request_id] ITERAÇÃO $i - Inserindo beneficiário " . ($i + 1) . "/$quantidade");
         $stmt_insert = $pdo->prepare($query_insert);
         $stmt_insert->execute([
             ':id_associado' => $id_associado,
@@ -147,8 +150,10 @@ try {
 
         $beneficiario = $stmt_insert->fetch(PDO::FETCH_ASSOC);
         $beneficiarios_criados[] = $beneficiario;
-        error_log("   ✅ [$request_id] Beneficiário criado: ID " . $beneficiario['id_beneficiario']);
+        error_log("   ✅ [$request_id] ITERAÇÃO $i - Beneficiário criado: ID " . $beneficiario['id_beneficiario']);
+        error_log("   📊 [$request_id] Total criados até agora: " . count($beneficiarios_criados));
     }
+    error_log("🏁 [$request_id] LOOP FINALIZADO - Total de iterações executadas: $i");
 
     error_log("💾 [$request_id] Commit da transação...");
     $pdo->commit();
