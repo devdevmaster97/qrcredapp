@@ -607,7 +607,8 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
 
   // Função para buscar o histórico de solicitações
   const fetchHistoricoSolicitacoes = useCallback(async () => {
-    console.log('🔍 fetchHistoricoSolicitacoes - Verificando condições:', {
+    console.log('� fetchHistoricoSolicitacoes - CHAMADA INICIADA');
+    console.log('� fetchHistoricoSolicitacoes - Verificando condições:', {
       matricula: associadoData?.matricula,
       id: associadoData?.id,
       id_divisao: associadoData?.id_divisao
@@ -638,7 +639,14 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         timeout: 30000
       });
       
+      console.log('📥 Resposta da API de histórico:', {
+        isArray: Array.isArray(response.data),
+        length: response.data?.length,
+        primeiros3: response.data?.slice(0, 3)
+      });
+      
       if (Array.isArray(response.data)) {
+        console.log(`✅ Setando ${response.data.length} solicitações no estado`);
         setUltimasSolicitacoes(response.data);
       } else {
         console.error('Formato de resposta inválido para histórico de solicitações');
