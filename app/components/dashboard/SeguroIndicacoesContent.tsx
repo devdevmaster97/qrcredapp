@@ -158,7 +158,7 @@ export default function SeguroIndicacoesContent() {
       
       if (data.success && Array.isArray(data.beneficiarios)) {
         console.log(`✅ [${fetchId}] Atualizando lista de beneficiários:`, data.beneficiarios.length, 'beneficiários');
-        console.log(`📋 [${fetchId}] IDs dos beneficiários:`, data.beneficiarios.map(b => b.id_beneficiario));
+        console.log(`📋 [${fetchId}] IDs dos beneficiários:`, data.beneficiarios.map((b: Beneficiario) => b.id_beneficiario));
         setBeneficiarios(data.beneficiarios);
       } else {
         console.warn('⚠️ Resposta inesperada da API:', data);
