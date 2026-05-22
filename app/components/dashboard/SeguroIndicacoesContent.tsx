@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { FaShieldAlt, FaTrash, FaExternalLinkAlt, FaCheckCircle, FaClock } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
@@ -36,9 +36,10 @@ export default function SeguroIndicacoesContent() {
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [beneficiarioToDelete, setBeneficiarioToDelete] = useState<{id: number, status: string} | null>(null);
   
-  // Proteção contra eventos touch duplicados no mobile
-  const [ultimoClickTimestamp, setUltimoClickTimestamp] = useState<number>(0);
-  const INTERVALO_MINIMO_CLIQUES = 2000; // 2 segundos entre cliques
+  // Proteção ATÔMICA contra execuções duplicadas (mobile e desktop)
+  const isExecutingRef = useRef(false);
+  const lastExecutionTimeRef = useRef(0);
+  const INTERVALO_MINIMO_MS = 1000; // 1 segundo entre execuções
 
   // Debug: Monitorar mudanças no estado beneficiarios
   useEffect(() => {
@@ -168,42 +169,53 @@ export default function SeguroIndicacoesContent() {
     const callTimestamp = Date.now();
     console.log(`🔔 [${callTimestamp}] handleConfirmarQuantidade CHAMADO - quantidade: ${quantidade}`);
     console.log(`📱 [${callTimestamp}] Tipo de evento: ${e?.type || 'desconhecido'}`);
-    console.trace('Stack trace da chamada:');
     
-    // PROTEÇÃO CRÍTICA 1: Prevenir eventos duplicados touch + click no mobile
-    const tempoDesdeUltimoClick = callTimestamp - ultimoClickTimestamp;
-    if (tempoDesdeUltimoClick < INTERVALO_MINIMO_CLIQUES) {
-      console.log(`🚫 [${callTimestamp}] BLOQUEADO - Clique muito rápido! ${tempoDesdeUltimoClick}ms desde último clique (mínimo: ${INTERVALO_MINIMO_CLIQUES}ms)`);
+    // PROTEÇÃO ATÔMICA 1: Verificar se já está executando (mutex)
+    if (isExecutingRef.current) {
+      console.log(`🚫 [${callTimestamp}] BLOQUEADO - Já está executando (mutex ativo)`);
       e?.preventDefault();
       e?.stopPropagation();
       return;
     }
     
-    // Atualizar timestamp do último clique
-    setUltimoClickTimestamp(callTimestamp);
-    console.log(`✅ [${callTimestamp}] Timestamp atualizado - permitindo execução`);
+    // PROTEÇÃO ATÔMICA 2: Verificar intervalo mínimo entre execuções
+    const tempoDesdeUltimaExecucao = callTimestamp - lastExecutionTimeRef.current;
+    if (lastExecutionTimeRef.current > 0 && tempoDesdeUltimaExecucao < INTERVALO_MINIMO_MS) {
+      console.log(`🚫 [${callTimestamp}] BLOQUEADO - Intervalo muito curto! ${tempoDesdeUltimaExecucao}ms (mínimo: ${INTERVALO_MINIMO_MS}ms)`);
+      e?.preventDefault();
+      e?.stopPropagation();
+      return;
+    }
     
-    // PROTEÇÃO CRÍTICA 2: Prevenir propagação de eventos
+    // MARCAR COMO EXECUTANDO (mutex)
+    isExecutingRef.current = true;
+    lastExecutionTimeRef.current = callTimestamp;
+    console.log(`🔒 [${callTimestamp}] Mutex ativado - bloqueando novas execuções`);
+    
+    // Prevenir propagação de eventos
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
     
-    // Proteção contra cliques duplicados
+    // Proteção contra estado loading
     if (loading) {
-      console.log(`⚠️ [${callTimestamp}] Já está processando, ignorando clique duplicado`);
+      console.log(`⚠️ [${callTimestamp}] Loading ativo, abortando`);
+      isExecutingRef.current = false;
       return;
     }
 
     if (quantidade < 1 || quantidade > 4) {
       console.log(`❌ [${callTimestamp}] Quantidade inválida: ${quantidade}`);
       toast.error('Selecione uma quantidade entre 1 e 4');
+      isExecutingRef.current = false;
       return;
     }
 
     if (!associadoData) {
       console.log(`❌ [${callTimestamp}] Dados do associado não disponíveis`);
       toast.error('Dados do associado não disponíveis');
+      isExecutingRef.current = false;
       return;
     }
 
@@ -214,6 +226,7 @@ export default function SeguroIndicacoesContent() {
     if (beneficiariosAtivos >= 4) {
       console.log(`❌ [${callTimestamp}] Limite de 4 beneficiários atingido`);
       toast.error('Você já possui 4 beneficiários cadastrados. Exclua algum para adicionar novos.');
+      isExecutingRef.current = false;
       return;
     }
 
@@ -221,6 +234,7 @@ export default function SeguroIndicacoesContent() {
     if (beneficiariosAtivos + quantidade > 4) {
       console.log(`❌ [${callTimestamp}] Quantidade excede limite: ${beneficiariosAtivos} + ${quantidade} > 4`);
       toast.error(`Você só pode ter até 4 beneficiários. Você já tem ${beneficiariosAtivos}.`);
+      isExecutingRef.current = false;
       return;
     }
 
@@ -266,6 +280,9 @@ export default function SeguroIndicacoesContent() {
       toast.error(error instanceof Error ? error.message : 'Erro ao criar beneficiários');
     } finally {
       setLoading(false);
+      // LIBERAR MUTEX - CRÍTICO para permitir novas execuções
+      isExecutingRef.current = false;
+      console.log(`🔓 [${requestId}] Mutex liberado - permitindo novas execuções`);
     }
   };
 
@@ -413,17 +430,7 @@ export default function SeguroIndicacoesContent() {
             <option value={4}>4</option>
           </select>
           <button
-            onTouchEnd={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleConfirmarQuantidade(e);
-            }}
-            onClick={(e) => {
-              // onClick só será usado em desktop (onde não há touch)
-              if (!('ontouchstart' in window)) {
-                handleConfirmarQuantidade(e);
-              }
-            }}
+            onClick={handleConfirmarQuantidade}
             disabled={loading || quantidade === 0 || beneficiarios.length >= 4}
             className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
           >
