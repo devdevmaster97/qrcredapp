@@ -606,9 +606,9 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
   }, [cartao, associadoData, fetchMesCorrente, fetchConta]);
 
   // Função para buscar o histórico de solicitações
-  const fetchHistoricoSolicitacoes = useCallback(async () => {
-    console.log('� fetchHistoricoSolicitacoes - CHAMADA INICIADA');
-    console.log('� fetchHistoricoSolicitacoes - Verificando condições:', {
+  const fetchHistoricoSolicitacoes = useCallback(async (): Promise<any[]> => {
+    console.log('🚀 fetchHistoricoSolicitacoes - CHAMADA INICIADA');
+    console.log('🔍 fetchHistoricoSolicitacoes - Verificando condições:', {
       matricula: associadoData?.matricula,
       id: associadoData?.id,
       id_divisao: associadoData?.id_divisao
@@ -616,13 +616,11 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     
     if (!associadoData?.matricula || !associadoData?.id || !associadoData?.id_divisao) {
       console.log('❌ fetchHistoricoSolicitacoes - Dados do associado incompletos, retornando early');
-      return;
+      return [];
     }
     
     try {
       setLoadingHistorico(true);
-      
-      // FormData não é mais necessário para GET, mas mantendo para referência
       
       // Usar GET diretamente na API PHP que funciona
       const params = new URLSearchParams({
@@ -646,11 +644,13 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       });
       
       if (Array.isArray(response.data)) {
-        console.log(`✅ Setando ${response.data.length} solicitações no estado`);
+        console.log(`✅ Setando ${response.data.length} solicitações no estado E retornando dados`);
         setUltimasSolicitacoes(response.data);
+        return response.data;
       } else {
         console.error('Formato de resposta inválido para histórico de solicitações');
         setUltimasSolicitacoes([]);
+        return [];
       }
     } catch (error) {
       console.error('❌ Erro ao buscar histórico de solicitações:', error);
@@ -662,6 +662,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         });
       }
       setUltimasSolicitacoes([]);
+      return [];
     } finally {
       setLoadingHistorico(false);
     }
@@ -721,18 +722,15 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       const carregarDadosSequencial = async () => {
         console.log('🔄 Carregando histórico de solicitações...');
         
-        // Buscar histórico
-        await fetchHistoricoSolicitacoes();
+        // Buscar histórico e capturar dados retornados
+        const historicoCarregado = await fetchHistoricoSolicitacoes();
         
-        console.log('✅ Histórico carregado, aguardando estado atualizar...');
+        console.log('✅ Histórico carregado, passando diretamente para loadSaldoData:', {
+          totalSolicitacoes: historicoCarregado.length
+        });
         
-        // Aguardar estado atualizar
-        await new Promise(resolve => setTimeout(resolve, 200));
-        
-        console.log('🔄 Recalculando saldo...');
-        
-        // Calcular saldo
-        await loadSaldoData();
+        // Calcular saldo passando histórico diretamente
+        await loadSaldoData(historicoCarregado);
       };
       
       carregarDadosSequencial();
