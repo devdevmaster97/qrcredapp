@@ -610,12 +610,11 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     console.log('🔍 fetchHistoricoSolicitacoes - Verificando condições:', {
       matricula: associadoData?.matricula,
       id: associadoData?.id,
-      id_divisao: associadoData?.id_divisao,
-      historicoApiDisponivel: historicoApiDisponivel
+      id_divisao: associadoData?.id_divisao
     });
     
-    if (!associadoData?.matricula || !associadoData?.id || !associadoData?.id_divisao || !historicoApiDisponivel) {
-      console.log('❌ fetchHistoricoSolicitacoes - Condições não atendidas, retornando early');
+    if (!associadoData?.matricula || !associadoData?.id || !associadoData?.id_divisao) {
+      console.log('❌ fetchHistoricoSolicitacoes - Dados do associado incompletos, retornando early');
       return;
     }
     
@@ -646,20 +645,19 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         setUltimasSolicitacoes([]);
       }
     } catch (error) {
-      console.error('Erro ao buscar histórico de solicitações:', error);
-      // Se for erro 403, marcar API como indisponível
-      if (axios.isAxiosError(error) && error.response?.status === 403) {
-        console.log(' API de histórico retornou 403 - marcando como indisponível');
-        console.log(' Detalhes do erro 403:', error.response.data);
-        setHistoricoApiDisponivel(false);
-        setUltimasSolicitacoes([]);
-        return;
+      console.error('❌ Erro ao buscar histórico de solicitações:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('Detalhes do erro:', {
+          status: error.response?.status,
+          data: error.response?.data,
+          message: error.message
+        });
       }
       setUltimasSolicitacoes([]);
     } finally {
       setLoadingHistorico(false);
     }
-  }, [associadoData, historicoApiDisponivel]);
+  }, [associadoData]);
 
   // Carregar o cartão do usuário - apenas uma vez
   useEffect(() => {
