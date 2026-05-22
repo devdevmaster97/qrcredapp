@@ -514,8 +514,8 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         }))
       });
       
-      const solicitacoesPendentes = historicoParaUsar.filter(solicitacao => {
-        // Considerar apenas solicitações do mês corrente que estão pendentes
+      const solicitacoesDoMes = historicoParaUsar.filter(solicitacao => {
+        // CORREÇÃO CRÍTICA: Considerar TODAS as solicitações do mês corrente (aprovadas E pendentes)
         const isPendente = solicitacao.status === false || 
                           solicitacao.status === 'false' || 
                           solicitacao.status === null ||
@@ -536,19 +536,19 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
           });
         }
         
-        return isPendente && isMesCorrente;
+        return isMesCorrente;
       });
 
-      const totalSolicitacoesPendentes = solicitacoesPendentes.reduce((acc, solicitacao) => {
+      const totalSolicitacoesDoMes = solicitacoesDoMes.reduce((acc, solicitacao) => {
         // Usar valor_descontar ou valor_a_descontar (ambos podem vir da API)
         const valorDescontar = parseFloat(solicitacao.valor_descontar || solicitacao.valor_a_descontar || '0');
         return acc + valorDescontar;
       }, 0);
 
-      console.log('💰 Solicitações pendentes encontradas:', {
-        quantidade: solicitacoesPendentes.length,
-        totalPendente: totalSolicitacoesPendentes,
-        solicitacoes: solicitacoesPendentes.map(s => ({
+      console.log('💰 Solicitações do mês corrente encontradas:', {
+        quantidade: solicitacoesDoMes.length,
+        totalADescontar: totalSolicitacoesDoMes,
+        solicitacoes: solicitacoesDoMes.map(s => ({
           id: s.id,
           valor: s.valor_descontar || s.valor_a_descontar,
           status: s.status,
@@ -556,9 +556,9 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         }))
       });
 
-      // 5. Calcular saldo deduzindo gastos E solicitações pendentes
+      // 5. Calcular saldo deduzindo gastos E TODAS as solicitações do mês
       const limite = parseFloat(associadoData.limite || '0');
-      const saldo = limite - total - totalSolicitacoesPendentes;
+      const saldo = limite - total - totalSolicitacoesDoMes;
 
       // 6. Atualizar o estado
       setSaldoData({
@@ -573,7 +573,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         mesCorrente: mesAtual,
         limite: limite,
         totalGastoNoMes: total,
-        totalSolicitacoesPendentes: totalSolicitacoesPendentes,
+        totalSolicitacoesDoMes: totalSolicitacoesDoMes,
         saldoDisponivel: saldo,
         porcentagem: porcentagem,
         idDivisao: associadoData.id_divisao
