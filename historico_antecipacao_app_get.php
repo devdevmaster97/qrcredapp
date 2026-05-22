@@ -96,6 +96,13 @@ if($matricula && $empregador && $id_associado && $id_divisao) {
             error_log("📋 Dados brutos encontrados (primeiros 3 registros):");
             for($i = 0; $i < min(3, count($resultados)); $i++) {
                 error_log("Registro " . ($i + 1) . ": " . json_encode($resultados[$i]));
+                // Verificar se mes_corrente está presente
+                if (isset($resultados[$i]['mes_corrente'])) {
+                    error_log("  ✅ Campo mes_corrente presente: " . $resultados[$i]['mes_corrente']);
+                } else {
+                    error_log("  ❌ Campo mes_corrente AUSENTE");
+                    error_log("  📋 Campos disponíveis: " . implode(", ", array_keys($resultados[$i])));
+                }
             }
             
             // Codificar para UTF-8 se necessário
@@ -108,6 +115,12 @@ if($matricula && $empregador && $id_associado && $id_divisao) {
             error_log("📋 Dados após conversão UTF-8 (primeiros 3 registros):");
             for($i = 0; $i < min(3, count($resultados)); $i++) {
                 error_log("Registro " . ($i + 1) . ": " . json_encode($resultados[$i]));
+                // Verificar novamente após conversão
+                if (isset($resultados[$i]['mes_corrente'])) {
+                    error_log("  ✅ Campo mes_corrente ainda presente: " . $resultados[$i]['mes_corrente']);
+                } else {
+                    error_log("  ❌ Campo mes_corrente PERDIDO na conversão UTF-8");
+                }
             }
             
             // Retornando os resultados em formato JSON
