@@ -131,6 +131,17 @@ try {
         exit;
     }
 
+    // VERIFICAÇÃO CRÍTICA: Contar registros ANTES do INSERT
+    $query_count_before = "SELECT COUNT(*) as total FROM sind.seguro_beneficiarios 
+                           WHERE id_associado = :id_associado AND id_divisao = :id_divisao";
+    $stmt_count_before = $pdo->prepare($query_count_before);
+    $stmt_count_before->execute([
+        ':id_associado' => $id_associado,
+        ':id_divisao' => $id_divisao
+    ]);
+    $count_before = $stmt_count_before->fetch(PDO::FETCH_ASSOC)['total'];
+    error_log("📊 [$request_id] CONTAGEM ANTES DO INSERT: $count_before beneficiários");
+
     // Inserir novos beneficiários
     error_log("➕ [$request_id] Inserindo $quantidade beneficiário(s)...");
     $beneficiarios_criados = [];
@@ -154,6 +165,23 @@ try {
         error_log("   📊 [$request_id] Total criados até agora: " . count($beneficiarios_criados));
     }
     error_log("🏁 [$request_id] LOOP FINALIZADO - Total de iterações executadas: $i");
+    error_log("📋 [$request_id] Array beneficiarios_criados tem " . count($beneficiarios_criados) . " elementos");
+    
+    // VERIFICAÇÃO CRÍTICA: Contar registros DEPOIS do INSERT (antes do commit)
+    $query_count_after = "SELECT COUNT(*) as total FROM sind.seguro_beneficiarios 
+                          WHERE id_associado = :id_associado AND id_divisao = :id_divisao";
+    $stmt_count_after = $pdo->prepare($query_count_after);
+    $stmt_count_after->execute([
+        ':id_associado' => $id_associado,
+        ':id_divisao' => $id_divisao
+    ]);
+    $count_after = $stmt_count_after->fetch(PDO::FETCH_ASSOC)['total'];
+    error_log("📊 [$request_id] CONTAGEM DEPOIS DO INSERT (antes commit): $count_after beneficiários");
+    error_log("🔢 [$request_id] DIFERENÇA: " . ($count_after - $count_before) . " novos registros (esperado: $quantidade)");
+    
+    if (($count_after - $count_before) != $quantidade) {
+        error_log("⚠️⚠️⚠️ [$request_id] ALERTA CRÍTICO: Diferença não bate! Esperado $quantidade, mas foram inseridos " . ($count_after - $count_before));
+    }
 
     error_log("💾 [$request_id] Commit da transação...");
     $pdo->commit();
