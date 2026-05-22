@@ -1997,6 +1997,48 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
           </div>
         )}
       </div>
+
+      {/* Modal de Alerta - Valor Mínimo */}
+      {mostrarModalValorMinimo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 animate-pulse">
+            <div className="flex items-center justify-center mb-4">
+              <div className="bg-red-100 rounded-full p-3">
+                <FaTimesCircle className="text-red-600 text-4xl" />
+              </div>
+            </div>
+            
+            <h3 className="text-xl font-bold text-center text-gray-800 mb-3">
+              ⚠️ Atenção: Valor Mínimo
+            </h3>
+            
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+              <p className="text-gray-700 text-center font-medium mb-2">
+                O valor mínimo para solicitação de antecipação salarial é:
+              </p>
+              <p className="text-3xl font-bold text-center text-red-600 mb-2">
+                R$ 100,00
+              </p>
+              <p className="text-sm text-gray-600 text-center">
+                Por favor, digite um valor igual ou superior a R$ 100,00 para continuar.
+              </p>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setMostrarModalValorMinimo(false);
+                  setValorSolicitado('');
+                  setValorFormatado('');
+                }}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-colors"
+              >
+                Entendi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 } 
