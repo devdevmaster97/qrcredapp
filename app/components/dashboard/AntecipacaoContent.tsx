@@ -514,6 +514,16 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         }))
       });
       
+      console.log('🔍 INICIANDO FILTRO DE SOLICITAÇÕES:', {
+        mesAtual: mesAtual,
+        totalSolicitacoes: historicoParaUsar.length,
+        primeirasSolicitacoes: historicoParaUsar.slice(0, 3).map(s => ({
+          id: s.id,
+          mes_corrente: s.mes_corrente,
+          valor_a_descontar: s.valor_a_descontar
+        }))
+      });
+
       const solicitacoesDoMes = historicoParaUsar.filter(solicitacao => {
         // CORREÇÃO CRÍTICA: Considerar TODAS as solicitações do mês corrente (aprovadas E pendentes)
         const isPendente = solicitacao.status === false || 
