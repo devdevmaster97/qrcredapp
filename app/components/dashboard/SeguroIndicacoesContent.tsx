@@ -112,7 +112,14 @@ export default function SeguroIndicacoesContent() {
 
   const fetchBeneficiarios = useCallback(async () => {
     if (!associadoData) return;
-
+    
+    // PROTEÇÃO: Evitar chamadas simultâneas
+    if (isFetchingRef.current) {
+      console.log('⚠️ fetchBeneficiarios já está executando, ignorando chamada duplicada');
+      return;
+    }
+    
+    isFetchingRef.current = true;
     const fetchId = `FETCH-${Date.now()}`;
     console.log(`🔄 [${fetchId}] Buscando beneficiários...`, { id_associado: associadoData.id, id_divisao: associadoData.id_divisao });
 
