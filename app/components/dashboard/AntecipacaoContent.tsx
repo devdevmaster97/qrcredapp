@@ -521,7 +521,7 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
                           solicitacao.status === null ||
                           solicitacao.status === 'Pendente' ||
                           solicitacao.status === 'pendente';
-        const isMesCorrente = solicitacao.mes_corrente === mesAtual;
+        const isMesCorrente = (solicitacao.mes_corrente || solicitacao.mes) === mesAtual;
         
         // Log detalhado para cada solicitação
         if (solicitacao.id) {
@@ -529,6 +529,8 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
             status: solicitacao.status,
             statusType: typeof solicitacao.status,
             mes_corrente: solicitacao.mes_corrente,
+            mes: solicitacao.mes,
+            mesUsado: solicitacao.mes_corrente || solicitacao.mes,
             mesAtual: mesAtual,
             isPendente: isPendente,
             isMesCorrente: isMesCorrente,
