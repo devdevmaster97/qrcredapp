@@ -922,24 +922,33 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     const valorArredondado = Math.round(valorNumerico * 100) / 100;
     const saldoArredondado = Math.round(saldoDisponivel * 100) / 100;
     
-    // Validação: valor só é inválido se for MAIOR que o saldo (igual é permitido)
+    // Validação 1: valor mínimo de R$ 100,00
+    const VALOR_MINIMO = 100.00;
+    const valorAbaixoMinimo = valorArredondado > 0 && valorArredondado < VALOR_MINIMO;
+    
+    // Validação 2: valor só é inválido se for MAIOR que o saldo (igual é permitido)
     const excedeSaldo = valorArredondado > saldoArredondado;
     
     // Debug: Log da validação
-    console.log('🔍 DEBUG VALIDAÇÃO SALDO:', {
+    console.log('🔍 DEBUG VALIDAÇÃO:', {
       valorOriginal: valorNumerico,
-      saldoOriginal: saldoDisponivel,
       valorArredondado,
-      saldoArredondado,
+      saldoDisponivel: saldoArredondado,
+      valorMinimo: VALOR_MINIMO,
+      valorAbaixoMinimo,
       excedeSaldo,
-      condicao: `${valorArredondado} > ${saldoArredondado} = ${excedeSaldo}`,
-      permitido: !excedeSaldo
+      permitido: !valorAbaixoMinimo && !excedeSaldo
     });
     
     setValorExcedeSaldo(excedeSaldo);
     
     // Validar se o valor é válido
-    if (excedeSaldo && valorNumerico > 0) {
+    if (valorAbaixoMinimo) {
+      setErro(`Valor mínimo para antecipação é ${formatarValor(VALOR_MINIMO)}`);
+      setValorFormatado("");
+      setTaxa(0);
+      setValorTotal(0);
+    } else if (excedeSaldo && valorNumerico > 0) {
       setErro(`Valor não pode ser maior que o saldo disponível: ${formatarValor(saldoDisponivel)}`);
       setValorFormatado("");
       setTaxa(0);
@@ -1030,7 +1039,10 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     ultimaSubmissao.set(chaveProtecao, agora);
     
     // Validações básicas APÓS marcar proteções
-    if (!valorSolicitado || parseFloat(valorSolicitado) / 100 <= 0) {
+    const valorNumericoValidacao = parseFloat(valorSolicitado) / 100;
+    const VALOR_MINIMO = 100.00;
+    
+    if (!valorSolicitado || valorNumericoValidacao <= 0) {
       setErro("Digite o valor desejado");
       setLoading(false);
       isSubmittingRef.current = false;
@@ -1038,6 +1050,17 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       globalMutex = false;
       submissoesEmAndamento.delete(chaveProtecao);
       console.log(`❌ Execução ${currentCounter} - validação falhou: valor inválido`);
+      return;
+    }
+    
+    if (valorNumericoValidacao < VALOR_MINIMO) {
+      setErro(`Valor mínimo para antecipação é ${formatarValor(VALOR_MINIMO)}`);
+      setLoading(false);
+      isSubmittingRef.current = false;
+      lastSubmissionRef.current = 0;
+      globalMutex = false;
+      submissoesEmAndamento.delete(chaveProtecao);
+      console.log(`❌ Execução ${currentCounter} - validação falhou: valor abaixo do mínimo (${valorNumericoValidacao} < ${VALOR_MINIMO})`);
       return;
     }
     
