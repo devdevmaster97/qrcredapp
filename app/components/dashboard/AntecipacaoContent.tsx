@@ -525,12 +525,6 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
       });
 
       const solicitacoesDoMes = historicoParaUsar.filter(solicitacao => {
-        // CORREÇÃO CRÍTICA: Considerar TODAS as solicitações do mês corrente (aprovadas E pendentes)
-        const isPendente = solicitacao.status === false || 
-                          solicitacao.status === 'false' || 
-                          solicitacao.status === null ||
-                          solicitacao.status === 'Pendente' ||
-                          solicitacao.status === 'pendente';
         const isMesCorrente = solicitacao.mes_corrente === mesAtual;
         
         // Log detalhado para cada solicitação
@@ -549,16 +543,27 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         return isMesCorrente;
       });
 
-      const totalSolicitacoesDoMes = solicitacoesDoMes.reduce((acc, solicitacao) => {
-        // Usar valor_descontar ou valor_a_descontar (ambos podem vir da API)
+      // CORREÇÃO CRÍTICA: Separar solicitações PENDENTES das APROVADAS
+      // Aprovadas já estão em 'total' (tabela conta), então só contamos pendentes
+      const solicitacoesPendentes = solicitacoesDoMes.filter(solicitacao => {
+        const isPendente = solicitacao.status === false || 
+                          solicitacao.status === 'false' || 
+                          solicitacao.status === null ||
+                          solicitacao.status === 'Pendente' ||
+                          solicitacao.status === 'pendente';
+        return isPendente;
+      });
+
+      const totalSolicitacoesPendentes = solicitacoesPendentes.reduce((acc, solicitacao) => {
         const valorDescontar = parseFloat(solicitacao.valor_descontar || solicitacao.valor_a_descontar || '0');
         return acc + valorDescontar;
       }, 0);
 
       console.log('💰 Solicitações do mês corrente encontradas:', {
-        quantidade: solicitacoesDoMes.length,
-        totalADescontar: totalSolicitacoesDoMes,
-        solicitacoes: solicitacoesDoMes.map(s => ({
+        quantidadeTotal: solicitacoesDoMes.length,
+        quantidadePendentes: solicitacoesPendentes.length,
+        totalPendentes: totalSolicitacoesPendentes,
+        solicitacoesPendentes: solicitacoesPendentes.map(s => ({
           id: s.id,
           valor: s.valor_descontar || s.valor_a_descontar,
           status: s.status,
@@ -566,9 +571,11 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         }))
       });
 
-      // 5. Calcular saldo deduzindo gastos E TODAS as solicitações do mês
+      // 5. Calcular saldo: limite - gastos aprovados (total) - solicitações pendentes
+      // IMPORTANTE: 'total' já inclui antecipações aprovadas da tabela conta
+      // Só subtraímos solicitações PENDENTES para evitar subtração dupla
       const limite = parseFloat(associadoData.limite || '0');
-      const saldo = limite - total - totalSolicitacoesDoMes;
+      const saldo = limite - total - totalSolicitacoesPendentes;
 
       // 6. Atualizar o estado
       setSaldoData({
@@ -583,8 +590,9 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         mesCorrente: mesAtual,
         limite: limite,
         totalGastoNoMes: total,
-        totalSolicitacoesDoMes: totalSolicitacoesDoMes,
+        totalSolicitacoesPendentes: totalSolicitacoesPendentes,
         saldoDisponivel: saldo,
+        calculo: `${limite} - ${total} - ${totalSolicitacoesPendentes} = ${saldo}`,
         porcentagem: porcentagem,
         idDivisao: associadoData.id_divisao
       });
