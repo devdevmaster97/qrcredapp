@@ -715,24 +715,23 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
     }
   }, [cartao, fetchAssociado, associadoData]);
 
-  // Carregar histórico e saldo quando o associado estiver disponível
+  // Carregar histórico quando o associado estiver disponível
   useEffect(() => {
     if (associadoData) {
-      const carregarDadosSequencial = async () => {
-        // IMPORTANTE: Aguardar histórico carregar ANTES de calcular saldo
-        // Buscar histórico e capturar resultado
-        await fetchHistoricoSolicitacoes();
-        
-        // Pequeno delay para garantir que estado foi atualizado
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        // Calcular saldo (agora com histórico atualizado no estado)
-        await loadSaldoData();
-      };
-      
-      carregarDadosSequencial();
+      console.log('🔄 Carregando histórico de solicitações...');
+      fetchHistoricoSolicitacoes();
     }
-  }, [associadoData, fetchHistoricoSolicitacoes, loadSaldoData]);
+  }, [associadoData, fetchHistoricoSolicitacoes]);
+
+  // Recalcular saldo quando histórico ou associado mudarem
+  useEffect(() => {
+    if (associadoData) {
+      console.log('🔄 Recalculando saldo com histórico atualizado...', {
+        totalSolicitacoes: ultimasSolicitacoes.length
+      });
+      loadSaldoData();
+    }
+  }, [associadoData, ultimasSolicitacoes, loadSaldoData]);
 
   // Função para forçar atualização do saldo (útil quando mês corrente muda)
   const atualizarSaldo = useCallback(async () => {
