@@ -46,7 +46,10 @@ export default function SeguroIndicacoesContent() {
 
   // Debug: Monitorar mudanças no estado beneficiarios
   useEffect(() => {
-    console.log('🔔 Estado beneficiarios atualizado:', beneficiarios.length, 'beneficiários', beneficiarios);
+    console.log('🔔 Estado beneficiarios atualizado:', beneficiarios.length, 'beneficiários');
+    console.log('🆔 IDs atuais no estado:', beneficiarios.map((b: Beneficiario) => b.id_beneficiario));
+    console.log('📋 Beneficiários completos:', JSON.stringify(beneficiarios, null, 2));
+    console.trace('🔍 Stack trace da atualização do estado:');
   }, [beneficiarios]);
 
   // Função para gerar link do ZapSign por beneficiário
@@ -150,8 +153,12 @@ export default function SeguroIndicacoesContent() {
       
       if (data.success && Array.isArray(data.beneficiarios)) {
         console.log(`✅ [${fetchId}] Atualizando lista de beneficiários:`, data.beneficiarios.length, 'beneficiários');
-        console.log(`📋 [${fetchId}] IDs dos beneficiários:`, data.beneficiarios.map((b: Beneficiario) => b.id_beneficiario));
+        console.log(`📋 [${fetchId}] IDs dos beneficiários recebidos da API:`, data.beneficiarios.map((b: Beneficiario) => b.id_beneficiario));
+        console.log(`🔍 [${fetchId}] ANTES de setBeneficiarios - Estado atual tem:`, beneficiarios.length, 'beneficiários');
+        console.log(`🔍 [${fetchId}] ANTES de setBeneficiarios - IDs atuais:`, beneficiarios.map((b: Beneficiario) => b.id_beneficiario));
+        console.log(`⚠️ [${fetchId}] CHAMANDO setBeneficiarios com ${data.beneficiarios.length} beneficiários`);
         setBeneficiarios(data.beneficiarios);
+        console.log(`✅ [${fetchId}] setBeneficiarios CHAMADO`);
       } else {
         console.warn('⚠️ Resposta inesperada da API:', data);
       }
