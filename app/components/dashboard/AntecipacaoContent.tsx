@@ -607,7 +607,17 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
 
   // Função para buscar o histórico de solicitações
   const fetchHistoricoSolicitacoes = useCallback(async () => {
-    if (!associadoData?.matricula || !associadoData?.id || !associadoData?.id_divisao || !historicoApiDisponivel) return;
+    console.log('🔍 fetchHistoricoSolicitacoes - Verificando condições:', {
+      matricula: associadoData?.matricula,
+      id: associadoData?.id,
+      id_divisao: associadoData?.id_divisao,
+      historicoApiDisponivel: historicoApiDisponivel
+    });
+    
+    if (!associadoData?.matricula || !associadoData?.id || !associadoData?.id_divisao || !historicoApiDisponivel) {
+      console.log('❌ fetchHistoricoSolicitacoes - Condições não atendidas, retornando early');
+      return;
+    }
     
     try {
       setLoadingHistorico(true);
