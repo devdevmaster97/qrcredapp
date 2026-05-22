@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { FaShieldAlt, FaTrash, FaExternalLinkAlt, FaCheckCircle, FaClock } from 'react-icons/fa';
 import toast from 'react-hot-toast';
 
@@ -40,6 +40,9 @@ export default function SeguroIndicacoesContent() {
   const isExecutingRef = useRef(false);
   const lastExecutionTimeRef = useRef(0);
   const INTERVALO_MINIMO_MS = 1000; // 1 segundo entre execuções
+  
+  // Proteção contra chamadas simultâneas de fetchBeneficiarios
+  const isFetchingRef = useRef(false);
 
   // Debug: Monitorar mudanças no estado beneficiarios
   useEffect(() => {
@@ -107,25 +110,7 @@ export default function SeguroIndicacoesContent() {
     fetchAssociado();
   }, []);
 
-  // Buscar beneficiários quando associado estiver disponível
-  useEffect(() => {
-    if (associadoData) {
-      fetchBeneficiarios();
-    }
-  }, [associadoData]);
-
-  // Polling: atualizar lista a cada 30 segundos
-  useEffect(() => {
-    if (!associadoData) return;
-
-    const interval = setInterval(() => {
-      fetchBeneficiarios();
-    }, 30000); // 30 segundos
-
-    return () => clearInterval(interval);
-  }, [associadoData]);
-
-  const fetchBeneficiarios = async () => {
+  const fetchBeneficiarios = useCallback(async () => {
     if (!associadoData) return;
 
     const fetchId = `FETCH-${Date.now()}`;
@@ -165,8 +150,29 @@ export default function SeguroIndicacoesContent() {
       }
     } catch (error) {
       console.error('❌ Erro ao buscar beneficiários:', error);
+    } finally {
+      isFetchingRef.current = false;
+      console.log(`🔓 [${fetchId}] fetchBeneficiarios finalizado - liberando lock`);
     }
-  };
+  }, [associadoData]);
+  
+  // Buscar beneficiários quando associado estiver disponível
+  useEffect(() => {
+    if (associadoData) {
+      fetchBeneficiarios();
+    }
+  }, [associadoData, fetchBeneficiarios]);
+
+  // Polling: atualizar lista a cada 30 segundos
+  useEffect(() => {
+    if (!associadoData) return;
+
+    const interval = setInterval(() => {
+      fetchBeneficiarios();
+    }, 30000); // 30 segundos
+
+    return () => clearInterval(interval);
+  }, [associadoData, fetchBeneficiarios]);
 
   const handleConfirmarQuantidade = async (e?: React.MouseEvent | React.TouchEvent) => {
     const callTimestamp = Date.now();
