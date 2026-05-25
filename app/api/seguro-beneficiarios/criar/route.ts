@@ -26,6 +26,16 @@ export async function POST(request: NextRequest) {
       const existingRequest = activeRequests.get(requestKey);
       return await existingRequest;
     }
+    
+    // Delay de 100ms para evitar race condition
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Verificar novamente após delay
+    if (activeRequests.has(requestKey)) {
+      console.log(`⚠️ [CALL #${callId}] REQUISIÇÃO DUPLICADA DETECTADA APÓS DELAY! Aguardando requisição anterior...`);
+      const existingRequest = activeRequests.get(requestKey);
+      return await existingRequest;
+    }
 
     console.log(`📝 [CALL #${callId}] Parâmetros recebidos:`, { id_associado, id_divisao, quantidade });
 
@@ -50,12 +60,21 @@ export async function POST(request: NextRequest) {
     // Criar Promise para esta requisição e armazená-la
     const requestPromise = (async () => {
       try {
+        // Adicionar timestamp único para PHP detectar duplicatas
+        const uniqueTimestamp = Date.now() + Math.random();
+        
         const response = await fetch(phpUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'X-Request-ID': `${callId}-${uniqueTimestamp}`,
           },
-          body: JSON.stringify({ id_associado, id_divisao, quantidade }),
+          body: JSON.stringify({ 
+            id_associado, 
+            id_divisao, 
+            quantidade,
+            _request_timestamp: uniqueTimestamp 
+          }),
         });
 
         const data = await response.json();
