@@ -186,82 +186,28 @@ export default function SeguroIndicacoesContent() {
   const handleConfirmarQuantidade = async (e?: React.MouseEvent | React.TouchEvent) => {
     const callTimestamp = Date.now();
     console.log(`🔔 [${callTimestamp}] handleConfirmarQuantidade CHAMADO - quantidade: ${quantidade}`);
-    console.log(`📱 [${callTimestamp}] Tipo de evento: ${e?.type || 'desconhecido'}`);
     
-    // PROTEÇÃO 0: Verificação SÍNCRONA com useRef (não espera re-render)
-    if (isButtonClickedRef.current) {
-      console.log(`🚫 [${callTimestamp}] BLOQUEADO - Clique já processado (ref)`);
-      e?.preventDefault();
-      e?.stopPropagation();
-      return;
-    }
-    isButtonClickedRef.current = true;
-    console.log(`🔒 [${callTimestamp}] isButtonClickedRef marcado como true`);
-    
-    // PROTEÇÃO 1: Desabilitar botão ANTES de qualquer verificação
-    if (buttonDisabled) {
-      console.log(`🚫 [${callTimestamp}] BLOQUEADO - Botão já desabilitado`);
-      e?.preventDefault();
-      e?.stopPropagation();
-      isButtonClickedRef.current = false;
-      return;
-    }
-    setButtonDisabled(true);
-    console.log(`🔒 [${callTimestamp}] Botão desabilitado imediatamente`);
-    
-    // PROTEÇÃO 2: Verificar se já está executando (mutex)
-    if (isExecutingRef.current) {
-      console.log(`🚫 [${callTimestamp}] BLOQUEADO - Já está executando (mutex ativo)`);
-      e?.preventDefault();
-      e?.stopPropagation();
-      setButtonDisabled(false);
-      isButtonClickedRef.current = false;
+    // PROTEÇÃO ÚNICA: Bloquear se já está carregando
+    if (loading) {
+      console.log(`🚫 [${callTimestamp}] BLOQUEADO - Loading ativo`);
       return;
     }
     
-    // PROTEÇÃO 3: Verificar intervalo mínimo entre execuções
-    const tempoDesdeUltimaExecucao = callTimestamp - lastExecutionTimeRef.current;
-    if (lastExecutionTimeRef.current > 0 && tempoDesdeUltimaExecucao < INTERVALO_MINIMO_MS) {
-      console.log(`🚫 [${callTimestamp}] BLOQUEADO - Intervalo muito curto! ${tempoDesdeUltimaExecucao}ms (mínimo: ${INTERVALO_MINIMO_MS}ms)`);
-      e?.preventDefault();
-      e?.stopPropagation();
-      setButtonDisabled(false);
-      isButtonClickedRef.current = false;
-      return;
-    }
-    
-    // MARCAR COMO EXECUTANDO (mutex)
-    isExecutingRef.current = true;
-    lastExecutionTimeRef.current = callTimestamp;
-    console.log(`🔒 [${callTimestamp}] Mutex ativado - bloqueando novas execuções`);
-    
-    // Prevenir propagação de eventos
+    // Prevenir eventos duplicados
     if (e) {
       e.preventDefault();
       e.stopPropagation();
-    }
-    
-    // Proteção contra estado loading
-    if (loading) {
-      console.log(`⚠️ [${callTimestamp}] Loading ativo, abortando`);
-      isExecutingRef.current = false;
-      setButtonDisabled(false);
-      return;
     }
 
     if (quantidade < 1 || quantidade > 4) {
       console.log(`❌ [${callTimestamp}] Quantidade inválida: ${quantidade}`);
       toast.error('Selecione uma quantidade entre 1 e 4');
-      isExecutingRef.current = false;
-      setButtonDisabled(false);
       return;
     }
 
     if (!associadoData) {
       console.log(`❌ [${callTimestamp}] Dados do associado não disponíveis`);
       toast.error('Dados do associado não disponíveis');
-      isExecutingRef.current = false;
-      setButtonDisabled(false);
       return;
     }
 
@@ -272,8 +218,6 @@ export default function SeguroIndicacoesContent() {
     if (beneficiariosAtivos >= 4) {
       console.log(`❌ [${callTimestamp}] Limite de 4 beneficiários atingido`);
       toast.error('Você já possui 4 beneficiários cadastrados. Exclua algum para adicionar novos.');
-      isExecutingRef.current = false;
-      setButtonDisabled(false);
       return;
     }
 
@@ -281,8 +225,6 @@ export default function SeguroIndicacoesContent() {
     if (beneficiariosAtivos + quantidade > 4) {
       console.log(`❌ [${callTimestamp}] Quantidade excede limite: ${beneficiariosAtivos} + ${quantidade} > 4`);
       toast.error(`Você só pode ter até 4 beneficiários. Você já tem ${beneficiariosAtivos}.`);
-      isExecutingRef.current = false;
-      setButtonDisabled(false);
       return;
     }
 
