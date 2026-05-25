@@ -250,6 +250,11 @@ export default function SeguroIndicacoesContent() {
       console.log(`📥 [${requestId}] Resposta recebida:`, response.status);
 
       if (!response.ok) {
+        // Se for erro 429 (requisição duplicada bloqueada), ignorar silenciosamente
+        if (response.status === 429) {
+          console.log(`⚠️ [${requestId}] Requisição duplicada bloqueada pelo servidor (esperado)`);
+          return; // Sair silenciosamente sem mostrar erro
+        }
         const errorData = await response.json();
         throw new Error(errorData.error || 'Erro ao criar beneficiários');
       }
@@ -266,6 +271,10 @@ export default function SeguroIndicacoesContent() {
         console.log(`✅ [${requestId}] Beneficiários criados, chamando fetchBeneficiarios...`);
         console.log(`📋 [${requestId}] Estado ANTES de fetchBeneficiarios:`, beneficiarios.length, 'beneficiários');
         setQuantidade(0);
+        
+        // Aguardar 300ms para garantir que o banco commitou a transação
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
         await fetchBeneficiarios();
         console.log(`✅ [${requestId}] fetchBeneficiarios concluído`);
         console.log(`📋 [${requestId}] Estado DEPOIS de fetchBeneficiarios:`, beneficiarios.length, 'beneficiários');
