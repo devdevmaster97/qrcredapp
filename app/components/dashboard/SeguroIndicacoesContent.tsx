@@ -31,6 +31,7 @@ export default function SeguroIndicacoesContent() {
   const [quantidade, setQuantidade] = useState<number>(0);
   const [beneficiarios, setBeneficiarios] = useState<Beneficiario[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingUpdate, setLoadingUpdate] = useState(false);
   const [loadingExcluir, setLoadingExcluir] = useState<number | null>(null);
   const [associadoData, setAssociadoData] = useState<AssociadoData | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -275,19 +276,18 @@ export default function SeguroIndicacoesContent() {
         // Aguardar 300ms para garantir que o banco commitou a transação
         await new Promise(resolve => setTimeout(resolve, 300));
         
-        // Mostrar toast de loading durante a atualização da lista
-        const updatePromise = fetchBeneficiarios();
+        // Ativar estado de loading para atualização
+        setLoadingUpdate(true);
         
-        toast.promise(
-          updatePromise,
-          {
-            loading: 'Atualizando lista de beneficiários...',
-            success: 'Lista atualizada com sucesso!',
-            error: 'Erro ao atualizar lista'
-          }
-        );
-        
-        await updatePromise;
+        try {
+          await fetchBeneficiarios();
+          toast.success('Lista atualizada com sucesso!');
+        } catch (error) {
+          console.error('Erro ao atualizar lista:', error);
+          toast.error('Erro ao atualizar lista');
+        } finally {
+          setLoadingUpdate(false);
+        }
         
         console.log(`✅ [${requestId}] fetchBeneficiarios concluído`);
         console.log(`📋 [${requestId}] Estado DEPOIS de fetchBeneficiarios:`, beneficiarios.length, 'beneficiários');
@@ -379,6 +379,19 @@ export default function SeguroIndicacoesContent() {
 
   return (
     <>
+      {/* Banner de Loading para Atualização */}
+      {loadingUpdate && (
+        <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 animate-fade-in">
+          <div className="bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span className="font-medium">Atualizando lista de beneficiários...</span>
+          </div>
+        </div>
+      )}
+
       {/* Modal de Confirmação de Exclusão */}
       {showConfirmModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
