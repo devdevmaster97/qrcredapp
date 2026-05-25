@@ -219,6 +219,7 @@ export default function SeguroIndicacoesContent() {
       console.log(`🚫 [${callTimestamp}] BLOQUEADO - Intervalo muito curto! ${tempoDesdeUltimaExecucao}ms (mínimo: ${INTERVALO_MINIMO_MS}ms)`);
       e?.preventDefault();
       e?.stopPropagation();
+      setButtonDisabled(false);
       return;
     }
     
@@ -237,6 +238,7 @@ export default function SeguroIndicacoesContent() {
     if (loading) {
       console.log(`⚠️ [${callTimestamp}] Loading ativo, abortando`);
       isExecutingRef.current = false;
+      setButtonDisabled(false);
       return;
     }
 
@@ -244,6 +246,7 @@ export default function SeguroIndicacoesContent() {
       console.log(`❌ [${callTimestamp}] Quantidade inválida: ${quantidade}`);
       toast.error('Selecione uma quantidade entre 1 e 4');
       isExecutingRef.current = false;
+      setButtonDisabled(false);
       return;
     }
 
@@ -251,6 +254,7 @@ export default function SeguroIndicacoesContent() {
       console.log(`❌ [${callTimestamp}] Dados do associado não disponíveis`);
       toast.error('Dados do associado não disponíveis');
       isExecutingRef.current = false;
+      setButtonDisabled(false);
       return;
     }
 
@@ -262,6 +266,7 @@ export default function SeguroIndicacoesContent() {
       console.log(`❌ [${callTimestamp}] Limite de 4 beneficiários atingido`);
       toast.error('Você já possui 4 beneficiários cadastrados. Exclua algum para adicionar novos.');
       isExecutingRef.current = false;
+      setButtonDisabled(false);
       return;
     }
 
@@ -270,6 +275,7 @@ export default function SeguroIndicacoesContent() {
       console.log(`❌ [${callTimestamp}] Quantidade excede limite: ${beneficiariosAtivos} + ${quantidade} > 4`);
       toast.error(`Você só pode ter até 4 beneficiários. Você já tem ${beneficiariosAtivos}.`);
       isExecutingRef.current = false;
+      setButtonDisabled(false);
       return;
     }
 
