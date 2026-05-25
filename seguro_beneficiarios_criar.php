@@ -64,6 +64,29 @@ try {
     debug_log("🔍 [$request_id] TIPO de quantidade: " . gettype($quantidade));
     debug_log("🔍 [$request_id] VALOR EXATO de quantidade: '" . var_export($quantidade, true) . "'");
 
+    // PROTEÇÃO ANTI-DUPLICAÇÃO: Verificar se requisição idêntica foi processada recentemente
+    $cache_key = "criar_beneficiario_{$id_associado}_{$id_divisao}_{$quantidade}";
+    $cache_file = sys_get_temp_dir() . "/{$cache_key}.cache";
+    
+    if (file_exists($cache_file)) {
+        $last_request_time = (float)file_get_contents($cache_file);
+        $time_diff = microtime(true) - $last_request_time;
+        
+        if ($time_diff < 2.0) { // 2 segundos
+            debug_log("🚫 [$request_id] REQUISIÇÃO DUPLICADA BLOQUEADA! Última requisição há " . round($time_diff * 1000) . "ms");
+            http_response_code(429);
+            echo json_encode([
+                'success' => false,
+                'error' => 'Requisição duplicada detectada. Aguarde 2 segundos.'
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+    }
+    
+    // Marcar timestamp desta requisição
+    file_put_contents($cache_file, microtime(true));
+    debug_log("✅ [$request_id] Timestamp registrado: " . microtime(true));
+
     // Criar lock para evitar execução duplicada simultânea
     $lock_key = "criar_beneficiario_{$id_associado}_{$id_divisao}_{$quantidade}";
     $lock_file = sys_get_temp_dir() . "/{$lock_key}.lock";
