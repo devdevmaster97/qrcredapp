@@ -324,6 +324,11 @@ export default function SeguroIndicacoesContent() {
       // LIBERAR MUTEX - CRÍTICO para permitir novas execuções
       isExecutingRef.current = false;
       console.log(`🔓 [${requestId}] Mutex liberado - permitindo novas execuções`);
+      // Reabilitar botão após 2 segundos para evitar cliques acidentais
+      setTimeout(() => {
+        setButtonDisabled(false);
+        console.log(`✅ Botão reabilitado`);
+      }, 2000);
     }
   };
 
