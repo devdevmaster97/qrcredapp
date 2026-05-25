@@ -272,10 +272,17 @@ export default function SeguroIndicacoesContent() {
         console.log(`📋 [${requestId}] Estado ANTES de fetchBeneficiarios:`, beneficiarios.length, 'beneficiários');
         setQuantidade(0);
         
+        // Mostrar mensagem de carregamento para o usuário
+        toast.loading('Atualizando lista de beneficiários...', { id: 'updating-list' });
+        
         // Aguardar 300ms para garantir que o banco commitou a transação
         await new Promise(resolve => setTimeout(resolve, 300));
         
         await fetchBeneficiarios();
+        
+        // Remover mensagem de loading e mostrar sucesso
+        toast.success('Lista atualizada!', { id: 'updating-list' });
+        
         console.log(`✅ [${requestId}] fetchBeneficiarios concluído`);
         console.log(`📋 [${requestId}] Estado DEPOIS de fetchBeneficiarios:`, beneficiarios.length, 'beneficiários');
       } else {
@@ -436,10 +443,16 @@ export default function SeguroIndicacoesContent() {
           <button
             onClick={handleConfirmarQuantidade}
             disabled={loading || quantidade === 0 || beneficiarios.length >= 4}
-            className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
             style={{ touchAction: 'manipulation', userSelect: 'none', WebkitTapHighlightColor: 'transparent' }}
           >
-            {loading ? 'Criando...' : 'Confirmar'}
+            {loading && (
+              <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            )}
+            {loading ? 'Processando...' : 'Confirmar'}
           </button>
         </div>
         <p className="text-sm text-orange-600 mt-3">
