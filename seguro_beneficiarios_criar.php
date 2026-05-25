@@ -114,6 +114,11 @@ try {
 
     debug_log("🔄 [$request_id] Iniciando transação...");
     $pdo->beginTransaction();
+    
+    // LOCK de tabela para evitar inserções concorrentes
+    debug_log("🔒 [$request_id] Aplicando LOCK na tabela seguro_beneficiarios...");
+    $pdo->exec("LOCK TABLE sind.seguro_beneficiarios IN EXCLUSIVE MODE");
+    debug_log("✅ [$request_id] LOCK de tabela aplicado com sucesso");
 
     // Verificar quantos beneficiários já existem
     debug_log("🔍 [$request_id] Verificando quantidade existente...");
@@ -160,6 +165,9 @@ try {
                      RETURNING id_beneficiario, id_associado, id_divisao, status, data_criacao";
 
     debug_log("🔁 [$request_id] INICIANDO LOOP - quantidade=$quantidade, tipo=" . gettype($quantidade));
+    debug_log("🔍 [$request_id] Valor de \$quantidade ANTES do loop: $quantidade");
+    debug_log("🔍 [$request_id] Condição do loop: \$i < $quantidade");
+    
     for ($i = 0; $i < $quantidade; $i++) {
         debug_log("   ➡️ [$request_id] ITERAÇÃO $i - Inserindo beneficiário " . ($i + 1) . "/$quantidade");
         $stmt_insert = $pdo->prepare($query_insert);
@@ -175,6 +183,8 @@ try {
     }
     debug_log("🏁 [$request_id] LOOP FINALIZADO - Total de iterações executadas: $i");
     debug_log("📋 [$request_id] Array beneficiarios_criados tem " . count($beneficiarios_criados) . " elementos");
+    debug_log("🔍 [$request_id] Valor de \$quantidade DEPOIS do loop: $quantidade");
+    debug_log("🔍 [$request_id] Valor de \$i DEPOIS do loop: $i");
     
     // VERIFICAÇÃO CRÍTICA: Contar registros DEPOIS do INSERT (antes do commit)
     $query_count_after = "SELECT COUNT(*) as total FROM sind.seguro_beneficiarios 
