@@ -483,10 +483,6 @@ export default function SeguroIndicacoesContent() {
           </select>
           <button
             onClick={handleConfirmarQuantidade}
-            onTouchEnd={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
             disabled={buttonDisabled || loading || quantidade === 0 || beneficiarios.length >= 4}
             className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             style={{ touchAction: 'manipulation', userSelect: 'none' }}
