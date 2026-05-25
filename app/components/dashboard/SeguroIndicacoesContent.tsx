@@ -31,17 +31,10 @@ export default function SeguroIndicacoesContent() {
   const [quantidade, setQuantidade] = useState<number>(0);
   const [beneficiarios, setBeneficiarios] = useState<Beneficiario[]>([]);
   const [loading, setLoading] = useState(false);
-  const [buttonDisabled, setButtonDisabled] = useState(false);
   const [loadingExcluir, setLoadingExcluir] = useState<number | null>(null);
   const [associadoData, setAssociadoData] = useState<AssociadoData | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [beneficiarioToDelete, setBeneficiarioToDelete] = useState<{id: number, status: string} | null>(null);
-  
-  // Proteção ATÔMICA contra execuções duplicadas (mobile e desktop)
-  const isExecutingRef = useRef(false);
-  const lastExecutionTimeRef = useRef(0);
-  const isButtonClickedRef = useRef(false); // Proteção SÍNCRONA contra double-click
-  const INTERVALO_MINIMO_MS = 1000; // 1 segundo entre execuções
   
   // Proteção contra chamadas simultâneas de fetchBeneficiarios
   const isFetchingRef = useRef(false);
@@ -293,10 +286,11 @@ export default function SeguroIndicacoesContent() {
       return;
     }
 
+    // ATIVAR LOADING IMEDIATAMENTE - Isso desabilita o botão
+    setLoading(true);
+    
     const requestId = `REQ-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     console.log(`🚀 [${requestId}] Iniciando criação de beneficiários:`, { quantidade, id_associado: associadoData.id, id_divisao: associadoData.id_divisao });
-    console.log(`🔒 [${requestId}] Setando loading=true`);
-    setLoading(true);
 
     try {
       console.log(`📤 [${requestId}] Enviando requisição para API...`);
@@ -341,15 +335,7 @@ export default function SeguroIndicacoesContent() {
       toast.error(error instanceof Error ? error.message : 'Erro ao criar beneficiários');
     } finally {
       setLoading(false);
-      // LIBERAR MUTEX - CRÍTICO para permitir novas execuções
-      isExecutingRef.current = false;
-      console.log(`🔓 [${requestId}] Mutex liberado - permitindo novas execuções`);
-      // Reabilitar botão após 2 segundos para evitar cliques acidentais
-      setTimeout(() => {
-        setButtonDisabled(false);
-        isButtonClickedRef.current = false;
-        console.log(`✅ Botão reabilitado`);
-      }, 2000);
+      console.log(`✅ Loading desativado - botão reabilitado`);
     }
   };
 
@@ -498,9 +484,9 @@ export default function SeguroIndicacoesContent() {
           </select>
           <button
             onClick={handleConfirmarQuantidade}
-            disabled={buttonDisabled || loading || quantidade === 0 || beneficiarios.length >= 4}
+            disabled={loading || quantidade === 0 || beneficiarios.length >= 4}
             className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-            style={{ touchAction: 'manipulation', userSelect: 'none' }}
+            style={{ touchAction: 'manipulation', userSelect: 'none', WebkitTapHighlightColor: 'transparent' }}
           >
             {loading ? 'Criando...' : 'Confirmar'}
           </button>
