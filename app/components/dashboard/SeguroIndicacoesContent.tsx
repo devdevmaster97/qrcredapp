@@ -31,6 +31,7 @@ export default function SeguroIndicacoesContent() {
   const [quantidade, setQuantidade] = useState<number>(0);
   const [beneficiarios, setBeneficiarios] = useState<Beneficiario[]>([]);
   const [loading, setLoading] = useState(false);
+  const [buttonDisabled, setButtonDisabled] = useState(false);
   const [loadingExcluir, setLoadingExcluir] = useState<number | null>(null);
   const [associadoData, setAssociadoData] = useState<AssociadoData | null>(null);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -193,11 +194,22 @@ export default function SeguroIndicacoesContent() {
     console.log(`🔔 [${callTimestamp}] handleConfirmarQuantidade CHAMADO - quantidade: ${quantidade}`);
     console.log(`📱 [${callTimestamp}] Tipo de evento: ${e?.type || 'desconhecido'}`);
     
+    // PROTEÇÃO IMEDIATA: Desabilitar botão ANTES de qualquer verificação
+    if (buttonDisabled) {
+      console.log(`🚫 [${callTimestamp}] BLOQUEADO - Botão já desabilitado`);
+      e?.preventDefault();
+      e?.stopPropagation();
+      return;
+    }
+    setButtonDisabled(true);
+    console.log(`🔒 [${callTimestamp}] Botão desabilitado imediatamente`);
+    
     // PROTEÇÃO ATÔMICA 1: Verificar se já está executando (mutex)
     if (isExecutingRef.current) {
       console.log(`🚫 [${callTimestamp}] BLOQUEADO - Já está executando (mutex ativo)`);
       e?.preventDefault();
       e?.stopPropagation();
+      setButtonDisabled(false);
       return;
     }
     
@@ -460,8 +472,13 @@ export default function SeguroIndicacoesContent() {
           </select>
           <button
             onClick={handleConfirmarQuantidade}
-            disabled={loading || quantidade === 0 || beneficiarios.length >= 4}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            disabled={buttonDisabled || loading || quantidade === 0 || beneficiarios.length >= 4}
             className="px-6 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            style={{ touchAction: 'manipulation', userSelect: 'none' }}
           >
             {loading ? 'Criando...' : 'Confirmar'}
           </button>
