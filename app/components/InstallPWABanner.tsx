@@ -78,16 +78,17 @@ export default function InstallPWABanner() {
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-2xl animate-slide-up">
-      <div className="max-w-4xl mx-auto p-4">
-        {/* Botão Fechar */}
-        <button
-          onClick={handleDismiss}
-          className="absolute top-2 right-2 text-white/80 hover:text-white transition-colors"
-          aria-label="Fechar"
-        >
-          <FaTimes size={20} />
-        </button>
+    <div className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none">
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-2xl animate-slide-up pointer-events-auto">
+        <div className="max-w-4xl mx-auto p-4">
+          {/* Botão Fechar */}
+          <button
+            onClick={handleDismiss}
+            className="absolute top-2 right-2 text-white/80 hover:text-white transition-colors"
+            aria-label="Fechar"
+          >
+            <FaTimes size={20} />
+          </button>
 
         {/* Conteúdo Principal */}
         <div className="pr-8">
@@ -140,6 +141,7 @@ export default function InstallPWABanner() {
             Ou toque no menu do navegador (⋮) e selecione "Adicionar à tela inicial"
           </p>
         </div>
+      </div>
       </div>
 
       <style jsx>{`
