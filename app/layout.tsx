@@ -7,7 +7,6 @@ import IOSInstallPrompt from './components/IOSInstallPrompt';
 import UpdateNotification from './components/UpdateNotification';
 import Providers from './components/Providers';
 import SplashScreen from './components/SplashScreen';
-import DebugLogger from './components/DebugLogger';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -142,7 +141,6 @@ export default function RootLayout({
           <PWAInstallPrompt />
           <IOSInstallPrompt />
           <UpdateNotification />
-          <DebugLogger />
         </Providers>
       </body>
     </html>
