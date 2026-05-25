@@ -27,8 +27,8 @@ export async function POST(request: NextRequest) {
       return await existingRequest;
     }
     
-    // Delay de 100ms para evitar race condition
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Delay de 500ms para evitar race condition
+    await new Promise(resolve => setTimeout(resolve, 500));
     
     // Verificar novamente após delay
     if (activeRequests.has(requestKey)) {

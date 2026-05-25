@@ -40,6 +40,7 @@ export default function SeguroIndicacoesContent() {
   // Proteção ATÔMICA contra execuções duplicadas (mobile e desktop)
   const isExecutingRef = useRef(false);
   const lastExecutionTimeRef = useRef(0);
+  const isButtonClickedRef = useRef(false); // Proteção SÍNCRONA contra double-click
   const INTERVALO_MINIMO_MS = 1000; // 1 segundo entre execuções
   
   // Proteção contra chamadas simultâneas de fetchBeneficiarios
@@ -194,32 +195,45 @@ export default function SeguroIndicacoesContent() {
     console.log(`🔔 [${callTimestamp}] handleConfirmarQuantidade CHAMADO - quantidade: ${quantidade}`);
     console.log(`📱 [${callTimestamp}] Tipo de evento: ${e?.type || 'desconhecido'}`);
     
-    // PROTEÇÃO IMEDIATA: Desabilitar botão ANTES de qualquer verificação
+    // PROTEÇÃO 0: Verificação SÍNCRONA com useRef (não espera re-render)
+    if (isButtonClickedRef.current) {
+      console.log(`🚫 [${callTimestamp}] BLOQUEADO - Clique já processado (ref)`);
+      e?.preventDefault();
+      e?.stopPropagation();
+      return;
+    }
+    isButtonClickedRef.current = true;
+    console.log(`🔒 [${callTimestamp}] isButtonClickedRef marcado como true`);
+    
+    // PROTEÇÃO 1: Desabilitar botão ANTES de qualquer verificação
     if (buttonDisabled) {
       console.log(`🚫 [${callTimestamp}] BLOQUEADO - Botão já desabilitado`);
       e?.preventDefault();
       e?.stopPropagation();
+      isButtonClickedRef.current = false;
       return;
     }
     setButtonDisabled(true);
     console.log(`🔒 [${callTimestamp}] Botão desabilitado imediatamente`);
     
-    // PROTEÇÃO ATÔMICA 1: Verificar se já está executando (mutex)
+    // PROTEÇÃO 2: Verificar se já está executando (mutex)
     if (isExecutingRef.current) {
       console.log(`🚫 [${callTimestamp}] BLOQUEADO - Já está executando (mutex ativo)`);
       e?.preventDefault();
       e?.stopPropagation();
       setButtonDisabled(false);
+      isButtonClickedRef.current = false;
       return;
     }
     
-    // PROTEÇÃO ATÔMICA 2: Verificar intervalo mínimo entre execuções
+    // PROTEÇÃO 3: Verificar intervalo mínimo entre execuções
     const tempoDesdeUltimaExecucao = callTimestamp - lastExecutionTimeRef.current;
     if (lastExecutionTimeRef.current > 0 && tempoDesdeUltimaExecucao < INTERVALO_MINIMO_MS) {
       console.log(`🚫 [${callTimestamp}] BLOQUEADO - Intervalo muito curto! ${tempoDesdeUltimaExecucao}ms (mínimo: ${INTERVALO_MINIMO_MS}ms)`);
       e?.preventDefault();
       e?.stopPropagation();
       setButtonDisabled(false);
+      isButtonClickedRef.current = false;
       return;
     }
     
@@ -333,6 +347,7 @@ export default function SeguroIndicacoesContent() {
       // Reabilitar botão após 2 segundos para evitar cliques acidentais
       setTimeout(() => {
         setButtonDisabled(false);
+        isButtonClickedRef.current = false;
         console.log(`✅ Botão reabilitado`);
       }, 2000);
     }
