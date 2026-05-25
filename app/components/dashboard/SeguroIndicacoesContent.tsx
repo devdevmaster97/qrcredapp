@@ -272,16 +272,22 @@ export default function SeguroIndicacoesContent() {
         console.log(`📋 [${requestId}] Estado ANTES de fetchBeneficiarios:`, beneficiarios.length, 'beneficiários');
         setQuantidade(0);
         
-        // Mostrar mensagem de carregamento para o usuário
-        toast.loading('Atualizando lista de beneficiários...', { id: 'updating-list' });
-        
         // Aguardar 300ms para garantir que o banco commitou a transação
         await new Promise(resolve => setTimeout(resolve, 300));
         
-        await fetchBeneficiarios();
+        // Mostrar toast de loading durante a atualização da lista
+        const updatePromise = fetchBeneficiarios();
         
-        // Remover mensagem de loading e mostrar sucesso
-        toast.success('Lista atualizada!', { id: 'updating-list' });
+        toast.promise(
+          updatePromise,
+          {
+            loading: 'Atualizando lista de beneficiários...',
+            success: 'Lista atualizada com sucesso!',
+            error: 'Erro ao atualizar lista'
+          }
+        );
+        
+        await updatePromise;
         
         console.log(`✅ [${requestId}] fetchBeneficiarios concluído`);
         console.log(`📋 [${requestId}] Estado DEPOIS de fetchBeneficiarios:`, beneficiarios.length, 'beneficiários');
