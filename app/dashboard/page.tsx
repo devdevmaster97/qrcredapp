@@ -138,58 +138,57 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid grid-cols-3 gap-3">
-              <Link href="/dashboard/sascred/o-que-e">
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 hover:bg-white/20 transition-all text-center">
-                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-2">
+              <Link href="/dashboard/sascred/o-que-e" className="block">
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl hover:bg-white/20 transition-all flex flex-col items-center justify-center gap-2 h-24 overflow-hidden">
+                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
                     <FaInfoCircle className="text-white" size={18} />
                   </div>
-                  <p className="text-xs text-white/90 font-medium">O que é</p>
+                  <p className="text-[11px] text-white/90 font-medium text-center leading-tight px-1">O que é</p>
                 </div>
               </Link>
 
-              <Link href="/dashboard/saldo">
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 hover:bg-white/20 transition-all text-center">
-                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-2">
+              <Link href="/dashboard/saldo" className="block">
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl hover:bg-white/20 transition-all flex flex-col items-center justify-center gap-2 h-24 overflow-hidden">
+                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
                     <FaWallet className="text-white" size={18} />
                   </div>
-                  <p className="text-xs text-white/90 font-medium">Saldo</p>
+                  <p className="text-[11px] text-white/90 font-medium text-center leading-tight px-1">Saldo</p>
                 </div>
               </Link>
 
-              <Link href="/dashboard/extrato">
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 hover:bg-white/20 transition-all text-center">
-                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-2">
+              <Link href="/dashboard/extrato" className="block">
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl hover:bg-white/20 transition-all flex flex-col items-center justify-center gap-2 h-24 overflow-hidden">
+                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
                     <FaFileInvoice className="text-white" size={18} />
                   </div>
-                  <p className="text-xs text-white/90 font-medium">Extrato</p>
+                  <p className="text-[11px] text-white/90 font-medium text-center leading-tight px-1">Extrato</p>
                 </div>
               </Link>
 
-              <Link href="/dashboard/qrcode">
-                <div className="bg-[#00677d] rounded-xl p-4 hover:bg-[#00b4d8] transition-all text-center col-span-1">
-                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-2">
+              <Link href="/dashboard/qrcode" className="block">
+                <div className="bg-[#00677d] rounded-xl hover:bg-[#00b4d8] transition-all flex flex-col items-center justify-center gap-2 h-24 overflow-hidden">
+                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
                     <FaQrcode className="text-white" size={18} />
                   </div>
-                  <p className="text-xs text-white font-medium">QR Code</p>
+                  <p className="text-[11px] text-white font-medium text-center leading-tight px-1">QR Code</p>
                 </div>
               </Link>
 
-              <Link href="/dashboard/convenios">
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 hover:bg-white/20 transition-all text-center">
-                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-2">
+              <Link href="/dashboard/convenios" className="block">
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl hover:bg-white/20 transition-all flex flex-col items-center justify-center gap-2 h-24 overflow-hidden">
+                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
                     <FaStore className="text-white" size={18} />
                   </div>
-                  <p className="text-xs text-white/90 font-medium">Convênios</p>
+                  <p className="text-[11px] text-white/90 font-medium text-center leading-tight px-1">Convênios</p>
                 </div>
               </Link>
 
-              <Link href="/dashboard/antecipacao">
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 hover:bg-white/20 transition-all text-center">
-                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center mx-auto mb-2">
+              <Link href="/dashboard/antecipacao" className="block">
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl hover:bg-white/20 transition-all flex flex-col items-center justify-center gap-2 h-24 overflow-hidden">
+                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
                     <FaChartLine className="text-white" size={18} />
                   </div>
-                  <p className="text-xs text-white/90 font-medium">Antecipação</p>
-                  <p className="text-[10px] text-white/60 mt-1">⚡ ANTECIPAR</p>
+                  <p className="text-[11px] text-white/90 font-medium text-center leading-tight px-1">Antecipação</p>
                 </div>
               </Link>
             </div>
