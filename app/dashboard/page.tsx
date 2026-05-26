@@ -2,19 +2,37 @@
 
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
+import { useEffect, useState } from 'react';
 import { FaMoneyBillWave, FaStore, FaQrcode, FaClipboardList, FaWallet, FaUser, FaPhone, FaHistory, FaClock, FaStar, FaShieldAlt, FaMobileAlt, FaArrowRight, FaChartLine, FaInfoCircle, FaHeadset, FaBuilding, FaCalendar, FaFileInvoice } from 'react-icons/fa';
 import { useAdesaoSasCred } from '@/app/hooks/useAdesaoSasCred';
 import NotificationManager from '@/app/components/NotificationManager';
 
+interface LocalUserData {
+  nome: string;
+  cartao: string;
+  nome_divisao: string;
+  [key: string]: string;
+}
+
 export default function DashboardPage() {
   const { jaAderiu, loading } = useAdesaoSasCred();
   const { data: session } = useSession();
+  const [localUser, setLocalUser] = useState<LocalUserData | null>(null);
 
-  // Debug: Verificar dados da sessão
-  console.log('🔍 [Dashboard] Sessão completa:', session);
-  console.log('🔍 [Dashboard] session?.user:', session?.user);
-  console.log('🔍 [Dashboard] session?.user?.nome:', session?.user?.nome);
-  console.log('🔍 [Dashboard] session?.user?.cartao:', session?.user?.cartao);
+  useEffect(() => {
+    const stored = localStorage.getItem('qrcred_user');
+    if (stored) {
+      try {
+        setLocalUser(JSON.parse(stored));
+      } catch {}
+    }
+  }, []);
+
+  // Dados do usuário: localStorage tem prioridade (disponível imediatamente),
+  // sessão NextAuth como complemento
+  const userName = localUser?.nome || session?.user?.nome || '';
+  const userCartao = localUser?.cartao || session?.user?.cartao || '';
+  const userNomeDivisao = localUser?.nome_divisao || session?.user?.nome_divisao || 'SasApp';
 
   // Layout moderno seguindo o design system Luminous Flux
   if (jaAderiu) {
@@ -24,13 +42,13 @@ export default function DashboardPage() {
           {/* Card Principal do Usuário */}
           <div className="bg-gradient-to-br from-[#00677d] to-[#00b4d8] rounded-2xl p-6 text-white shadow-lg">
             <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-              {session?.user?.nome}
+              {userName}
             </h1>
             <p className="text-sm text-white/90 mb-1">
-              Cartão: {session?.user?.cartao}
+              Cartão: {userCartao}
             </p>
             <p className="text-sm text-white/90 mb-4">
-              Convênio: {session?.user?.nome_divisao || 'SasApp'}
+              Convênio: {userNomeDivisao}
             </p>
             <div className="inline-block bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
               <span className="text-sm font-semibold">SasCred Ativo</span>
