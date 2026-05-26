@@ -1,7 +1,6 @@
 'use client';
 
-import Link from 'next/link';
-import { FaArrowLeft, FaPhone, FaEnvelope, FaWhatsapp, FaMapMarkerAlt, FaClock, FaHeadset } from 'react-icons/fa';
+import { FaPhone, FaEnvelope, FaWhatsapp, FaMapMarkerAlt, FaClock, FaHeadset } from 'react-icons/fa';
 
 export default function ContatosPage() {
   return (
@@ -9,14 +8,6 @@ export default function ContatosPage() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <Link 
-            href="/dashboard" 
-            className="inline-flex items-center text-blue-600 hover:text-blue-800 mb-4"
-          >
-            <FaArrowLeft className="mr-2" />
-            Voltar a página principal
-          </Link>
-          
           <div className="text-center">
             <h1 className="text-3xl font-bold text-gray-900 mb-4">
               Contatos

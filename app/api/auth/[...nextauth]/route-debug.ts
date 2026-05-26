@@ -67,30 +67,23 @@ const handler = NextAuth({
         console.log('🔍 [NextAuth authorize] Chamando PHP com:', { cartao: credentials.cartao, senha: '***' });
 
         try {
-          const payload = new URLSearchParams();
-          payload.append('cartao', credentials.cartao);
-          payload.append('senha', credentials.senha);
-          
-          const response = await axios.post("https://sas.makecard.com.br/localiza_associado_app_2.php", payload, {
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            timeout: 10000,
+          const response = await axios.post("https://sas.makecard.com.br/login_app.php", {
+            cartao: credentials.cartao,
+            senha: credentials.senha
           });
 
           const data = response.data;
           console.log('🔍 [NextAuth authorize] Resposta do PHP:', data);
 
-          if (data.situacao === 1) {
+          if (data.success) {
             const userObj = {
               id: credentials.cartao,
               cartao: credentials.cartao,
-              matricula: data.matricula || '',
-              empregador: data.empregador || data.id_divisao || '',
+              matricula: data.matricula,
+              empregador: data.empregador,
               senha: credentials.senha,
-              nome: data.nome || '',
-              nome_divisao: data.nome_divisao || '',
-              name: data.nome || '',
+              nome: data.nome,
+              name: data.nome,
               email: data.email || `${credentials.cartao}@qrcred.com.br`
             } as CustomUser;
             
@@ -98,8 +91,8 @@ const handler = NextAuth({
             return userObj;
           }
 
-          console.error('❌ [NextAuth authorize] Login falhou. Situacao:', data.situacao);
-          throw new Error('Credenciais inválidas');
+          console.error('❌ [NextAuth authorize] Login falhou:', data.message);
+          throw new Error(data.message || 'Credenciais inválidas');
         } catch (error) {
           console.error('❌ [NextAuth authorize] Erro:', error);
           if (axios.isAxiosError(error) && error.response?.data?.message) {
@@ -115,23 +108,6 @@ const handler = NextAuth({
     maxAge: 30 * 24 * 60 * 60,
   },
   callbacks: {
-    async redirect({ url, baseUrl }) {
-      console.log('🔍 [NextAuth redirect] url:', url, 'baseUrl:', baseUrl);
-      
-      if (url.startsWith('/')) {
-        const fullUrl = `${baseUrl}${url}`;
-        console.log('🔍 [NextAuth redirect] Redirecionando para:', fullUrl);
-        return fullUrl;
-      }
-      
-      if (url.startsWith(baseUrl)) {
-        console.log('🔍 [NextAuth redirect] Redirecionando para:', url);
-        return url;
-      }
-      
-      console.log('🔍 [NextAuth redirect] Redirecionando para dashboard');
-      return `${baseUrl}/dashboard`;
-    },
     async jwt({ token, user }) {
       if (user) {
         const customUser = user as CustomUser;
@@ -143,8 +119,7 @@ const handler = NextAuth({
           matricula: customUser.matricula,
           empregador: customUser.empregador,
           senha: customUser.senha,
-          nome: customUser.nome,
-          nome_divisao: customUser.nome_divisao
+          nome: customUser.nome
         };
         
         console.log('🔍 [NextAuth jwt] Token criado:', newToken);
@@ -163,7 +138,6 @@ const handler = NextAuth({
         session.user.empregador = customToken.empregador;
         session.user.senha = customToken.senha;
         session.user.nome = customToken.nome;
-        session.user.nome_divisao = customToken.nome_divisao;
         
         console.log('🔍 [NextAuth session] Session.user final:', session.user);
       }

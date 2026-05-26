@@ -1049,7 +1049,7 @@ export default function LoginForm({ onSubmit, loading }: LoginFormProps) {
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmitForm)} className="space-y-4">
+      <form onSubmit={onSubmit} className="space-y-4">
         {!showSavedCards && (
           <>
             <div className="space-y-1">
@@ -1059,11 +1059,11 @@ export default function LoginForm({ onSubmit, loading }: LoginFormProps) {
                 </div>
                 <input
                   type="text"
+                  name="cartao"
                   placeholder="Número do Cartão"
                   className="block w-full pl-10 py-2 sm:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   readOnly={readOnly}
                   maxLength={10}
-                  {...register('cartao')}
                 />
               </div>
               {errors.cartao && (
@@ -1078,10 +1078,10 @@ export default function LoginForm({ onSubmit, loading }: LoginFormProps) {
                 </div>
                 <input
                   type={mostrarSenhaLogin ? "text" : "password"}
+                  name="senha"
                   placeholder="Senha"
                   className="block w-full pl-10 pr-10 py-2 sm:text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   maxLength={20}
-                  {...register('senha')}
                 />
                 <button
                   type="button"

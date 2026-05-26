@@ -16,8 +16,6 @@ import {
   FaUser, 
   FaCalendarAlt, 
   FaSignOutAlt,
-  FaBars,
-  FaTimes,
   FaStar,
   FaWhatsapp,
   FaPhone,
@@ -40,6 +38,9 @@ type SidebarProps = {
   userName: string;
   cardNumber: string;
   company: string;
+  isOpen: boolean;
+  onToggle: () => void;
+  onClose: () => void;
 };
 
 interface UserData {
@@ -49,8 +50,7 @@ interface UserData {
   [key: string]: string;
 }
 
-export default function Sidebar({ userName, cardNumber, company }: SidebarProps) {
-  const [isOpen, setIsOpen] = useState(false);
+export default function Sidebar({ userName, cardNumber, company, isOpen, onToggle, onClose }: SidebarProps) {
   const [isSasCredOpen, setIsSasCredOpen] = useState(false);
   const [isProtecaoFamiliarOpen, setIsProtecaoFamiliarOpen] = useState(false);
   const [isProgramadoOpen, setIsProgramadoOpen] = useState(false);
@@ -184,11 +184,7 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
 
   const handleAntecipacao = () => {
     abrirCanalAntecipacao();
-    setIsOpen(false);
-  };
-
-  const toggleSidebar = () => {
-    setIsOpen(!isOpen);
+    onClose();
   };
 
   const toggleSasCred = () => {
@@ -430,7 +426,7 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
                                   className={`flex items-center px-12 py-2 text-xs transition-colors hover:bg-blue-700 ${
                                     pathname === subSubItem.href ? 'bg-blue-700' : ''
                                   }`}
-                                  onClick={() => setIsOpen(false)}
+                                  onClick={() => onClose()}
                                 >
                                   <span className="mr-2">{subSubItem.icon}</span>
                                   {subSubItem.label}
@@ -452,7 +448,7 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
                         className={`flex items-center px-8 py-2 text-sm transition-colors hover:bg-blue-700 ${
                           pathname === subItem.href ? 'bg-blue-700' : ''
                         }`}
-                        onClick={() => setIsOpen(false)}
+                        onClick={() => onClose()}
                       >
                         <span className="mr-3">{subItem.icon}</span>
                         {subItem.label}
@@ -483,7 +479,7 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
             className={`flex items-center px-5 py-3 transition-colors hover:bg-blue-700 ${
               pathname === item.href ? 'bg-blue-700' : ''
             } ${isSubmenuItem ? 'text-sm pl-8' : ''}`}
-            onClick={() => setIsOpen(false)}
+            onClick={() => onClose()}
           >
             <span className="mr-3">{item.icon}</span>
             {item.label}
@@ -495,48 +491,19 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
 
   return (
     <>
-      {/* Botão de Menu para Mobile */}
-      <button 
-        className={`lg:hidden fixed z-50 bg-blue-600 p-3 rounded-md text-white transition-all duration-300 ease-in-out shadow-lg ${
-          isIOS 
-            ? (isOpen ? 'top-20 left-60' : 'top-20 left-6')
-            : (isOpen ? 'top-4 left-60' : 'top-4 left-4')
-        }`}
-        onClick={toggleSidebar}
-        onTouchEnd={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          toggleSidebar();
-        }}
-        aria-label={isOpen ? "Fechar Menu" : "Abrir Menu"}
-        style={{
-          WebkitTapHighlightColor: 'transparent',
-          touchAction: 'manipulation',
-          userSelect: 'none',
-          WebkitUserSelect: 'none',
-          minWidth: '44px',
-          minHeight: '44px'
-        }}
-      >
-        {isOpen ? <FaTimes size={20} /> : <FaBars size={20} />}
-      </button>
-
-      {/* Overlay para fechar o menu em mobile */}
+      {/* Overlay para fechar o menu */}
       {isOpen && (
         <div 
-          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-30"
-          onClick={toggleSidebar}
+          className="fixed inset-0 bg-black bg-opacity-50 z-30"
+          onClick={onClose}
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar - sempre gaveta (drawer) */}
       <aside 
-        className={`fixed left-0 h-full bg-gray-800 text-white transition-all duration-300 ease-in-out z-40 ${
-          isIOS ? 'top-0 pt-16' : 'top-0'
-        } ${isOpen ? 'w-64 translate-x-0' : 'w-64 -translate-x-full lg:translate-x-0'}`}
-        style={{
-          paddingTop: isIOS ? 'env(safe-area-inset-top, 64px)' : undefined
-        }}
+        className={`fixed left-0 top-0 h-full bg-gray-800 text-white transition-all duration-300 ease-in-out z-40 w-64 ${
+          isOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
       >
         <div className="flex flex-col h-full">
           {/* Cabeçalho do Sidebar */}
@@ -548,7 +515,7 @@ export default function Sidebar({ userName, cardNumber, company }: SidebarProps)
               Cartão: {userData?.cartao || cardNumber}
             </p>
             <p className="text-sm opacity-90 truncate">
-              Convênio: SasApp
+              Convênio: {userData?.nome_divisao || company}
             </p>
             
 

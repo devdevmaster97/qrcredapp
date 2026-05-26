@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste Login NextAuth</title>
+</head>
+<body>
+    <h1>Teste Login NextAuth</h1>
+    <form id="loginForm">
+        <input type="text" id="cartao" placeholder="Cartão" value="6338507346"><br><br>
+        <input type="password" id="senha" placeholder="Senha" value="123456"><br><br>
+        <button type="submit">Login</button>
+    </form>
+    <pre id="result"></pre>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const cartao = document.getElementById('cartao').value;
+            const senha = document.getElementById('senha').value;
+            
+            console.log('Enviando:', { cartao, senha });
+            
+            // Primeiro, pegar o CSRF token
+            const csrfRes = await fetch('http://localhost:3000/api/auth/csrf');
+            const { csrfToken } = await csrfRes.json();
+            console.log('CSRF Token:', csrfToken);
+            
+            // Agora fazer o login
+            const formData = new URLSearchParams();
+            formData.append('cartao', cartao);
+            formData.append('senha', senha);
+            formData.append('csrfToken', csrfToken);
+            formData.append('callbackUrl', 'http://localhost:3000/dashboard');
+            formData.append('json', 'true');
+            
+            const response = await fetch('http://localhost:3000/api/auth/callback/credentials', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: formData.toString()
+            });
+            
+            const result = await response.json();
+            console.log('Resultado:', result);
+            document.getElementById('result').textContent = JSON.stringify(result, null, 2);
+        });
+    </script>
+</body>
+</html>
