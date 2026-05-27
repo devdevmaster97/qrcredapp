@@ -114,7 +114,7 @@ export default function DashboardLayout({
                     className="text-[#191c1d] font-semibold text-base"
                     style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}
                   >
-                    {userData.nome?.split(' ')[0] || 'Usuário'}
+                    SasApp
                   </span>
                 </>
               )}
