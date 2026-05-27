@@ -221,8 +221,8 @@ export default function DashboardPage() {
         </main>
 
         {/* Bottom Navigation */}
-        <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-[#e1e3e4] px-6 py-3 safe-area-bottom">
-          <div className="flex items-center justify-around max-w-md mx-auto">
+        <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-lg border-t border-[#e1e3e4] px-2 py-3 safe-area-bottom">
+          <div className="grid grid-cols-4 w-full">
             <Link href="/dashboard/saldo" className="flex flex-col items-center gap-1 text-[#6d797e] hover:text-[#00677d] transition-colors">
               <FaWallet size={22} />
               <span className="text-[10px] font-medium">Saldo</span>
