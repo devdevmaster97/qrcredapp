@@ -40,18 +40,30 @@ export default function DashboardPage() {
       <div className="bg-[#f8f9fa]">
         <main className="px-5 py-6 space-y-6">
           {/* Card Principal do Usuário */}
-          <div className="bg-gradient-to-br from-[#00677d] to-[#00b4d8] rounded-2xl p-6 text-white shadow-lg">
-            <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-              {userName}
-            </h1>
-            <p className="text-sm text-white/90 mb-1">
-              Cartão: {userCartao}
-            </p>
-            <p className="text-sm text-white/90 mb-4">
-              Convênio: {userNomeDivisao}
-            </p>
-            <div className="inline-block bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
-              <span className="text-sm font-semibold">SasCred Ativo</span>
+          <div
+            className="rounded-2xl p-6 text-white shadow-lg overflow-hidden relative"
+            style={{
+              backgroundImage: "url('/background-card.png')",
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }}
+          >
+            {/* overlay suave para garantir legibilidade do texto */}
+            <div className="absolute inset-0 bg-[#00677d]/60 rounded-2xl" />
+            {/* conteúdo acima do overlay */}
+            <div className="relative z-10">
+              <h1 className="text-2xl font-bold mb-1" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                {userName}
+              </h1>
+              <p className="text-sm text-white/90 mb-1">
+                Cartão: {userCartao}
+              </p>
+              <p className="text-sm text-white/90 mb-4">
+                Convênio: {userNomeDivisao}
+              </p>
+              <div className="inline-block bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
+                <span className="text-sm font-semibold">SasCred Ativo</span>
+              </div>
             </div>
           </div>
 
