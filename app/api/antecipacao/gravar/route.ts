@@ -357,12 +357,13 @@ async function processarSolicitacao(body: any, chaveUnica: string, requestId: st
       raw_response: JSON.stringify(response.data)
     });
     
-    // Verificar se houve erro (incluindo erros de duplicata da trigger)
-    const temErro = response.status >= 400 ||
+    // Verificar se houve erro — se success === true, nunca é erro independente da mensagem
+    const phpRetornouSucesso = response.data.success === true;
+    const temErro = !phpRetornouSucesso && (
+                   response.status >= 400 ||
                    response.data.success === false || 
                    response.data.success === "false" ||
                    (response.data.message && (
-                     response.data.message.toLowerCase().includes("erro") ||
                      response.data.message.toLowerCase().includes("senha") ||
                      response.data.message.toLowerCase().includes("incorreta") ||
                      response.data.message.toLowerCase().includes("inválida") ||
@@ -371,7 +372,7 @@ async function processarSolicitacao(body: any, chaveUnica: string, requestId: st
                      response.data.message.toLowerCase().includes("duplicata") ||
                      response.data.message.toLowerCase().includes("duplicidade") ||
                      response.data.message.toLowerCase().includes("duplicate")
-                   ));
+                   )));
     
     console.log(`🔍 [VALIDAÇÃO ERRO] RequestID: ${requestId} - temErro: ${temErro}`, {
       status_maior_400: response.status >= 400,
@@ -402,9 +403,9 @@ async function processarSolicitacao(body: any, chaveUnica: string, requestId: st
       });
     }
     
-    // ✅ VALIDAÇÃO RIGOROSA: Verificar se IDs foram retornados
-    const antecipacaoId = response.data.antecipacao_id;
-    const contaId = response.data.conta_id;
+    // ✅ VALIDAÇÃO: success === true é suficiente para confirmar gravação
+    const antecipacaoId = Number(response.data.antecipacao_id) || response.data.antecipacao_id;
+    const contaId = Number(response.data.conta_id) || response.data.conta_id;
     
     console.log(`🔍 [VALIDAÇÃO IDS] RequestID: ${requestId}:`, {
       antecipacao_id: antecipacaoId,
@@ -412,22 +413,17 @@ async function processarSolicitacao(body: any, chaveUnica: string, requestId: st
       success: response.data.success
     });
     
-    // Sucesso SOMENTE se:
-    // 1. success === true
-    // 2. antecipacao_id está presente e é válido
-    // 3. conta_id está presente e é válido
-    const idsValidos = antecipacaoId && contaId && 
-                       antecipacaoId > 0 && contaId > 0;
+    const idsValidos = Number(antecipacaoId) > 0 && Number(contaId) > 0;
     
-    const isSuccess = response.data.success === true && idsValidos;
+    // Sucesso se PHP retornou success === true (IDs são informativos, não bloqueantes)
+    const isSuccess = response.data.success === true;
     
-    if (!idsValidos && response.data.success === true) {
-      console.log(`⚠️ [ALERTA] RequestID: ${requestId} - PHP retornou success=true mas IDs inválidos!`);
-      console.log(`📋 [IDS RECEBIDOS]:`, {
+    if (!idsValidos && isSuccess) {
+      console.log(`⚠️ [AVISO] RequestID: ${requestId} - Gravado com sucesso mas IDs não retornados pelo PHP.`, {
         antecipacao_id: antecipacaoId,
         conta_id: contaId,
-        tipo_antecipacao: typeof antecipacaoId,
-        tipo_conta: typeof contaId
+        tipo_antecipacao: typeof response.data.antecipacao_id,
+        tipo_conta: typeof response.data.conta_id
       });
     }
     
