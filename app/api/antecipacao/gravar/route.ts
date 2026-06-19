@@ -177,6 +177,22 @@ async function processarSolicitacao(body: any, chaveUnica: string, requestId: st
     
     debugInfo.etapas_executadas.push('log_inicial');
     console.log(`🔍 [${requestId}] Processando solicitação com proteção anti-duplicação ativa`);
+
+    // =====================================================
+    // 📱 RASTREAMENTO DE DISPOSITIVO - diagnóstico de saldo
+    // =====================================================
+    console.log(`📱 [${requestId}] DISPOSITIVO DO USUÁRIO:`, {
+      matricula: body.matricula,
+      user_agent: body.device_user_agent || 'não informado',
+      platform: body.device_platform || 'não informado',
+      saldo_calculado_no_dispositivo: body.saldo_no_momento ?? 'não informado',
+      limite_no_dispositivo: body.limite_no_momento ?? 'não informado',
+      total_conta_no_dispositivo: body.total_conta_no_momento ?? 'não informado',
+      valor_solicitado: body.valor_pedido,
+      mes_corrente: body.mes_corrente,
+      timestamp: new Date().toISOString(),
+    });
+    // =====================================================
     
     // Validar campos obrigatórios
     const camposObrigatorios = ['matricula', 'pass', 'empregador', 'valor_pedido', 'taxa', 'valor_descontar', 'mes_corrente', 'chave_pix'];
@@ -243,7 +259,7 @@ async function processarSolicitacao(body: any, chaveUnica: string, requestId: st
     formData.append('pass', body.pass);
     formData.append('empregador', (body.empregador || 0).toString());
     formData.append('mes_corrente', body.mes_corrente || '');
-    formData.append('celular', body.celular || '');
+    formData.append('celular', body.device_user_agent || body.celular || '');
     formData.append('taxa', body.taxa || '0');
     formData.append('valor_descontar', body.valor_descontar || '0');
     formData.append('chave_pix', body.chave_pix || '');

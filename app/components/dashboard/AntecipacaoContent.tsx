@@ -1120,7 +1120,13 @@ export default function AntecipacaoContent({ cartao: propCartao }: AntecipacaoPr
         chave_pix: chavePix,
         id: associadoData?.id,
         id_divisao: associadoData?.id_divisao,
-        request_id: requestId, // Adicionar ID único
+        request_id: requestId,
+        // Rastreamento de dispositivo para diagnóstico de saldo incorreto
+        device_user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : 'desconhecido',
+        device_platform: typeof navigator !== 'undefined' ? (navigator.platform || 'desconhecido') : 'desconhecido',
+        saldo_no_momento: saldoData?.saldo?.toFixed(2) ?? '0.00',
+        limite_no_momento: saldoData?.limite?.toFixed(2) ?? '0.00',
+        total_conta_no_momento: saldoData?.total?.toFixed(2) ?? '0.00',
       };
 
       addDebugLog(`📤 [${requestId}] Enviando para API - Valor: ${payload.valor_pedido}`);
