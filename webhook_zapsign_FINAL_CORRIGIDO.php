@@ -116,53 +116,62 @@ try {
     $stmtPendente->execute($params);
     
     $adesaoPendente = $stmtPendente->fetch(PDO::FETCH_ASSOC);
+
+    // Se não achou por CPF+Email, tenta só pelo CPF (email pode estar vazio no banco)
+    if (!$adesaoPendente && !empty($cpf) && !empty($email)) {
+        error_log("⚠️ Não encontrado por CPF+Email. Tentando apenas por CPF em adesoes_pendentes...");
+        $sqlPendenteCpf = "SELECT id, codigo, id_associado, id_divisao, nome, celular 
+                           FROM sind.adesoes_pendentes 
+                           WHERE status = 'pendente' AND cpf = :cpf
+                           ORDER BY data_inicio DESC LIMIT 1";
+        $stmtPendenteCpf = $pdo->prepare($sqlPendenteCpf);
+        $stmtPendenteCpf->execute([':cpf' => $cpf]);
+        $adesaoPendente = $stmtPendenteCpf->fetch(PDO::FETCH_ASSOC);
+    }
+
+    // Última tentativa em adesoes_pendentes: qualquer status (pode já ter sido processada)
+    if (!$adesaoPendente && !empty($cpf)) {
+        error_log("⚠️ Não encontrado com status=pendente. Tentando qualquer status em adesoes_pendentes...");
+        $sqlPendenteAny = "SELECT id, codigo, id_associado, id_divisao, nome, celular 
+                           FROM sind.adesoes_pendentes 
+                           WHERE cpf = :cpf
+                           ORDER BY data_inicio DESC LIMIT 1";
+        $stmtPendenteAny = $pdo->prepare($sqlPendenteAny);
+        $stmtPendenteAny->execute([':cpf' => $cpf]);
+        $adesaoPendente = $stmtPendenteAny->fetch(PDO::FETCH_ASSOC);
+    }
     
     if (!$adesaoPendente) {
         error_log("⚠️ AVISO: Adesão pendente não encontrada para CPF: $cpf, Email: $email");
         error_log("⚠️ Tentando buscar diretamente na tabela associado...");
         
-        // Fallback: Buscar na tabela associado (menos seguro)
-        error_log("   Tentando fallback na tabela associado...");
-        
+        if (empty($cpf)) {
+            error_log("❌ ERRO: CPF não disponível - impossível identificar associado");
+            throw new Exception('CPF não disponível - impossível identificar associado');
+        }
+
+        // Fallback 1: busca por CPF apenas em sind.associado (email pode estar vazio no banco)
+        error_log("   Fallback: Buscando por CPF em sind.associado...");
         $sqlAssociado = "SELECT id, id_divisao, codigo 
                          FROM sind.associado 
-                         WHERE 1=1";
-        
-        $paramsAssociado = [];
-        
-        // ✅ FALLBACK INTELIGENTE: Priorizar CPF + Email juntos
-        if (!empty($cpf) && !empty($email)) {
-            // MELHOR CENÁRIO: Buscar por CPF E Email (mais preciso)
-            $sqlAssociado .= " AND cpf = :cpf AND email = :email";
-            $paramsAssociado[':cpf'] = $cpf;
-            $paramsAssociado[':email'] = $email;
-            error_log("   Fallback: Buscando por CPF + Email (mais preciso)");
-        } elseif (!empty($cpf)) {
-            // Apenas CPF disponível
-            $sqlAssociado .= " AND cpf = :cpf";
-            $paramsAssociado[':cpf'] = $cpf;
-            error_log("   Fallback: Buscando apenas por CPF");
-        } elseif (!empty($email)) {
-            // Apenas Email disponível
-            $sqlAssociado .= " AND email = :email";
-            $paramsAssociado[':email'] = $email;
-            error_log("   Fallback: Buscando apenas por Email");
-        } else {
-            error_log("❌ ERRO: Impossível buscar associado sem CPF ou Email");
-            throw new Exception('CPF e Email não disponíveis - impossível identificar associado');
-        }
-        
-        $sqlAssociado .= " ORDER BY id DESC LIMIT 1";
+                         WHERE cpf = :cpf
+                         ORDER BY id DESC LIMIT 1";
         
         $stmtAssociado = $pdo->prepare($sqlAssociado);
-        $stmtAssociado->execute($paramsAssociado);
-        
+        $stmtAssociado->execute([':cpf' => $cpf]);
         $associadoData = $stmtAssociado->fetch(PDO::FETCH_ASSOC);
+
+        // Fallback 2: CPF sem zeros à esquerda (alguns sistemas gravam sem)
+        if (!$associadoData) {
+            $cpfSemZero = ltrim($cpf, '0');
+            error_log("   Fallback: Tentando CPF sem zeros à esquerda: $cpfSemZero");
+            $stmtAssociado->execute([':cpf' => $cpfSemZero]);
+            $associadoData = $stmtAssociado->fetch(PDO::FETCH_ASSOC);
+        }
         
         if (!$associadoData) {
-            $criterio = !empty($cpf) ? "CPF: $cpf" : "Email: $email";
-            error_log("❌ ERRO: Associado não encontrado no banco de dados ($criterio)");
-            throw new Exception("Associado não encontrado no banco de dados ($criterio)");
+            error_log("❌ ERRO: Associado não encontrado no banco de dados (CPF: $cpf)");
+            throw new Exception("Associado não encontrado no banco de dados (CPF: $cpf)");
         }
         
         $id_associado = $associadoData['id'];
