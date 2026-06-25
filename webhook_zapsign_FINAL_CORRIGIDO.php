@@ -117,7 +117,7 @@ try {
     
     $adesaoPendente = $stmtPendente->fetch(PDO::FETCH_ASSOC);
 
-    // Se não achou por CPF+Email, tenta só pelo CPF (email pode estar vazio no banco)
+    // Se não achou por CPF+Email, tenta só pelo CPF (email pode estar vazio na adesão pendente)
     if (!$adesaoPendente && !empty($cpf) && !empty($email)) {
         error_log("⚠️ Não encontrado por CPF+Email. Tentando apenas por CPF em adesoes_pendentes...");
         $sqlPendenteCpf = "SELECT id, codigo, id_associado, id_divisao, nome, celular 
@@ -129,7 +129,7 @@ try {
         $adesaoPendente = $stmtPendenteCpf->fetch(PDO::FETCH_ASSOC);
     }
 
-    // Última tentativa em adesoes_pendentes: qualquer status (pode já ter sido processada)
+    // Última tentativa em adesoes_pendentes: qualquer status (pode já ter sido processada antes)
     if (!$adesaoPendente && !empty($cpf)) {
         error_log("⚠️ Não encontrado com status=pendente. Tentando qualquer status em adesoes_pendentes...");
         $sqlPendenteAny = "SELECT id, codigo, id_associado, id_divisao, nome, celular 
@@ -140,72 +140,36 @@ try {
         $stmtPendenteAny->execute([':cpf' => $cpf]);
         $adesaoPendente = $stmtPendenteAny->fetch(PDO::FETCH_ASSOC);
     }
-    
+
     if (!$adesaoPendente) {
-        error_log("⚠️ AVISO: Adesão pendente não encontrada para CPF: $cpf, Email: $email");
-        error_log("⚠️ Tentando buscar diretamente na tabela associado...");
-        
-        if (empty($cpf)) {
-            error_log("❌ ERRO: CPF não disponível - impossível identificar associado");
-            throw new Exception('CPF não disponível - impossível identificar associado');
-        }
-
-        // Fallback 1: busca por CPF apenas em sind.associado (email pode estar vazio no banco)
-        error_log("   Fallback: Buscando por CPF em sind.associado...");
-        $sqlAssociado = "SELECT id, id_divisao, codigo 
-                         FROM sind.associado 
-                         WHERE cpf = :cpf
-                         ORDER BY id DESC LIMIT 1";
-        
-        $stmtAssociado = $pdo->prepare($sqlAssociado);
-        $stmtAssociado->execute([':cpf' => $cpf]);
-        $associadoData = $stmtAssociado->fetch(PDO::FETCH_ASSOC);
-
-        // Fallback 2: CPF sem zeros à esquerda (alguns sistemas gravam sem)
-        if (!$associadoData) {
-            $cpfSemZero = ltrim($cpf, '0');
-            error_log("   Fallback: Tentando CPF sem zeros à esquerda: $cpfSemZero");
-            $stmtAssociado->execute([':cpf' => $cpfSemZero]);
-            $associadoData = $stmtAssociado->fetch(PDO::FETCH_ASSOC);
-        }
-        
-        if (!$associadoData) {
-            error_log("❌ ERRO: Associado não encontrado no banco de dados (CPF: $cpf)");
-            throw new Exception("Associado não encontrado no banco de dados (CPF: $cpf)");
-        }
-        
-        $id_associado = $associadoData['id'];
-        $id_divisao = $associadoData['id_divisao'];
-        $codigo = $associadoData['codigo'];
-        
-        error_log("⚠️ Usando dados do associado (fallback): ID=$id_associado, Divisão=$id_divisao, Código=$codigo");
-        
-    } else {
-        // ✅ Dados encontrados na adesão pendente (CORRETO)
-        $id_associado = $adesaoPendente['id_associado'];
-        $id_divisao = $adesaoPendente['id_divisao'];
-        $codigo = $adesaoPendente['codigo'];
-        
-        error_log("✅ Adesão pendente encontrada:");
-        error_log("   ID Adesão Pendente: " . $adesaoPendente['id']);
-        error_log("   Código: $codigo");
-        error_log("   ID Associado: $id_associado");
-        error_log("   ID Divisão: $id_divisao");
-        
-        // Atualizar status da adesão pendente
-        $sqlUpdatePendente = "UPDATE sind.adesoes_pendentes 
-                              SET status = 'assinado', 
-                                  doc_token = :doc_token
-                              WHERE id = :id";
-        
-        $stmtUpdatePendente = $pdo->prepare($sqlUpdatePendente);
-        $stmtUpdatePendente->execute([
-            ':doc_token' => $doc_token,
-            ':id' => $adesaoPendente['id']
-        ]);
-        
-        error_log("✅ Status da adesão pendente atualizado para 'assinado'");
+        error_log("❌ ERRO: Adesão pendente não encontrada para CPF: $cpf - o associado precisa iniciar o processo de adesão pelo app");
+        throw new Exception("Adesão pendente não encontrada para CPF: $cpf. O associado deve iniciar o processo de adesão pelo aplicativo antes de assinar.");
     }
+
+    // ✅ Dados encontrados na adesão pendente (dados reais)
+    $id_associado = $adesaoPendente['id_associado'];
+    $id_divisao = $adesaoPendente['id_divisao'];
+    $codigo = $adesaoPendente['codigo'];
+    
+    error_log("✅ Adesão pendente encontrada:");
+    error_log("   ID Adesão Pendente: " . $adesaoPendente['id']);
+    error_log("   Código: $codigo");
+    error_log("   ID Associado: $id_associado");
+    error_log("   ID Divisão: $id_divisao");
+    
+    // Atualizar status da adesão pendente para 'assinado'
+    $sqlUpdatePendente = "UPDATE sind.adesoes_pendentes 
+                          SET status = 'assinado', 
+                              doc_token = :doc_token
+                          WHERE id = :id";
+    
+    $stmtUpdatePendente = $pdo->prepare($sqlUpdatePendente);
+    $stmtUpdatePendente->execute([
+        ':doc_token' => $doc_token,
+        ':id' => $adesaoPendente['id']
+    ]);
+    
+    error_log("✅ Status da adesão pendente atualizado para 'assinado'");
     
     // ✅ BUSCAR DADOS ADICIONAIS DO ASSOCIADO (limite, salário, etc)
     error_log("🔍 Buscando dados adicionais do associado...");
