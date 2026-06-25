@@ -144,7 +144,7 @@ export default function AdesaoSasapp() {
       }
 
       const userData = JSON.parse(storedUser);
-      const { cartao, senha } = userData;
+      const { cartao, senha, email: emailLocalStorage } = userData;
 
       // Busca os dados completos do usuário na API de localização
       const localizaResponse = await fetch('/api/localiza-associado', {
@@ -251,7 +251,7 @@ export default function AdesaoSasapp() {
           body: JSON.stringify({
             codigo: localizaData.matricula,
             cpf: localizaData.cpf,
-            email: localizaData.email,
+            email: localizaData.email || emailLocalStorage || '',
             id_associado: localizaData.id,
             id_divisao: localizaData.id_divisao,
             nome: localizaData.nome,
@@ -269,12 +269,10 @@ export default function AdesaoSasapp() {
           console.error('⚠️ Dados enviados:', {
             codigo: localizaData.matricula,
             cpf: localizaData.cpf?.substring(0, 3) + '***',
-            email: localizaData.email,
+            email: localizaData.email || emailLocalStorage || '(vazio)',
             id_associado: localizaData.id,
             id_divisao: localizaData.id_divisao
           });
-          // Mostrar alerta para debug
-          alert('⚠️ ATENÇÃO: Erro ao registrar adesão pendente. Verifique o console (F12) para detalhes.');
         }
       } catch (error) {
         console.error('❌ EXCEÇÃO ao registrar adesão pendente:', error);
