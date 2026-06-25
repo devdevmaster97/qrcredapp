@@ -13,6 +13,7 @@ interface UserData {
 
 interface AdesaoStatus {
   jaAderiu: boolean;
+  temAntecipacao: boolean;
   loading: boolean;
   error: string | null;
   dadosAdesao: any | null;
@@ -21,7 +22,7 @@ interface AdesaoStatus {
 
 export function useAdesaoSasCred(): AdesaoStatus {
   // 🚀 CARREGAR CACHE DO LOCALSTORAGE IMEDIATAMENTE
-  const getCachedStatus = (): { jaAderiu: boolean; dadosAdesao: any | null } => {
+  const getCachedStatus = (): { jaAderiu: boolean; temAntecipacao: boolean; dadosAdesao: any | null } => {
     try {
       const cached = localStorage.getItem('sascred_adesao_cache');
       if (cached) {
@@ -30,19 +31,24 @@ export function useAdesaoSasCred(): AdesaoStatus {
         // Cache válido por 5 minutos
         if (cacheAge < 5 * 60 * 1000) {
           console.log('✅ SasCred: Cache encontrado e válido', parsed);
-          return { jaAderiu: parsed.jaAderiu || false, dadosAdesao: parsed.dadosAdesao || null };
+          return {
+            jaAderiu: parsed.jaAderiu || false,
+            temAntecipacao: parsed.temAntecipacao || false,
+            dadosAdesao: parsed.dadosAdesao || null,
+          };
         }
       }
     } catch (error) {
       console.warn('⚠️ Erro ao ler cache:', error);
     }
-    return { jaAderiu: false, dadosAdesao: null };
+    return { jaAderiu: false, temAntecipacao: false, dadosAdesao: null };
   };
 
   const cachedData = getCachedStatus();
   
   const [status, setStatus] = useState<AdesaoStatus>({
     jaAderiu: cachedData.jaAderiu,
+    temAntecipacao: false,
     loading: true,
     error: null,
     dadosAdesao: cachedData.dadosAdesao,
@@ -274,11 +280,35 @@ export function useAdesaoSasCred(): AdesaoStatus {
         console.log('🔍 DEBUG useAdesaoSasCred - jaAderiu calculado:', jaAderiu);
         console.log('🔍 DEBUG useAdesaoSasCred - Comparação: resultado.jaAderiu === true?', resultado.jaAderiu === true);
         const statusAnterior = lastStatusRef.current;
+
+        // Verificar se o usuário também tem contrato de Antecipação (tipo=2)
+        let temAntecipacao = false;
+        if (jaAderiu) {
+          try {
+            const antecipReqBody: Record<string, unknown> = { codigo: userData.matricula.toString() };
+            if (associadoData?.id)         antecipReqBody.id         = associadoData.id;
+            if (associadoData?.id_divisao) antecipReqBody.id_divisao = associadoData.id_divisao;
+
+            const antecipResp = await fetch('/api/verificar-antecipacao-sascred', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(antecipReqBody),
+            });
+            if (antecipResp.ok) {
+              const antecipData = await antecipResp.json();
+              temAntecipacao = antecipData.temAntecipacao === true;
+              console.log('🔍 temAntecipacao:', temAntecipacao);
+            }
+          } catch (e) {
+            console.warn('⚠️ Erro ao verificar antecipação:', e);
+          }
+        }
         
         // 💾 SALVAR NO CACHE DO LOCALSTORAGE
         try {
           localStorage.setItem('sascred_adesao_cache', JSON.stringify({
             jaAderiu,
+            temAntecipacao,
             dadosAdesao: resultado.dados || null,
             timestamp: Date.now()
           }));
@@ -290,6 +320,7 @@ export function useAdesaoSasCred(): AdesaoStatus {
         setStatus(prev => ({
           ...prev,
           jaAderiu,
+          temAntecipacao,
           loading: false,
           error: null,
           dadosAdesao: resultado.dados || null

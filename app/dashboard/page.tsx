@@ -15,7 +15,7 @@ interface LocalUserData {
 }
 
 export default function DashboardPage() {
-  const { jaAderiu, loading } = useAdesaoSasCred();
+  const { jaAderiu, temAntecipacao, loading } = useAdesaoSasCred();
   const { data: session } = useSession();
   const [localUser, setLocalUser] = useState<LocalUserData | null>(null);
 
@@ -195,14 +195,26 @@ export default function DashboardPage() {
                 </div>
               </Link>
 
-              <Link href="/dashboard/antecipacao" className="block">
-                <div className="bg-white/10 backdrop-blur-sm rounded-xl hover:bg-white/20 transition-all flex flex-col items-center justify-center gap-2 h-24 overflow-hidden">
-                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-                    <FaChartLine className="text-white" size={18} />
+              {temAntecipacao ? (
+                <Link href="/dashboard/antecipacao" className="block">
+                  <div className="bg-white/10 backdrop-blur-sm rounded-xl hover:bg-white/20 transition-all flex flex-col items-center justify-center gap-2 h-24 overflow-hidden">
+                    <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                      <FaChartLine className="text-white" size={18} />
+                    </div>
+                    <p className="text-[11px] text-white/90 font-medium text-center leading-tight px-1">Antecipação</p>
                   </div>
-                  <p className="text-[11px] text-white/90 font-medium text-center leading-tight px-1">Antecipação</p>
-                </div>
-              </Link>
+                </Link>
+              ) : (
+                <Link href="/dashboard/sascred/antecipacao/aderir" className="block">
+                  <div className="bg-white/5 rounded-xl flex flex-col items-center justify-center gap-2 h-24 overflow-hidden opacity-60">
+                    <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
+                      <FaChartLine className="text-white/60" size={18} />
+                    </div>
+                    <p className="text-[10px] text-white/60 font-medium text-center leading-tight px-1">Antecipação</p>
+                    <p className="text-[9px] text-white/40 font-medium text-center leading-tight px-1 -mt-1">Aderir</p>
+                  </div>
+                </Link>
+              )}
             </div>
           </div>
 
@@ -250,10 +262,17 @@ export default function DashboardPage() {
               <span className="text-[10px] font-medium">QR Code</span>
             </Link>
 
-            <Link href="/dashboard/antecipacao" className="flex flex-col items-center gap-1 text-[#6d797e] hover:text-[#00677d] transition-colors">
-              <FaChartLine size={22} />
-              <span className="text-[10px] font-medium">Antecipação</span>
-            </Link>
+            {temAntecipacao ? (
+              <Link href="/dashboard/antecipacao" className="flex flex-col items-center gap-1 text-[#6d797e] hover:text-[#00677d] transition-colors">
+                <FaChartLine size={22} />
+                <span className="text-[10px] font-medium">Antecipação</span>
+              </Link>
+            ) : (
+              <Link href="/dashboard/sascred/antecipacao/aderir" className="flex flex-col items-center gap-1 text-[#b0bbbf] transition-colors">
+                <FaChartLine size={22} className="opacity-50" />
+                <span className="text-[10px] font-medium opacity-50">Antecipação</span>
+              </Link>
+            )}
           </div>
         </nav>
       </div>
