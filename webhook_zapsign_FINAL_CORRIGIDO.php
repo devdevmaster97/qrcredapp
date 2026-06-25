@@ -141,35 +141,61 @@ try {
         $adesaoPendente = $stmtPendenteAny->fetch(PDO::FETCH_ASSOC);
     }
 
-    if (!$adesaoPendente) {
-        error_log("❌ ERRO: Adesão pendente não encontrada para CPF: $cpf - o associado precisa iniciar o processo de adesão pelo app");
-        throw new Exception("Adesão pendente não encontrada para CPF: $cpf. O associado deve iniciar o processo de adesão pelo aplicativo antes de assinar.");
+    // Último recurso: buscar em sind.associado por CPF (cadastro real do associado)
+    $usouFallbackAssociado = false;
+    if (!$adesaoPendente && !empty($cpf)) {
+        error_log("⚠️ Adesão pendente não encontrada. Buscando em sind.associado por CPF...");
+        $sqlAssociado = "SELECT id, id_divisao, codigo 
+                         FROM sind.associado 
+                         WHERE cpf = :cpf
+                         ORDER BY id DESC LIMIT 1";
+        $stmtAssociado = $pdo->prepare($sqlAssociado);
+        $stmtAssociado->execute([':cpf' => $cpf]);
+        $associadoData = $stmtAssociado->fetch(PDO::FETCH_ASSOC);
+
+        if (!$associadoData) {
+            error_log("❌ ERRO: Associado não encontrado em sind.associado (CPF: $cpf)");
+            throw new Exception("Associado não encontrado no banco de dados (CPF: $cpf)");
+        }
+
+        $id_associado = $associadoData['id'];
+        $id_divisao   = $associadoData['id_divisao'];
+        $codigo       = $associadoData['codigo'];
+        $usouFallbackAssociado = true;
+        error_log("✅ Associado encontrado em sind.associado: ID=$id_associado, Divisão=$id_divisao, Código=$codigo");
     }
 
-    // ✅ Dados encontrados na adesão pendente (dados reais)
-    $id_associado = $adesaoPendente['id_associado'];
-    $id_divisao = $adesaoPendente['id_divisao'];
-    $codigo = $adesaoPendente['codigo'];
+    if (!$adesaoPendente && !$usouFallbackAssociado) {
+        error_log("❌ ERRO: Impossível identificar associado para CPF: $cpf");
+        throw new Exception("Associado não encontrado no banco de dados (CPF: $cpf)");
+    }
+
+    if (!$usouFallbackAssociado) {
+        // ✅ Dados vindos da adesão pendente (caminho normal)
+        $id_associado = $adesaoPendente['id_associado'];
+        $id_divisao   = $adesaoPendente['id_divisao'];
+        $codigo       = $adesaoPendente['codigo'];
+    }
     
-    error_log("✅ Adesão pendente encontrada:");
-    error_log("   ID Adesão Pendente: " . $adesaoPendente['id']);
+    error_log("✅ Identificação concluída:");
     error_log("   Código: $codigo");
     error_log("   ID Associado: $id_associado");
     error_log("   ID Divisão: $id_divisao");
-    
-    // Atualizar status da adesão pendente para 'assinado'
-    $sqlUpdatePendente = "UPDATE sind.adesoes_pendentes 
-                          SET status = 'assinado', 
-                              doc_token = :doc_token
-                          WHERE id = :id";
-    
-    $stmtUpdatePendente = $pdo->prepare($sqlUpdatePendente);
-    $stmtUpdatePendente->execute([
-        ':doc_token' => $doc_token,
-        ':id' => $adesaoPendente['id']
-    ]);
-    
-    error_log("✅ Status da adesão pendente atualizado para 'assinado'");
+    error_log("   Origem: " . ($usouFallbackAssociado ? 'sind.associado (fallback)' : 'sind.adesoes_pendentes'));
+
+    // Atualizar status da adesão pendente para 'assinado' (somente se veio de lá)
+    if (!$usouFallbackAssociado && $adesaoPendente) {
+        $sqlUpdatePendente = "UPDATE sind.adesoes_pendentes 
+                              SET status = 'assinado', 
+                                  doc_token = :doc_token
+                              WHERE id = :id";
+        $stmtUpdatePendente = $pdo->prepare($sqlUpdatePendente);
+        $stmtUpdatePendente->execute([
+            ':doc_token' => $doc_token,
+            ':id' => $adesaoPendente['id']
+        ]);
+        error_log("✅ Status da adesão pendente atualizado para 'assinado'");
+    }
     
     // ✅ BUSCAR DADOS ADICIONAIS DO ASSOCIADO (limite, salário, etc)
     error_log("🔍 Buscando dados adicionais do associado...");
