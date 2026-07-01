@@ -120,6 +120,9 @@ export default function LoginPage() {
             className="space-y-4 bg-white p-8 rounded-lg shadow"
           >
             <div className="space-y-1">
+              <label htmlFor="cartao-input" className="block text-sm font-medium text-gray-700">
+                Cartão
+              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FaCreditCard className="h-5 w-5 text-gray-400" />
@@ -137,6 +140,9 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-1">
+              <label htmlFor="senha-input" className="block text-sm font-medium text-gray-700">
+                Senha
+              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FaLock className="h-5 w-5 text-gray-400" />
